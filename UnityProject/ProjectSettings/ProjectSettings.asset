@@ -1,11 +1,12 @@
 %YAML 1.1
-%TAG !u! tag:unity3d.com,2011:
+%TAG !u! tag:yousandi.cn,2023:
 --- !u!129 &1
 PlayerSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 24
+  serializedVersion: 26
   productGUID: 00b7e6093f2d7bb48971e60951014258
   AndroidProfiler: 0
+  hmiUseInternalProfiler: 0
   AndroidFilterTouchesWhenObscured: 0
   AndroidEnableSustainedPerformanceMode: 0
   defaultScreenOrientation: 4
@@ -41,12 +42,7 @@ PlayerSettings:
     height: 1
   m_SplashScreenLogos: []
   m_VirtualRealitySplashScreen: {fileID: 0}
-  m_ShowUnitySplashAds: 0
-  m_AdsAndroidGameId: 
-  m_AdsIosGameId: 
-  m_ShowSplashAdsSlogan: 0
-  m_SloganImage: {fileID: 0}
-  m_SloganHeight: 150
+  integrityHash: 
   m_HolographicTrackingLossScreen: {fileID: 0}
   defaultScreenWidth: 1920
   defaultScreenHeight: 1080
@@ -54,14 +50,16 @@ PlayerSettings:
   defaultScreenHeightWeb: 600
   m_StereoRenderingPath: 0
   m_ActiveColorSpace: 0
+  unsupportedMSAAFallback: 0
+  m_SpriteBatchVertexThreshold: 300
   m_MTRendering: 1
   mipStripping: 0
   numberOfMipsStripped: 0
+  numberOfMipsStrippedPerMipmapLimitGroup: {}
   m_StackTraceTypes: 010000000100000001000000010000000100000001000000
   iosShowActivityIndicatorOnLoading: -1
   androidShowActivityIndicatorOnLoading: -1
   iosUseCustomAppBackgroundBehavior: 0
-  iosAllowHTTPDownload: 1
   allowedAutorotateToPortrait: 1
   allowedAutorotateToPortraitUpsideDown: 1
   allowedAutorotateToLandscapeRight: 1
@@ -73,6 +71,7 @@ PlayerSettings:
   androidStartInFullscreen: 1
   androidRenderOutsideSafeArea: 1
   androidUseSwappy: 1
+  androidDisableUnityAndroidVSync: 0
   androidBlitType: 0
   androidResizableWindow: 0
   androidDefaultWindowWidth: 1920
@@ -80,6 +79,9 @@ PlayerSettings:
   androidMinimumWindowWidth: 400
   androidMinimumWindowHeight: 300
   androidFullscreenMode: 1
+  androidAutoRotationBehavior: 1
+  androidUrasMode: 0
+  androidEnableSensors: 0
   defaultIsNativeResolution: 1
   macRetinaSupport: 1
   runInBackground: 0
@@ -92,17 +94,23 @@ PlayerSettings:
   submitAnalytics: 1
   usePlayerLog: 1
   autoStreaming: 0
-  useAnimationStreaming: 0
   useFontStreaming: 0
+  cacheASTextureAB: 0
+  maxCacheSize: 0
+  maxConcurrentLoad: 0
   autoStreamingId: 
   instantGameAppId: 
+  dedicatedServerOptimizations: 0
   bakeCollisionMeshes: 0
   forceSingleInstance: 0
   useFlipModelSwapchain: 1
   resizableWindow: 0
   useMacAppStoreValidation: 0
+  wglDisableFBODepthStencil: 0
   macAppStoreCategory: public.app-category.games
   gpuSkinning: 0
+  gpuSkinningTransformFeedback: 0
+  vertexShaderSkinning: 0
   xboxPIXTextureCapture: 0
   xboxEnableAvatar: 0
   xboxEnableKinect: 0
@@ -130,8 +138,21 @@ PlayerSettings:
   switchNVNShaderPoolsGranularity: 33554432
   switchNVNDefaultPoolsGranularity: 16777216
   switchNVNOtherPoolsGranularity: 16777216
+  switchGpuScratchPoolGranularity: 2097152
+  switchAllowGpuScratchShrinking: 0
   switchNVNMaxPublicTextureIDCount: 0
   switchNVNMaxPublicSamplerIDCount: 0
+  switchNVNGraphicsFirmwareMemory: 32
+  switchMaxWorkerMultiple: 8
+  openHarmonyStartInFullscreen: 1
+  openHarmonyRenderOutsideSafeArea: 1
+  openHarmonyResizableWindow: 0
+  openHarmonyFullscreenMode: 1
+  openHarmonyBlitType: 0
+  openHarmonyDefaultWindowWidth: 1920
+  openHarmonyDefaultWindowHeight: 1080
+  openHarmonyMinimumWindowWidth: 400
+  openHarmonyMinimumWindowHeight: 300
   stadiaPresentMode: 0
   stadiaTargetFramerate: 0
   vulkanNumSwapchainBuffers: 3
@@ -139,12 +160,9 @@ PlayerSettings:
   vulkanEnablePreTransform: 0
   vulkanEnableLateAcquireNextImage: 0
   vulkanEnableCommandBufferRecycling: 1
-  m_SupportedAspectRatios:
-    4:3: 1
-    5:4: 1
-    16:10: 1
-    16:9: 1
-    Others: 1
+  loadStoreDebugModeEnabled: 0
+  visionOSBundleVersion: 1.0
+  tvOSBundleVersion: 1.0
   bundleVersion: 1.0
   preloadedAssets: []
   metroInputSource: 0
@@ -157,8 +175,9 @@ PlayerSettings:
   isWsaHolographicRemotingEnabled: 0
   enableFrameTimingStats: 0
   enableOpenGLProfilerGPURecorders: 1
+  allowHDRDisplaySupport: 0
   useHDRDisplay: 0
-  D3DHDRBitDepth: 0
+  hdrBitDepth: 0
   m_ColorGamuts: 00000000
   targetPixelDensity: 30
   resolutionScalingMode: 0
@@ -169,6 +188,7 @@ PlayerSettings:
     Standalone: com.DinStudio.TEngine
   buildNumber:
     Standalone: 0
+    VisionOS: 0
     iPhone: 0
     tvOS: 0
   overrideDefaultApplicationIdentifier: 0
@@ -186,12 +206,15 @@ PlayerSettings:
   APKExpansionFiles: 0
   keepLoadedShadersAlive: 0
   StripUnusedMeshComponents: 0
+  strictShaderVariantMatching: 0
   VertexChannelCompressionMask: 4054
   iPhoneSdkVersion: 988
-  iOSTargetOSVersionString: 11.0
+  iOSTargetOSVersionString: 12.0
   tvOSSdkVersion: 0
   tvOSRequireExtendedGameController: 0
-  tvOSTargetOSVersionString: 11.0
+  tvOSTargetOSVersionString: 12.0
+  VisionOSSdkVersion: 0
+  VisionOSTargetOSVersionString: 1.0
   uIPrerenderedIcon: 0
   uIRequiresPersistentWiFi: 0
   uIRequiresFullScreen: 1
@@ -234,18 +257,26 @@ PlayerSettings:
   iOSMetalForceHardShadows: 0
   metalEditorSupport: 1
   metalAPIValidation: 1
+  metalCompileShaderBinary: 0
   iOSRenderExtraFrameOnPause: 0
   iosCopyPluginsCodeInsteadOfSymlink: 0
   appleDeveloperTeamID: 
   iOSManualSigningProvisioningProfileID: 
   tvOSManualSigningProvisioningProfileID: 
+  VisionOSManualSigningProvisioningProfileID: 
   iOSManualSigningProvisioningProfileType: 0
   tvOSManualSigningProvisioningProfileType: 0
+  VisionOSManualSigningProvisioningProfileType: 0
   appleEnableAutomaticSigning: 0
   iOSRequireARKit: 0
   iOSAutomaticallyDetectAndAddCapabilities: 1
   appleEnableProMotion: 0
   shaderPrecisionModel: 0
+  optimizeInstantGameEnabled: 1
+  useMobileShaderForInstantGame: 1
+  limitMaxVisibleLights16: 1
+  declareTempsInMain: 1
+  declareImmCBAsConst: 1
   clonedFromGUID: 00000000000000000000000000000000
   templatePackageId: 
   templateDefaultScene: 
@@ -255,6 +286,7 @@ PlayerSettings:
   useCustomLauncherGradleManifest: 0
   useCustomBaseGradleTemplate: 0
   useCustomGradlePropertiesTemplate: 0
+  useCustomGradleSettingsTemplate: 0
   useCustomProguardFile: 0
   AndroidTargetArchitectures: 1
   AndroidTargetDevices: 0
@@ -262,6 +294,7 @@ PlayerSettings:
   androidSplashScreen: {fileID: 0}
   AndroidKeystoreName: 
   AndroidKeyaliasName: 
+  AndroidEnableArmv9SecurityFeatures: 0
   AndroidBuildApkPerCpuArchitecture: 0
   AndroidTVCompatibility: 0
   AndroidIsGame: 1
@@ -275,7 +308,6 @@ PlayerSettings:
     banner: {fileID: 0}
   androidGamepadSupportLevel: 0
   chromeosInputEmulation: 1
-  AndroidMinifyWithR8: 0
   AndroidMinifyRelease: 0
   AndroidMinifyDebug: 0
   AndroidValidateAppBundleSize: 1
@@ -488,7 +520,9 @@ PlayerSettings:
     iPhone: 1
     tvOS: 1
   m_BuildTargetGroupLightmapEncodingQuality: []
+  m_BuildTargetGroupHDRCubemapEncodingQuality: []
   m_BuildTargetGroupLightmapSettings: []
+  m_BuildTargetGroupLoadStoreDebugModeSettings: []
   m_BuildTargetNormalMapEncoding: []
   m_BuildTargetDefaultTextureCompressionFormat: []
   playModeTestRunnerEnabled: 0
@@ -501,6 +535,7 @@ PlayerSettings:
   locationUsageDescription: 
   microphoneUsageDescription: 
   bluetoothUsageDescription: 
+  macOSTargetOSVersion: 10.13.0
   switchNMETAOverride: 
   switchNetLibKey: 
   switchSocketMemoryPoolSize: 6144
@@ -508,10 +543,11 @@ PlayerSettings:
   switchSocketConcurrencyLimit: 14
   switchScreenResolutionBehavior: 2
   switchUseCPUProfiler: 0
-  switchUseGOLDLinker: 0
+  switchEnableFileSystemTrace: 0
   switchLTOSetting: 0
   switchApplicationID: 0x01004b9000490000
   switchNSODependencies: 
+  switchCompilerFlags: 
   switchTitleNames_0: 
   switchTitleNames_1: 
   switchTitleNames_2: 
@@ -637,7 +673,6 @@ PlayerSettings:
   switchSocketBufferEfficiency: 4
   switchSocketInitializeEnabled: 1
   switchNetworkInterfaceManagerInitializeEnabled: 1
-  switchPlayerConnectionEnabled: 1
   switchUseNewStyleFilepaths: 0
   switchUseLegacyFmodPriorities: 1
   switchUseMicroSleepForYield: 1
@@ -727,6 +762,7 @@ PlayerSettings:
   webGLMemorySize: 32
   webGLExceptionSupport: 1
   webGLNameFilesAsHashes: 0
+  webGLShowDiagnostics: 0
   webGLDataCaching: 1
   webGLDebugSymbols: 0
   webGLEmscriptenArgs: 
@@ -739,30 +775,52 @@ PlayerSettings:
   webGLLinkerTarget: 1
   webGLThreadsSupport: 0
   webGLDecompressionFallback: 0
+  webGLInitialMemorySize: 32
+  webGLMaximumMemorySize: 2048
+  webGLMemoryGrowthMode: 2
+  webGLMemoryLinearGrowthStep: 16
+  webGLMemoryGeometricGrowthStep: 0.2
+  webGLMemoryGeometricGrowthCap: 96
   webGLPowerPreference: 2
   scriptingDefineSymbols:
-    Android: ENABLE_LOG
-    Standalone: ODIN_INSPECTOR;ODIN_INSPECTOR_3;ODIN_INSPECTOR_3_1;ODIN_VALIDATOR;ODIN_VALIDATOR_3_1;ENABLE_LOG
-    WebGL: ENABLE_LOG
-    Windows Store Apps: ENABLE_LOG
-    iPhone: ENABLE_LOG
+    Android: ENABLE_LOG;TextMeshPro
+    ArmLinux: TextMeshPro
+    ArmLinuxServer: TextMeshPro
+    EmbeddedLinux: TextMeshPro
+    GameCoreScarlett: TextMeshPro
+    GameCoreXboxOne: TextMeshPro
+    HMIAndroid: TextMeshPro
+    Nintendo Switch: TextMeshPro
+    OpenHarmony: TextMeshPro
+    PS4: TextMeshPro
+    PS5: TextMeshPro
+    QNX: TextMeshPro
+    Stadia: TextMeshPro
+    Standalone: ODIN_INSPECTOR;ODIN_INSPECTOR_3;ODIN_INSPECTOR_3_1;ODIN_VALIDATOR;ODIN_VALIDATOR_3_1;ENABLE_LOG;TextMeshPro
+    VisionOS: TextMeshPro
+    WebGL: ENABLE_LOG;TextMeshPro
+    WeixinMiniGame: TextMeshPro
+    Windows Store Apps: ENABLE_LOG;TextMeshPro
+    XboxOne: TextMeshPro
+    iPhone: ENABLE_LOG;TextMeshPro
+    tvOS: TextMeshPro
   additionalCompilerArguments: {}
   platformArchitecture: {}
   scriptingBackend:
     Standalone: 1
   il2cppCompilerConfiguration: {}
+  il2cppCodeGeneration: {}
   managedStrippingLevel: {}
   incrementalIl2cppBuild: {}
   suppressCommonWarnings: 1
   allowUnsafeCode: 1
   useDeterministicCompilation: 1
-  enableRoslynAnalyzers: 1
-  selectedPlatform: 0
   additionalIl2CppArgs: 
   scriptingRuntimeVersion: 1
+  monoAOTCompilation: 0
   gcIncremental: 0
-  assemblyVersionValidation: 1
   gcWBarrierValidation: 0
+  gcAlgorithm: {}
   apiCompatibilityLevelPerPlatform: {}
   m_RenderingPath: 1
   m_MobileRenderingPath: 1
@@ -787,6 +845,7 @@ PlayerSettings:
   metroTileBackgroundColor: {r: 0.13333334, g: 0.17254902, b: 0.21568628, a: 0}
   metroSplashScreenBackgroundColor: {r: 0.12941177, g: 0.17254902, b: 0.21568628, a: 1}
   metroSplashScreenUseBackgroundColor: 0
+  syncCapabilities: 0
   platformCapabilities: {}
   metroTargetDeviceFamilies: {}
   metroFTAName: 
@@ -833,7 +892,59 @@ PlayerSettings:
   luminVersion:
     m_VersionCode: 1
     m_VersionName: 
+  hmiPlayerDataPath: 
+  hmiForceSRGBBlit: 1
+  embeddedLinuxEnableGamepadInput: 0
+  hmiLogStartupTiming: 0
+  hmiCpuConfiguration: 
+  openHarmonySplashScreen: {fileID: 0}
+  openHarmonySplashScreenScale: 0
+  OpenHarmonyTargetArchitectures: 2
+  openHarmonyClientID: 
+  openHarmonyAppID: 
+  openHarmonyDeviceTypes: 7
+  openHarmonySupportWindowModes: 1
+  OpenHarmonyBundleVersionCode: 1
+  forceOpenHarmonyInternetPermission: 0
+  forceOpenHarmonySDCardPermission: 0
+  openHarmonyUseLowAccuracyLocation: 0
+  openHarmonyPredefinedPermissions: []
+  OpenHarmonyKeystoreName: 
+  OpenHarmonyKeyaliasName: 
+  OpenHarmonyProfile: 
+  OpenHarmonyCertificate: 
+  OpenHarmonyUseCustomKeystore: 0
   apiCompatibilityLevel: 3
+  weixinMiniGameMemorySize: 32
+  weixinMiniGameExceptionSupport: 1
+  weixinMiniGameExceptionOnlyEnableForUserCodes: 0
+  weixinMiniGameNameFilesAsHashes: 0
+  weixinMiniGameShowDiagnostics: 0
+  weixinMiniGameDataCaching: 1
+  weixinMiniGameDebugSymbols: 0
+  weixinMiniGameEmscriptenArgs: 
+  weixinMiniGameModulesDirectory: 
+  weixinMiniGameTemplate: APPLICATION:Default
+  weixinMiniGameAnalyzeBuildSize: 0
+  weixinMiniGameUseEmbeddedResources: 0
+  weixinMiniGameCompressionFormat: 0
+  weixinMiniGameWasmArithmeticExceptions: 0
+  weixinMiniGameLinkerTarget: 1
+  weixinMiniGameThreadsSupport: 0
+  weixinMiniGameDecompressionFallback: 0
+  weixinMiniGameInitialMemorySize: 32
+  weixinMiniGameMaximumMemorySize: 2048
+  weixinMiniGameMemoryGrowthMode: 2
+  weixinMiniGameMemoryLinearGrowthStep: 16
+  weixinMiniGameMemoryGeometricGrowthStep: 0.2
+  weixinMiniGameMemoryGeometricGrowthCap: 96
+  weixinMiniGamePowerPreference: 2
+  weixinMiniGameSIMDSupport: 0
+  weixinMiniGameUseSlimMetaFileFormat: 1
+  weixinMiniGamePhysicsEngine: 0
+  weixinMiniGameInjectStrippedMethodLogger: 0
+  weixinMiniGameEnableDotNetWasmExceptionHandling: 1
+  weixinMiniGamePreserveEventDelegate: 0
   activeInputHandler: 0
   windowsGamepadBackendHint: 0
   cloudProjectId: 
@@ -843,6 +954,7 @@ PlayerSettings:
   organizationId: 
   cloudEnabled: 0
   legacyClampBlendShapeWeights: 0
-  playerDataPath: 
-  forceSRGBBlit: 1
+  hmiLoadingImage: {fileID: 0}
+  platformRequiresReadableAssets: 0
   virtualTexturingSupportEnabled: 0
+  insecureHttpOption: 0

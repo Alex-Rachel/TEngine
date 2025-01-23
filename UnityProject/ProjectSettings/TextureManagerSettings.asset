@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!444 &1
+TextureManagerSettings:
+  m_ObjectHideFlags: 0
+  m_UseTextureManager: 0
+  m_MemoryBudget: 1024
+  m_ifUseRemoteLoad: 0
+  m_ifUseCustomCDN: 0
+  m_UnityCDNRoute: 
+  m_CustomCacheLocation: 0
+  m_CachePath: Library/TextureStreamingCache/TexRes
+  m_CacheBudget: 30
+  m_DummyTexture: 0
+  m_DebugMode: 0
+  m_TextureFormatPlatform: 0
+  m_PlatformOperationGroupNames: []
+  m_PlatformOperationGroupSettings: 
+  m_BatchSize: 1

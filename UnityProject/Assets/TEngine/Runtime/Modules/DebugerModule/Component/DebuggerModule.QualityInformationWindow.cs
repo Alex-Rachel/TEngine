@@ -33,7 +33,7 @@ namespace TEngine
                     DrawItem("Desired Color Space", QualitySettings.desiredColorSpace.ToString());
                     DrawItem("Max Queued Frames", QualitySettings.maxQueuedFrames.ToString());
                     DrawItem("Pixel Light Count", QualitySettings.pixelLightCount.ToString());
-                    DrawItem("Master Texture Limit", QualitySettings.masterTextureLimit.ToString());
+                    DrawItem("Master Texture Limit", QualitySettings.globalTextureMipmapLimit.ToString());
                     DrawItem("Anisotropic Filtering", QualitySettings.anisotropicFiltering.ToString());
                     DrawItem("Anti Aliasing", QualitySettings.antiAliasing.ToString());
 #if UNITY_5_5_OR_NEWER

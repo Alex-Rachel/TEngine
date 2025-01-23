@@ -1,9 +1,9 @@
 %YAML 1.1
-%TAG !u! tag:unity3d.com,2011:
+%TAG !u! tag:yousandi.cn,2023:
 --- !u!30 &1
 GraphicsSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 14
+  serializedVersion: 15
   m_Deferred:
     m_Mode: 1
     m_Shader: {fileID: 69, guid: 0000000000000000f000000000000000, type: 0}
@@ -13,9 +13,6 @@ GraphicsSettings:
   m_ScreenSpaceShadows:
     m_Mode: 1
     m_Shader: {fileID: 64, guid: 0000000000000000f000000000000000, type: 0}
-  m_LegacyDeferred:
-    m_Mode: 1
-    m_Shader: {fileID: 63, guid: 0000000000000000f000000000000000, type: 0}
   m_DepthNormals:
     m_Mode: 1
     m_Shader: {fileID: 62, guid: 0000000000000000f000000000000000, type: 0}
@@ -29,6 +26,7 @@ GraphicsSettings:
     m_Mode: 1
     m_Shader: {fileID: 102, guid: 0000000000000000f000000000000000, type: 0}
   m_VideoShadersIncludeMode: 2
+  m_LengthOfAlwaysIncludedShadersInInspector: 7
   m_AlwaysIncludedShaders:
   - {fileID: 7, guid: 0000000000000000f000000000000000, type: 0}
   - {fileID: 15104, guid: 0000000000000000f000000000000000, type: 0}
@@ -49,6 +47,7 @@ GraphicsSettings:
   m_LightmapStripping: 0
   m_FogStripping: 0
   m_InstancingStripping: 0
+  m_BrgStripping: 0
   m_LightmapKeepPlain: 1
   m_LightmapKeepDirCombined: 1
   m_LightmapKeepDynamicPlain: 1
@@ -59,10 +58,16 @@ GraphicsSettings:
   m_FogKeepExp: 1
   m_FogKeepExp2: 1
   m_AlbedoSwatchInfos: []
+  m_ModelImportDefaultMaterial: {fileID: 0}
   m_LightsUseLinearIntensity: 0
   m_LightsUseColorTemperature: 0
   m_DefaultRenderingLayerMask: 1
   m_LogWhenShaderIsCompiled: 0
-  m_SRPDefaultSettings: {}
+  m_NoExactGfxBuffer: 0
+  m_SRPDefaultSettings:
+    UnityEngine.Rendering.Universal.UniversalRenderPipeline: {fileID: 11400000, guid: 178f5f9054cd3de459c44719ddc95e15, type: 2}
+  m_LightProbeOutsideHullStrategy: 0
   m_CameraRelativeLightCulling: 0
   m_CameraRelativeShadowCulling: 0
+  m_GenerateGeometryBuffer: 0
+  m_EnableGDRP: 0
