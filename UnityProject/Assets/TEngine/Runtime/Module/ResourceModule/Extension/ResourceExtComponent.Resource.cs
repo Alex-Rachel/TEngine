@@ -57,7 +57,7 @@ namespace TEngine
             else
             {
                 _assetLoadingList.Add(setAssetObject.Location);
-                _resourceModule.LoadAssetAsync(setAssetObject.Location, 0, _loadAssetCallbacks, setAssetObject);
+                _resourceModule.LoadAssetAsync(setAssetObject.Location, typeof(T), 0, _loadAssetCallbacks, setAssetObject);
             }
         }
     }

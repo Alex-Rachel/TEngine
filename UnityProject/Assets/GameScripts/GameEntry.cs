@@ -10,5 +10,6 @@ public class GameEntry : MonoBehaviour
         ModuleSystem.GetModule<IDebuggerModule>();
         ModuleSystem.GetModule<IFsmModule>();
         Settings.ProcedureSetting.StartProcedure().Forget();
+        DontDestroyOnLoad(this);
     }
 }
