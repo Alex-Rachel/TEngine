@@ -80,12 +80,12 @@ namespace TEngine
 
             string moduleName = Utility.Text.Format("{0}.{1}", interfaceType.Namespace, interfaceType.Name.Substring(1));
             Type moduleType = Type.GetType(moduleName);
-            if (moduleType == null)
+            //让模块支持GameLogic 程序集里面的类型，但是最好是在热更程序集加载好的情况下，只遍历热更程序集里面的内容。
+            if (moduleType != null ||( moduleType = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == "GameLogic")?.GetType(moduleName))!=null)
             {
-                throw new GameFrameworkException(Utility.Text.Format("Can not find Game Framework module type '{0}'.", moduleName));
+                return GetModule(moduleType) as T;
             }
-
-            return GetModule(moduleType) as T;
+            throw new GameFrameworkException(Utility.Text.Format("Can not find Game Framework module type '{0}'.", moduleName));
         }
 
         /// <summary>
