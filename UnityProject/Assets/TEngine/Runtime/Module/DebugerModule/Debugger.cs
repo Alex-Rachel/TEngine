@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
 using Object = UnityEngine.Object;
@@ -79,9 +80,11 @@ namespace TEngine
         private RuntimeMemoryInformationWindow<ScriptableObject> _runtimeMemoryScriptableObjectInformationWindow = new RuntimeMemoryInformationWindow<ScriptableObject>();
         private MemoryPoolPoolInformationWindow _memoryPoolPoolInformationWindow = new MemoryPoolPoolInformationWindow();
         private SettingsWindow _settingsWindow = new SettingsWindow();
-
-        private FpsCounter _fpsCounter = null;
-
+        
+        private double currentFPS = 0f;
+        private float timeSinceStartup = 0f; // 从游戏启动到当前的时间
+        private float lastSinceStartup = 0f; // 上一次GUI 时间
+        private const float FPS_UPDATE_INTERVAL = 0.25f;  // 每0.1秒更新一次FPS显示
         /// <summary>
         /// 获取或设置调试器窗口是否激活。
         /// </summary>
@@ -165,9 +168,7 @@ namespace TEngine
                 Log.Fatal("Debugger manager is invalid.");
                 return;
             }
-
-            _fpsCounter = new FpsCounter(0.5f);
-
+            
             var lastIconX = PlayerPrefs.GetFloat("Debugger.Icon.X", DefaultIconRect.x);
             var lastIconY = PlayerPrefs.GetFloat("Debugger.Icon.Y", DefaultIconRect.y);
             var lastWindowX = PlayerPrefs.GetFloat("Debugger.Window.X", DefaultWindowRect.x);
@@ -231,11 +232,7 @@ namespace TEngine
                     break;
             }
         }
-
-        private void Update()
-        {
-            _fpsCounter.Update(Time.deltaTime, Time.unscaledDeltaTime);
-        }
+        
 
         private void OnGUI()
         {
@@ -244,6 +241,14 @@ namespace TEngine
                 return;
             }
 
+            // 获取从游戏启动到当前的实时时间
+            timeSinceStartup = Time.unscaledTime;
+            if (timeSinceStartup-lastSinceStartup >= FPS_UPDATE_INTERVAL)
+            {
+                currentFPS = Math.Round(1f / Time.deltaTime, 2);  // 更新 FPS
+                lastSinceStartup = timeSinceStartup;
+            }
+            
             GUISkin cachedGuiSkin = GUI.skin;
             Matrix4x4 cachedMatrix = GUI.matrix;
 
@@ -409,7 +414,7 @@ namespace TEngine
                 color = _consoleWindow.GetLogStringColor(LogType.Log);
             }
 
-            string title = Utility.Text.Format("<color=#{0:x2}{1:x2}{2:x2}{3:x2}><b>FPS: {4:F2}</b></color>", color.r, color.g, color.b, color.a, _fpsCounter.CurrentFps);
+            string title = Utility.Text.Format("<color=#{0:x2}{1:x2}{2:x2}{3:x2}><b>FPS: {4:F2}</b></color>", color.r, color.g, color.b, color.a,currentFPS);
             if (GUILayout.Button(title, GUILayout.Width(100f), GUILayout.Height(40f)))
             {
                 ShowFullWindow = true;
