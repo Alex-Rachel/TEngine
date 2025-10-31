@@ -12,6 +12,7 @@
 
     public static class EditorSpriteSaveInfo
     {
+        private static readonly HashSet<string> _dirtyAtlasNamesNeedCreateNew = new HashSet<string>();
         private static readonly HashSet<string> _dirtyAtlasNames = new HashSet<string>();
         private static readonly Dictionary<string, List<string>> _atlasMap = new Dictionary<string, List<string>>();
         private static bool _initialized;
@@ -28,11 +29,11 @@
         {
             if (_initialized) return;
 
-            ScanExistingSprites();
+            ScanExistingSprites(false);
             _initialized = true;
         }
 
-        public static void OnImportSprite(string assetPath)
+        public static void OnImportSprite(string assetPath, bool isCreateNew = false)
         {
             if (!ShouldProcess(assetPath)) return;
 
@@ -48,12 +49,12 @@
             if (!list.Contains(assetPath))
             {
                 list.Add(assetPath);
-                MarkDirty(atlasName);
-                MarkParentAtlasesDirty(assetPath);
+                MarkDirty(atlasName, isCreateNew);
+                MarkParentAtlasesDirty(assetPath, isCreateNew);
             }
         }
 
-        public static void OnDeleteSprite(string assetPath)
+        public static void OnDeleteSprite(string assetPath, bool isCreateNew = true)
         {
             if (!ShouldProcess(assetPath)) return;
 
@@ -64,8 +65,8 @@
             {
                 if (list.Remove(assetPath))
                 {
-                    MarkDirty(atlasName);
-                    MarkParentAtlasesDirty(assetPath);
+                    MarkDirty(atlasName, isCreateNew);
+                    MarkParentAtlasesDirty(assetPath, isCreateNew);
                 }
             }
         }
@@ -75,18 +76,19 @@
         {
             _atlasMap.Clear();
             ScanExistingSprites();
-            _dirtyAtlasNames.UnionWith(_atlasMap.Keys);
+            _dirtyAtlasNamesNeedCreateNew.UnionWith(_atlasMap.Keys);
             ProcessDirtyAtlases(true);
         }
 
         public static void ClearCache()
         {
+            _dirtyAtlasNamesNeedCreateNew.Clear();
             _dirtyAtlasNames.Clear();
             _atlasMap.Clear();
             AssetDatabase.Refresh();
         }
 
-        public static void MarkParentAtlasesDirty(string assetPath)
+        public static void MarkParentAtlasesDirty(string assetPath, bool isCreateNew)
         {
             var currentPath = Path.GetDirectoryName(assetPath).Replace("\\", "/");
             var rootPath = Config.sourceAtlasRoot.Replace("\\", "/").TrimEnd('/');
@@ -95,7 +97,7 @@
                 var parentAtlasName = GetAtlasNameForDirectory(currentPath);
                 if (!string.IsNullOrEmpty(parentAtlasName))
                 {
-                    MarkDirty(parentAtlasName);
+                    MarkDirty(parentAtlasName, isCreateNew);
                 }
 
                 currentPath = Path.GetDirectoryName(currentPath);
@@ -104,7 +106,7 @@
 
         private static void OnUpdate()
         {
-            if (_dirtyAtlasNames.Count > 0)
+            if (_dirtyAtlasNames.Count > 0 || _dirtyAtlasNamesNeedCreateNew.Count > 0)
             {
                 ProcessDirtyAtlases();
             }
@@ -116,14 +118,24 @@
             {
                 AssetDatabase.StartAssetEditing();
 
-                foreach (var atlasName in _dirtyAtlasNames.ToList())
+                while (_dirtyAtlasNames.Count > 0)
                 {
+                    var atlasName = _dirtyAtlasNames.First();
                     if (force || ShouldUpdateAtlas(atlasName))
                     {
-                        GenerateAtlas(atlasName);
+                        GenerateAtlas(atlasName, false);
                     }
-
                     _dirtyAtlasNames.Remove(atlasName);
+                }
+
+                while (_dirtyAtlasNamesNeedCreateNew.Count > 0)
+                {
+                    var atlasName = _dirtyAtlasNamesNeedCreateNew.First();
+                    if (force || ShouldUpdateAtlas(atlasName))
+                    {
+                        GenerateAtlas(atlasName, true);
+                    }
+                    _dirtyAtlasNamesNeedCreateNew.Remove(atlasName);
                 }
             }
             finally
@@ -134,17 +146,49 @@
             }
         }
 
-        private static void GenerateAtlas(string atlasName)
+        private static void GenerateAtlas(string atlasName, bool createNew = false)
         {
             var outputPath = $"{Config.outputAtlasDir}/{atlasName}.spriteatlas";
-            SpriteAtlasAsset spriteAtlasAsset = default;
-            SpriteAtlas atlas = new SpriteAtlas();
+            var outputPathV2 = outputPath.Replace(".spriteatlas", ".spriteatlasv2");
+            string deletePath = outputPath;
             if (Config.enableV2)
             {
-                outputPath = $"{Config.outputAtlasDir}/{atlasName}.spriteatlasv2";
+                DeleteAtlas(outputPath);
+                deletePath = outputPathV2;
+            }
+            else
+            {
+                DeleteAtlas(outputPathV2);
+                deletePath = outputPath;
+            }
+
+            if (createNew && File.Exists(deletePath))
+            {
+                AssetDatabase.DeleteAsset(deletePath);
+            }
+            var sprites = LoadValidSprites(atlasName);
+            EnsureOutputDirectory();
+            if (sprites.Count == 0)
+            {
+                DeleteAtlas(deletePath);
+                return;
+            }
+            AssetDatabase.Refresh();
+            EditorApplication.delayCall += () => { InternalGenerateAtlas(atlasName, sprites, outputPath); };
+        }
+
+        private static string InternalGenerateAtlas(string atlasName, List<Sprite> sprites, string outputPath)
+        {
+            SpriteAtlasAsset spriteAtlasAsset = null;
+            SpriteAtlas atlas = null;
+            if (Config.enableV2)
+            {
+                outputPath = outputPath.Replace(".spriteatlas", ".spriteatlasv2");
+
                 if (!File.Exists(outputPath))
                 {
                     spriteAtlasAsset = new SpriteAtlasAsset();
+                    atlas = new SpriteAtlas();
                 }
                 else
                 {
@@ -153,29 +197,23 @@
                     if (atlas != null)
                     {
                         var olds = atlas.GetPackables();
-                        if (olds != null) spriteAtlasAsset.Remove(olds);
+
+                        if (olds != null)
+                        {
+                            spriteAtlasAsset.Remove(olds);
+                        }
                     }
                 }
             }
 
-
-            var sprites = LoadValidSprites(atlasName);
-            EnsureOutputDirectory();
-            if (sprites.Count == 0)
-            {
-                DeleteAtlas(outputPath);
-                return;
-            }
-
             if (Config.enableV2)
             {
-                spriteAtlasAsset.Add(sprites.ToArray());
+                spriteAtlasAsset?.Add(sprites.ToArray());
                 SpriteAtlasAsset.Save(spriteAtlasAsset, outputPath);
                 AssetDatabase.Refresh();
-
                 EditorApplication.delayCall += () =>
                 {
-#if UNITY_2022_1_OR_NEWER
+#if UNITY_2022_1_OR_NEW
                     SpriteAtlasImporter sai = (SpriteAtlasImporter)AssetImporter.GetAtPath(outputPath);
                     ConfigureAtlasV2Settings(sai);
 #else
@@ -188,15 +226,37 @@
             }
             else
             {
-                ConfigureAtlasSettings(atlas);
-                atlas.Add(sprites.ToArray());
-                atlas.SetIsVariant(false);
-                AssetDatabase.CreateAsset(atlas, outputPath);
+                atlas = AssetDatabase.LoadAssetAtPath<SpriteAtlas>(outputPath);
+
+                if (atlas != null)
+                {
+                    var olds = atlas.GetPackables();
+                    if (olds != null)
+                    {
+                        atlas.Remove(olds);
+                    }
+                    ConfigureAtlasSettings(atlas);
+                    atlas.Add(sprites.ToArray());
+                    atlas.SetIsVariant(false);
+                }
+                else
+                {
+                    atlas = new SpriteAtlas();
+                    ConfigureAtlasSettings(atlas);
+                    atlas.Add(sprites.ToArray());
+                    atlas.SetIsVariant(false);
+                    AssetDatabase.CreateAsset(atlas, outputPath);
+                }
+            }
+            EditorUtility.SetDirty(atlas);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            if (Config.enableLogging)
+            {
+                Debug.Log($"<b>[Generate Atlas]</b>: {atlasName} ({sprites.Count} sprites)");
             }
 
-
-            if (Config.enableLogging)
-                Debug.Log($"Generated atlas: {atlasName} ({sprites.Count} sprites)");
+            return outputPath;
         }
 
         private static List<Sprite> LoadValidSprites(string atlasName)
@@ -343,9 +403,16 @@
             return ext == ".png" || ext == ".jpg" || ext == ".jpeg";
         }
 
-        private static void MarkDirty(string atlasName)
+        private static void MarkDirty(string atlasName, bool isCreateNew = false)
         {
-            _dirtyAtlasNames.Add(atlasName);
+            if (isCreateNew)
+            {
+                _dirtyAtlasNamesNeedCreateNew.Add(atlasName);
+            }
+            else
+            {
+                _dirtyAtlasNames.Add(atlasName);
+            }
         }
 
         private static bool ShouldUpdateAtlas(string atlasName)
@@ -381,7 +448,7 @@
             }
         }
 
-        private static void ScanExistingSprites()
+        private static void ScanExistingSprites(bool isCreateNew = true)
         {
             var guids = AssetDatabase.FindAssets("t:Sprite", new[] { Config.sourceAtlasRoot });
             foreach (var guid in guids)
@@ -389,7 +456,7 @@
                 var path = AssetDatabase.GUIDToAssetPath(guid);
                 if (ShouldProcess(path))
                 {
-                    OnImportSprite(path);
+                    OnImportSprite(path, isCreateNew);
                 }
             }
         }

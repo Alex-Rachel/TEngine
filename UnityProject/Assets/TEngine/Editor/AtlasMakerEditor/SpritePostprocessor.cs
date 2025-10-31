@@ -81,14 +81,14 @@ namespace TEngine.Editor
                 {
                     EditorSpriteSaveInfo.OnDeleteSprite(oldPaths[i]);
                     LogProcessed("[Moved From]", oldPaths[i]);
-                    EditorSpriteSaveInfo.MarkParentAtlasesDirty(oldPaths[i]);
+                    EditorSpriteSaveInfo.MarkParentAtlasesDirty(oldPaths[i], true);
                 }
 
                 if (ShouldProcessAsset(newPaths[i]))
                 {
                     EditorSpriteSaveInfo.OnImportSprite(newPaths[i]);
                     LogProcessed("[Moved To]", newPaths[i]);
-                    EditorSpriteSaveInfo.MarkParentAtlasesDirty(newPaths[i]);
+                    EditorSpriteSaveInfo.MarkParentAtlasesDirty(newPaths[i], false);
                 }
             }
         }
