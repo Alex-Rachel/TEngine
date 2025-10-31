@@ -1,0 +1,23 @@
+{
+  "en": {
+    "welcome": "Welcome",
+    "login": "Login",
+    "logout": "Logout",
+    "userProfile": "User Profile",
+    "settings": "Settings"
+  },
+  "zh": {
+    "welcome": "欢迎",
+    "login": "登录",
+    "logout": "退出",
+    "userProfile": "用户资料",
+    "settings": "设置"
+  },
+  "vi": {
+    "welcome": "Chào mừng",
+    "login": "Đăng nhập",
+    "logout": "Đăng xuất",
+    "userProfile": "Hồ sơ người dùng",
+    "settings": "Cài đặt"
+  }
+}

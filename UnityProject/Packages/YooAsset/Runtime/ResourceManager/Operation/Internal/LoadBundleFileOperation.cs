@@ -173,6 +173,13 @@ namespace YooAsset
 
             if (Result != null)
                 Result.UnloadBundleFile();
+
+            if (IsDone == false)
+            {
+                _steps = ESteps.Done;
+                Status = EOperationStatus.Failed;
+                Error = "Bundle loader destroyed !";
+            }
         }
 
         /// <summary>
@@ -180,11 +187,7 @@ namespace YooAsset
         /// </summary>
         public bool CanDestroyLoader()
         {
-            // 注意：正在加载中的任务不可以销毁
-            if (_steps == ESteps.LoadBundleFile)
-                return false;
-
-            if (RefCount > 0)
+            if (CanReleasableLoader() == false)
                 return false;
 
             // YOOASSET_LEGACY_DEPENDENCY
@@ -194,10 +197,30 @@ namespace YooAsset
             {
                 foreach (var bundleID in LoadBundleInfo.Bundle.ReferenceBundleIDs)
                 {
+#if YOOASSET_EXPERIMENTAL
+                    if (_resManager.CheckBundleReleasable(bundleID) == false)
+                        return false;
+#else
                     if (_resManager.CheckBundleDestroyed(bundleID) == false)
                         return false;
+#endif
                 }
             }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 是否可以释放
+        /// </summary>
+        public bool CanReleasableLoader()
+        {
+            // 注意：正在加载中的任务不可以销毁
+            if (_steps == ESteps.LoadBundleFile)
+                return false;
+
+            if (RefCount > 0)
+                return false;
 
             return true;
         }
@@ -238,6 +261,29 @@ namespace YooAsset
             {
                 _resManager.RemoveBundleProviders(_removeList);
                 _removeList.Clear();
+            }
+        }
+
+        /// <summary>
+        /// 尝试终止加载器
+        /// </summary>
+        public void TryAbortLoader()
+        {
+            if (IsDone == false)
+            {
+                if (_steps == ESteps.CheckConcurrency)
+                {
+                    _steps = ESteps.Done;
+                    Status = EOperationStatus.Failed;
+                    Error = "Abort bundle loader !";
+                }
+
+                if (_steps == ESteps.LoadBundleFile)
+                {
+                    // 注意：终止下载器
+                    if (_loadBundleOp != null)
+                        _loadBundleOp.AbortDownloadFile = true;
+                }
             }
         }
     }

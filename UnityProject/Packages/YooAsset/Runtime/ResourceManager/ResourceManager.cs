@@ -17,6 +17,7 @@ namespace YooAsset
         private int _bundleLoadingMaxConcurrency;
 
         // 开发者配置选项
+        public bool AutoUnloadBundleWhenUnused { private set; get; }
         public bool WebGLForceSyncLoadAsset { private set; get; }
         public bool UseWeakReferenceHandle { private set; get; }
 
@@ -47,6 +48,7 @@ namespace YooAsset
         public void Initialize(InitializeParameters parameters, IBundleQuery bundleServices)
         {
             _bundleLoadingMaxConcurrency = parameters.BundleLoadingMaxConcurrency;
+            AutoUnloadBundleWhenUnused = parameters.AutoUnloadBundleWhenUnused;
             WebGLForceSyncLoadAsset = parameters.WebGLForceSyncLoadAsset;
             UseWeakReferenceHandle = parameters.UseWeakReferenceHandle;
             _bundleQuery = bundleServices;
@@ -326,6 +328,14 @@ namespace YooAsset
             if (bundleFileLoader == null)
                 return true;
             return bundleFileLoader.IsDestroyed;
+        }
+        internal bool CheckBundleReleasable(int bundleID)
+        {
+            string bundleName = _bundleQuery.GetMainBundleName(bundleID);
+            var bundleFileLoader = TryGetBundleFileLoader(bundleName);
+            if (bundleFileLoader == null)
+                return true;
+            return bundleFileLoader.CanReleasableLoader();
         }
         internal bool HasAnyLoader()
         {

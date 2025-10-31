@@ -1,24 +1,11 @@
 {
   "dependencies": {
     "com.code-philosophy.hybridclr": {
-      "version": "file:com.code-philosophy.hybridclr",
-      "depth": 0,
-      "source": "embedded",
-      "dependencies": {}
-    },
-    "com.code-philosophy.obfuz": {
-      "version": "https://gitee.com/focus-creative-games/obfuz.git",
+      "version": "https://github.com/focus-creative-games/hybridclr_unity.git",
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "25762369603f43351bc5f46dd458dee05eb537b0"
-    },
-    "com.code-philosophy.obfuz4hybridclr": {
-      "version": "https://gitee.com/focus-creative-games/obfuz4hybridclr.git",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {},
-      "hash": "59804e17a0d1562ca0f847db986ed93b25825b6d"
+      "hash": "01754c8fb47bd49697b3428993109e7a972a7968"
     },
     "com.cysharp.unitask": {
       "version": "file:UniTask",
@@ -269,17 +256,6 @@
     "com.unity.modules.uielements": {
       "version": "1.0.0",
       "depth": 0,
-      "source": "builtin",
-      "dependencies": {
-        "com.unity.modules.ui": "1.0.0",
-        "com.unity.modules.imgui": "1.0.0",
-        "com.unity.modules.jsonserialize": "1.0.0",
-        "com.unity.modules.uielementsnative": "1.0.0"
-      }
-    },
-    "com.unity.modules.uielementsnative": {
-      "version": "1.0.0",
-      "depth": 1,
       "source": "builtin",
       "dependencies": {
         "com.unity.modules.ui": "1.0.0",
