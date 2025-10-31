@@ -213,7 +213,7 @@
                 AssetDatabase.Refresh();
                 EditorApplication.delayCall += () =>
                 {
-#if UNITY_2022_1_OR_NEW
+#if UNITY_2022_1_OR_NEWER
                     SpriteAtlasImporter sai = (SpriteAtlasImporter)AssetImporter.GetAtPath(outputPath);
                     ConfigureAtlasV2Settings(sai);
 #else
