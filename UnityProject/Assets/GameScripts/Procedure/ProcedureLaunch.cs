@@ -1,5 +1,7 @@
-﻿using Launcher;
+﻿using Cysharp.Threading.Tasks;
+using Launcher;
 using TEngine;
+using UnityEngine;
 using YooAsset;
 using ProcedureOwner = TEngine.IFsm<TEngine.IProcedureModule>;
 
@@ -11,7 +13,8 @@ namespace Procedure
     public class ProcedureLaunch : ProcedureBase
     {
         public override bool UseNativeDialog => true;
-        
+        private bool _initlizeFinishd;
+
         private IAudioModule _audioModule;
 
         protected override void OnInit(ProcedureOwner procedureOwner)
@@ -23,8 +26,13 @@ namespace Procedure
         protected override void OnEnter(ProcedureOwner procedureOwner)
         {
             base.OnEnter(procedureOwner);
-            
-            //热更新UI初始化
+            DelayEnter().Forget();
+        }
+
+        protected async UniTaskVoid DelayEnter()
+        {
+            await UniTask.Delay(500); ///后续Main工程UI结构改成使用框架 就无需等待延迟
+
             LauncherMgr.Initialize();
 
             // 语言配置：设置当前使用的语言，如果不设置，则默认使用操作系统语言
@@ -32,12 +40,14 @@ namespace Procedure
 
             // 声音配置：根据用户配置数据，设置即将使用的声音选项
             InitSoundSettings();
+            _initlizeFinishd = true;
         }
+
 
         protected override void OnUpdate(ProcedureOwner procedureOwner, float elapseSeconds, float realElapseSeconds)
         {
             base.OnUpdate(procedureOwner, elapseSeconds, realElapseSeconds);
-
+            if (!_initlizeFinishd) return;
             // 运行一帧即切换到 Splash 展示流程
             ChangeState<ProcedureSplash>(procedureOwner);
         }
@@ -49,7 +59,7 @@ namespace Procedure
                 // 编辑器资源模式直接使用 Inspector 上设置的语言
                 return;
             }
-            
+
             ILocalizationModule localizationModule = ModuleSystem.GetModule<ILocalizationModule>();
             Language language = localizationModule.Language;
             if (Utility.PlayerPrefs.HasSetting(Constant.Setting.Language))
@@ -59,23 +69,23 @@ namespace Procedure
                     string languageString = Utility.PlayerPrefs.GetString(Constant.Setting.Language);
                     language = (Language)System.Enum.Parse(typeof(Language), languageString);
                 }
-                catch(System.Exception exception)
+                catch (System.Exception exception)
                 {
-                    Log.Error("Init language error, reason {0}",exception.ToString());
+                    Log.Error("Init language error, reason {0}", exception.ToString());
                 }
             }
-            
+
             if (language != Language.English
                 && language != Language.ChineseSimplified
                 && language != Language.ChineseTraditional)
             {
                 // 若是暂不支持的语言，则使用英语
                 language = Language.English;
-            
+
                 Utility.PlayerPrefs.SetString(Constant.Setting.Language, language.ToString());
                 Utility.PlayerPrefs.Save();
             }
-            
+
             localizationModule.Language = language;
             Log.Info("Init language settings complete, current language is '{0}'.", language.ToString());
         }

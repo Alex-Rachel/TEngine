@@ -3,7 +3,7 @@
     "rootNamespace": "Launcher",
     "references": [
         "GUID:13ba8ce62aa80c74598530029cb2d649",
-        "GUID:4140bd2e2764f1f47ab93125ecb61942"
+        "GUID:24c092aee38482f4e80715eaa8148782"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

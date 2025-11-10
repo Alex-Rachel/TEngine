@@ -19,6 +19,7 @@ public static class BuildDLLCommand
     private const string EnableObfuzScriptingDefineSymbol = "ENABLE_OBFUZ";
 
     #region HybridCLR/Define Symbols
+
     /// <summary>
     /// 禁用HybridCLR宏定义。
     /// </summary>
@@ -48,13 +49,22 @@ public static class BuildDLLCommand
         if (!HybridCLR.Editor.SettingsUtil.Enable)
         {
             HybridCLR.Editor.SettingsUtil.Enable = true;
-            UpdateSettingEditor.ForceUpdateAssemblies();
         }
+
         ScriptingDefineSymbols.RemoveScriptingDefineSymbol(EnableHybridClrScriptingDefineSymbol);
         ScriptingDefineSymbols.AddScriptingDefineSymbol(EnableHybridClrScriptingDefineSymbol);
     }
+
+    [MenuItem("HybridCLR/Define Symbols/ForceUpdateAssemblies", false, 31)]
+    public static void ForceUpdateAssemblies()
+    {
+#if ENABLE_HYBRIDCLR
+        UpdateSettingEditor.ForceUpdateAssemblies();
+#endif
+    }
+
     #endregion
-    
+
 #if ENABLE_OBFUZ
     #region Obfuz/Define Symbols
     /// <summary>
@@ -102,7 +112,7 @@ public static class BuildDLLCommand
     {
         CopyAOTAssembliesToAssetPath();
         CopyHotUpdateAssembliesToAssetPath();
-        
+
 #if ENABLE_HYBRIDCLR && ENABLE_OBFUZ
         CompileDllCommand.CompileDll(target);
 
@@ -126,7 +136,7 @@ public static class BuildDLLCommand
             }
         }
 #endif
-        
+
         AssetDatabase.Refresh();
     }
 
