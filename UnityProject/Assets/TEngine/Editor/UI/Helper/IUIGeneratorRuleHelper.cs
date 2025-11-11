@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Text;
-using TEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -28,9 +27,8 @@ namespace TEngine.UI.Editor
         public string GetPrivateComponentByNameRule(string regexName, string componentName, EBindType bindType)
         {
             string endPrefix = bindType == EBindType.ListCom ? "List" : string.Empty;
-            int endNameIndex = componentName.IndexOf(
-                UIGenerateConfiguration.Instance.UIGenerateCommonData.ComCheckEndName,
-                StringComparison.Ordinal);
+            var common = UIGenerateConfiguration.Instance.UIGenerateCommonData;
+            int endNameIndex = componentName.IndexOf(common.ComCheckEndName, StringComparison.Ordinal);
 
             string componentSuffix = endNameIndex >= 0 ? componentName.Substring(endNameIndex + 1) : componentName;
 
@@ -39,12 +37,17 @@ namespace TEngine.UI.Editor
 
         public string GetPublicComponentByNameRule(string variableName)
         {
-            return variableName.Substring(1);
+            if (string.IsNullOrEmpty(variableName)) return variableName;
+            if (variableName.Length > 1)
+                return variableName.Substring(1);
+            return variableName;
         }
 
         public string GetClassGenerateName(GameObject targetObject, UIScriptGenerateData scriptGenerateData)
         {
-            return $"{UIGenerateConfiguration.Instance.UIGenerateCommonData.GeneratePrefix}_{targetObject.name}";
+            var config = UIGenerateConfiguration.Instance.UIGenerateCommonData;
+            string prefix = config.GeneratePrefix ?? "ui";
+            return $"{prefix}_{targetObject.name}";
         }
 
         public string GetUIResourceSavePath(GameObject targetObject, UIScriptGenerateData scriptGenerateData)
@@ -52,15 +55,11 @@ namespace TEngine.UI.Editor
             if (targetObject == null)
                 return $"\"{nameof(targetObject)}\"";
 
-            // 默认返回资源名
             string defaultPath = targetObject.name;
+            string assetPath = UIGenerateQuick.GetPrefabAssetPath(targetObject);
+            if (string.IsNullOrEmpty(assetPath) || !assetPath.StartsWith("Assets/", StringComparison.Ordinal))
+                return defaultPath;
 
-            // 获取对应的Prefab资源路径（支持场景Prefab实例 & Prefab编辑模式）
-            string assetPath = GetPrefabAssetPath(targetObject);
-            if (string.IsNullOrEmpty(assetPath) || !assetPath.StartsWith("Assets/"))
-                return defaultPath; // 不在 Assets 下
-
-            // 统一使用正斜杠
             assetPath = assetPath.Replace('\\', '/');
 
             switch (scriptGenerateData.LoadType)
@@ -82,11 +81,18 @@ namespace TEngine.UI.Editor
                 case EUIResLoadType.AssetBundle:
                 {
                     string bundleRoot = scriptGenerateData.UIPrefabRootPath; // 例如 "Assets/Bundles/UI"
-                    var defaultPackage = YooAsset.Editor.AssetBundleCollectorSettingData.Setting.GetPackage("DefaultPackage");
-                    if (defaultPackage.EnableAddressable)
-                        return defaultPath;
 
-                    if (!assetPath.StartsWith(bundleRoot, System.StringComparison.OrdinalIgnoreCase))
+                    try
+                    {
+                        var defaultPackage = YooAsset.Editor.AssetBundleCollectorSettingData.Setting.GetPackage("DefaultPackage");
+                        if (defaultPackage != null && defaultPackage.EnableAddressable)
+                            return defaultPath;
+                    }
+                    catch
+                    {
+                    }
+
+                    if (!assetPath.StartsWith(bundleRoot, StringComparison.OrdinalIgnoreCase))
                     {
                         Debug.LogWarning($"[UI生成] 资源 {assetPath} 不在配置的 AssetBundle 根目录下: {bundleRoot}");
                         return defaultPath;
@@ -100,43 +106,25 @@ namespace TEngine.UI.Editor
             }
         }
 
-        /// <summary>
-        /// 获取 GameObject 对应的 Prefab 资源路径，如果是 Prefab 编辑模式也可以获取
-        /// </summary>
-        private string GetPrefabAssetPath(GameObject go)
-        {
-            var prefabAsset = PrefabUtility.GetCorrespondingObjectFromSource(go);
-            if (prefabAsset != null)
-                return AssetDatabase.GetAssetPath(prefabAsset);
-
-            // Prefab 编辑模式
-            var prefabStage = PrefabStageUtility.GetCurrentPrefabStage();
-            if (prefabStage != null && prefabStage.IsPartOfPrefabContents(go))
-                return prefabStage.assetPath;
-
-            return null;
-        }
-
-        /// <summary>
-        /// 获取 Resources.Load 可用路径（去掉扩展名），如果不在指定的 Resources 根目录返回 null
-        /// </summary>
         private string GetResourcesRelativePath(string assetPath, string resourcesRoot)
         {
-            // 统一正斜杠
+            if (string.IsNullOrEmpty(assetPath) || string.IsNullOrEmpty(resourcesRoot)) return null;
             assetPath = assetPath.Replace('\\', '/');
             resourcesRoot = resourcesRoot.Replace('\\', '/');
 
-            if (!assetPath.StartsWith(resourcesRoot, System.StringComparison.OrdinalIgnoreCase))
+            if (!assetPath.StartsWith(resourcesRoot, StringComparison.OrdinalIgnoreCase))
                 return null;
 
-            // 获取相对路径
             string relPath = assetPath.Substring(resourcesRoot.Length).TrimStart('/');
-            return Path.ChangeExtension(relPath, null); // 去掉扩展名
+            return Path.ChangeExtension(relPath, null);
         }
-
 
         public void WriteUIScriptContent(string className, string scriptContent, UIScriptGenerateData scriptGenerateData)
         {
+            if (string.IsNullOrEmpty(className)) throw new ArgumentNullException(nameof(className));
+            if (scriptContent == null) throw new ArgumentNullException(nameof(scriptContent));
+            if (scriptGenerateData == null) throw new ArgumentNullException(nameof(scriptGenerateData));
+
             string scriptFolderPath = scriptGenerateData.GenerateHolderCodePath;
             string scriptFilePath = Path.Combine(scriptFolderPath, className + ".cs");
 
@@ -147,9 +135,10 @@ namespace TEngine.UI.Editor
 
             if (File.Exists(scriptFilePath))
             {
-                string oldText = File.ReadAllText(scriptFilePath);
-                if (oldText.Equals(scriptContent))
+                string oldText = File.ReadAllText(scriptFilePath, Encoding.UTF8);
+                if (oldText.Equals(scriptContent, StringComparison.Ordinal))
                 {
+                    // 文件未变更：标记并等待脚本 reload 去做附加
                     EditorPrefs.SetString("Generate", className);
                     UIScriptGeneratorHelper.CheckHasAttach();
                     return;
@@ -163,13 +152,14 @@ namespace TEngine.UI.Editor
 
         public bool CheckCanGenerate(GameObject targetObject, UIScriptGenerateData scriptGenerateData)
         {
-            string assetPath = GetPrefabAssetPath(targetObject);
-            if (string.IsNullOrEmpty(assetPath) || !assetPath.StartsWith("Assets/"))
+            if (targetObject == null || scriptGenerateData == null) return false;
+
+            string assetPath = UIGenerateQuick.GetPrefabAssetPath(targetObject);
+            if (string.IsNullOrEmpty(assetPath) || !assetPath.StartsWith("Assets/", StringComparison.Ordinal))
                 return false; // 不在 Assets 下
 
-            // 统一使用正斜杠
             assetPath = assetPath.Replace('\\', '/');
-            bool result = assetPath.StartsWith(scriptGenerateData.UIPrefabRootPath, System.StringComparison.OrdinalIgnoreCase);
+            bool result = assetPath.StartsWith(scriptGenerateData.UIPrefabRootPath, StringComparison.OrdinalIgnoreCase);
             if (!result)
             {
                 Debug.LogWarning($"UI存储位置与配置生成规则不符合 请检查对应配置的UIPrefabRootPath\n[AssetPath]{assetPath}\n[ConfigPath]{scriptGenerateData.UIPrefabRootPath}");
