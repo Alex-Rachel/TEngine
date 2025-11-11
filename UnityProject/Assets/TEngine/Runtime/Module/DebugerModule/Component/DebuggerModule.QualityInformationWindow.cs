@@ -36,7 +36,7 @@ namespace TEngine
 #if UNITY_6000_0_OR_NEWER
                     DrawItem("Master Texture Limit", QualitySettings.globalTextureMipmapLimit.ToString());
 #else
-                    DrawItem("Master Texture Limit", QualitySettings.masterTextureLimit.ToString());
+                    DrawItem("Master Texture Limit", QualitySettings.globalTextureMipmapLimit.ToString());
 #endif
                     DrawItem("Anisotropic Filtering", QualitySettings.anisotropicFiltering.ToString());
                     DrawItem("Anti Aliasing", QualitySettings.antiAliasing.ToString());

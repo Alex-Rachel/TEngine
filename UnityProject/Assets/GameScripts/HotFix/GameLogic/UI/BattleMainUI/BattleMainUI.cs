@@ -1,30 +1,40 @@
-﻿using UnityEngine;
+﻿using Cysharp.Threading.Tasks;
+using Game.UI;
+using UnityEngine;
 using UnityEngine.UI;
 using TEngine;
 
 namespace GameLogic
 {
-    [Window(UILayer.UI,location:"BattleMainUI")]
-    class BattleMainUI : UIWindow
+    [Window(UILayer.UI, fullScreen: false, -1)]
+    class BattleMainUI : UIWindow<gen_BattleMainUI>
     {
-        #region 脚本工具生成的代码
-        private RectTransform _rectContainer;
-        private GameObject _itemTouch;
-        private GameObject _goTopInfo;
-        private GameObject _itemRoleInfo;
-        private GameObject _itemMonsterInfo;
-        protected override void ScriptGenerator()
+        private UIRoleInfoWidget _uiRoleInfoWidget;
+        private UIMonsterInfoWidget _uiMonsterInfoWidget;
+
+        protected override async UniTask OnInitializeAsync()
         {
-            _rectContainer = FindChildComponent<RectTransform>("m_rectContainer");
-            _itemTouch = FindChild("m_rectContainer/m_itemTouch").gameObject;
-            _goTopInfo = FindChild("m_goTopInfo").gameObject;
-            _itemRoleInfo = FindChild("m_goTopInfo/m_itemRoleInfo").gameObject;
-            _itemMonsterInfo = FindChild("m_goTopInfo/m_itemMonsterInfo").gameObject;
+            baseui.UIMonsterInfoWidget.RectInfo.gameObject.SetActive(true);
+
+            Debug.Log("BattleMainUI OnInitialize");
         }
-        #endregion
 
-        #region 事件
-        #endregion
+        protected override async UniTask OnOpenAsync()
+        {
+            _uiMonsterInfoWidget = await CreateWidget<UIMonsterInfoWidget>(baseui.UIMonsterInfoWidget);
+            _uiRoleInfoWidget = await CreateWidget<UIRoleInfoWidget>(baseui.RectTopInfo);
+        }
 
+        protected override void OnRegisterEvent(GameEventMgr proxy)
+        {
+            base.OnRegisterEvent(proxy);
+            proxy.AddEvent(ILoginUI_Event.ShowLoginUI, OnShowLoginUI);
+            Debug.Log("BattleMainUI OnRegisterEvent");
+        }
+
+        private void OnShowLoginUI()
+        {
+            Debug.Log("OnShowLoginUI");
+        }
     }
 }

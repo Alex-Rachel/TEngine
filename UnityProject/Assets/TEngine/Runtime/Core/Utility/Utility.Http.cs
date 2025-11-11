@@ -46,7 +46,7 @@ namespace TEngine
 #if UNITY_6000_0_OR_NEWER
                 using UnityWebRequest unityWebRequest = UnityWebRequest.PostWwwForm(url, postData);
 #else
-                using UnityWebRequest unityWebRequest = UnityWebRequest.Post(url, postData);
+                using UnityWebRequest unityWebRequest = UnityWebRequest.PostWwwForm(url, postData);
 #endif
                 return await SendWebRequest(unityWebRequest, cts);
             }

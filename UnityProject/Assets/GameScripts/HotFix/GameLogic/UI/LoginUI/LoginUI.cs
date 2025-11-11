@@ -4,10 +4,10 @@ using Log = TEngine.Log;
 
 namespace GameLogic
 {
-    [Window(UILayer.UI)]
-    class LoginUI : UIWindow
-    {
-        
-    }
+    // [Window(UILayer.UI)]
+    // class LoginUI : UIWindow
+    // {
+    //     
+    // }
 }
 
