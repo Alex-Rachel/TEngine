@@ -2,9 +2,7 @@
 using System.Buffers;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
-using TEngine;
 using UnityEngine;
-using UnityEngine.Pool;
 
 namespace TEngine
 {
@@ -17,7 +15,7 @@ namespace TEngine
             var values = _children.Values;
             foreach (var meta in values)
             {
-                if (meta.View.State == UIState.Opened)
+                if (meta.View.State == UIState.Opened && meta.MetaInfo.NeedUpdate)
                 {
                     meta.View.InternalUpdate();
                 }
@@ -43,7 +41,7 @@ namespace TEngine
             }
             finally
             {
-                ArrayPool<UIMetadata>.Shared.Return(temp);
+                ArrayPool<UIMetadata>.Shared.Return(temp, true);
             }
 
             _children.Clear();
@@ -61,28 +59,40 @@ namespace TEngine
             }
         }
 
-        internal async UniTask<UIBase> CreateWidget(UIMetadata metadata, Transform parent, bool visible)
+        internal async UniTask<UIBase> CreateWidgetUIAsync(UIMetadata metadata, Transform parent, bool visible)
         {
             metadata.CreateUI();
-            await UIHolderFactory.CreateUIResource(metadata, parent, this);
+            await UIHolderFactory.CreateUIResourceAsync(metadata, parent, this);
             await ProcessWidget(metadata, visible);
             return (UIBase)metadata.View;
         }
 
-        protected async UniTask<UIBase> CreateWidget(string typeName, Transform parent, bool visible = true)
+        internal UIBase CreateWidgetUISync(UIMetadata metadata, Transform parent, bool visible)
+        {
+            metadata.CreateUI();
+            UIHolderFactory.CreateUIResourceSync(metadata, parent, this);
+            ProcessWidget(metadata, visible).Forget();
+            return (UIBase)metadata.View;
+        }
+
+        #region CreateWidget
+
+        #region Async
+
+        protected async UniTask<UIBase> CreateWidgetAsync(string typeName, Transform parent, bool visible = true)
         {
             UIMetaRegistry.TryGet(typeName, out var metaRegistry);
             UIMetadata metadata = UIMetadataFactory.GetMetadata(metaRegistry.RuntimeTypeHandle);
-            return await CreateWidget(metadata, parent, visible);
+            return await CreateWidgetUIAsync(metadata, parent, visible);
         }
 
-        protected async UniTask<T> CreateWidget<T>(Transform parent, bool visible = true) where T : UIBase
+        protected async UniTask<T> CreateWidgetAsync<T>(Transform parent, bool visible = true) where T : UIBase
         {
             UIMetadata metadata = MetaTypeCache<T>.Metadata;
-            return (T)await CreateWidget(metadata, parent, visible);
+            return (T)await CreateWidgetUIAsync(metadata, parent, visible);
         }
 
-        protected async UniTask<T> CreateWidget<T>(UIHolderObjectBase holder) where T : UIBase
+        protected async UniTask<T> CreateWidgetAsync<T>(UIHolderObjectBase holder) where T : UIBase
         {
             UIMetadata metadata = MetaTypeCache<T>.Metadata;
             metadata.CreateUI();
@@ -92,9 +102,42 @@ namespace TEngine
             return (T)widget;
         }
 
+        #endregion
+
+
+        #region Sync
+
+        protected UIBase CreateWidgetSync(string typeName, Transform parent, bool visible = true)
+        {
+            UIMetaRegistry.TryGet(typeName, out var metaRegistry);
+            UIMetadata metadata = UIMetadataFactory.GetMetadata(metaRegistry.RuntimeTypeHandle);
+            return CreateWidgetUISync(metadata, parent, visible);
+        }
+
+        protected T CreateWidgetSync<T>(Transform parent, bool visible = true) where T : UIBase
+        {
+            UIMetadata metadata = MetaTypeCache<T>.Metadata;
+            return (T)CreateWidgetUISync(metadata, parent, visible);
+        }
+
+        protected T CreateWidgetSync<T>(UIHolderObjectBase holder) where T : UIBase
+        {
+            UIMetadata metadata = MetaTypeCache<T>.Metadata;
+            metadata.CreateUI();
+            UIBase widget = (UIBase)metadata.View;
+            widget.BindUIHolder(holder, this);
+            ProcessWidget(metadata, true).Forget();
+            return (T)widget;
+        }
+
+        #endregion
+
+        #endregion
+
+
         private async UniTask ProcessWidget(UIMetadata meta, bool visible)
         {
-            AddWidget(meta);
+            if (!AddWidget(meta)) return;
             await meta.View.InternalInitlized();
             meta.View.Visible = visible;
             if (meta.View.Visible)
@@ -103,13 +146,16 @@ namespace TEngine
             }
         }
 
-        private void AddWidget(UIMetadata meta)
+        private bool AddWidget(UIMetadata meta)
         {
             if (!_children.TryAdd(meta.View, meta))
             {
                 Log.Warning("Already has widget:{0}", meta.View);
                 meta.Dispose();
+                return false;
             }
+
+            return true;
         }
 
         public async UniTask RemoveWidget(UIBase widget)

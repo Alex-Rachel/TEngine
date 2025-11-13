@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
-using TEngine;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -105,7 +104,7 @@ namespace TEngine
                 var metadata = UIMetadataFactory.GetMetadata(typeHandle);
                 var parent = _tabCache[typeHandle];
 
-                var widget = await CreateWidget(metadata, parent, false);
+                var widget = await CreateWidgetUIAsync(metadata, parent, false);
                 if (widget is not UIWidget tabWidget) return;
 
                 _loadedTabs[typeHandle] = tabWidget;

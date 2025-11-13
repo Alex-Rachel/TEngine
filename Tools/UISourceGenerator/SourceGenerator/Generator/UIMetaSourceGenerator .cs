@@ -22,6 +22,7 @@ public class UIMetaSourceGenerator : ISourceGenerator
         var uiWidgetType = context.Compilation.GetTypeByMetadataName("TEngine.UIWidget`1");
         var uiTabWindowType = context.Compilation.GetTypeByMetadataName("TEngine.UITabWindow`1");
         var windowAttribute = context.Compilation.GetTypeByMetadataName("TEngine.WindowAttribute");
+        var uiUpdateAttribute = context.Compilation.GetTypeByMetadataName("TEngine.UIUpdateAttribute");
 
         var registryCode = new ConcurrentBag<string>();
         var candidateClasses = ((SyntaxReceiver)context.SyntaxReceiver).CandidateClasses;
@@ -58,7 +59,7 @@ public class UIMetaSourceGenerator : ISourceGenerator
                 return;
             }
 
-            var registrationCode = BuildRegistrationCode(context, classSymbol, holderType, isWindowType, windowAttribute);
+            var registrationCode = BuildRegistrationCode(context, classSymbol, holderType, isWindowType, windowAttribute, uiUpdateAttribute);
             registryCode.Add(registrationCode);
         });
 
@@ -108,7 +109,7 @@ public class UIMetaSourceGenerator : ISourceGenerator
 
     private string BuildRegistrationCode(GeneratorExecutionContext context,
         INamedTypeSymbol classSymbol, INamedTypeSymbol holderType,
-        bool isWindow, INamedTypeSymbol windowAttribute)
+        bool isWindow, INamedTypeSymbol windowAttribute, INamedTypeSymbol uiUpdateAttribute)
     {
         var builder = new StringBuilder();
         var classType = classSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
@@ -118,6 +119,8 @@ public class UIMetaSourceGenerator : ISourceGenerator
         {
             var attribute = classSymbol.GetAttributes()
                 .FirstOrDefault(a => a.AttributeClass?.Equals(windowAttribute, SymbolEqualityComparer.Default) == true);
+            var updateAttribute = classSymbol.GetAttributes()
+                .FirstOrDefault(a => a.AttributeClass?.Equals(uiUpdateAttribute, SymbolEqualityComparer.Default) == true);
 
             if (attribute != null)
             {
@@ -129,7 +132,8 @@ public class UIMetaSourceGenerator : ISourceGenerator
                       .Append($"typeof({holderTypeName}), ")
                       .Append($"UILayer.{layer}, ")
                       .Append($"{fullScreen.ToString().ToLower()}, ")
-                      .Append($"{cacheTime});");
+                      .Append($"{cacheTime}, ")
+                     .Append($"{(updateAttribute != null).ToString().ToLower()});");
             }
             else
             {

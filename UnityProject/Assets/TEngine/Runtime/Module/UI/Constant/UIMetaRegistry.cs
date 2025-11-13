@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -16,14 +15,16 @@ namespace TEngine
             public readonly int UILayer;
             public readonly bool FullScreen;
             public readonly int CacheTime;
+            public readonly bool NeedUpdate;
 
-            public UIMetaInfo(RuntimeTypeHandle runtimeTypeHandle, RuntimeTypeHandle holderRuntimeTypeHandle, UILayer windowLayer, bool fullScreen, int cacheTime)
+            public UIMetaInfo(RuntimeTypeHandle runtimeTypeHandle, RuntimeTypeHandle holderRuntimeTypeHandle, UILayer windowLayer, bool fullScreen, int cacheTime, bool needUpdate)
             {
                 RuntimeTypeHandle = runtimeTypeHandle;
                 HolderRuntimeTypeHandle = holderRuntimeTypeHandle;
                 UILayer = (int)windowLayer;
                 FullScreen = fullScreen;
                 CacheTime = cacheTime;
+                NeedUpdate = needUpdate;
             }
         }
 
@@ -31,11 +32,11 @@ namespace TEngine
         private static readonly Dictionary<string, RuntimeTypeHandle> _stringHandleMap = new();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Register(Type uiType, Type holderType, UILayer layer = UILayer.UI, bool fullScreen = false, int cacheTime = 0)
+        public static void Register(Type uiType, Type holderType, UILayer layer = UILayer.UI, bool fullScreen = false, int cacheTime = 0, bool needUpdate = false)
         {
             var holderHandle = holderType.TypeHandle;
             var uiHandle = uiType.TypeHandle;
-            _typeHandleMap[uiHandle] = new UIMetaInfo(uiHandle, holderHandle, layer, fullScreen, cacheTime);
+            _typeHandleMap[uiHandle] = new UIMetaInfo(uiHandle, holderHandle, layer, fullScreen, cacheTime, needUpdate);
             _stringHandleMap[uiType.Name] = uiHandle;
         }
 
@@ -80,21 +81,25 @@ namespace TEngine
             UILayer layer = UILayer.UI;
             bool fullScreen = false;
             int cacheTime = 0;
+            bool needUpdate = false;
 
-            var cad = CustomAttributeData.GetCustomAttributes(uiType)
+            var windowAttribute = CustomAttributeData.GetCustomAttributes(uiType)
                 .FirstOrDefault(a => a.AttributeType.Name == nameof(WindowAttribute));
-
-            if (cad != null)
+            var uiUpdateAttribute = CustomAttributeData.GetCustomAttributes(uiType)
+                .FirstOrDefault(a => a.AttributeType.Name == nameof(UIUpdateAttribute));
+            if (windowAttribute != null)
             {
-                var args = cad.ConstructorArguments;
+                var args = windowAttribute.ConstructorArguments;
                 if (args.Count > 0) layer = (UILayer)(args[0].Value ?? UILayer.UI);
                 if (args.Count > 1) fullScreen = (bool)(args[1].Value ?? false);
                 if (args.Count > 2) cacheTime = (int)(args[2].Value ?? 0);
             }
 
+            needUpdate = uiUpdateAttribute != null;
+
             if (holderType != null)
             {
-                Register(uiType, holderType, layer, fullScreen, cacheTime);
+                Register(uiType, holderType, layer, fullScreen, cacheTime, needUpdate);
                 info = _typeHandleMap[uiType.TypeHandle];
                 return true;
             }

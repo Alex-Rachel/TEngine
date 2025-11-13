@@ -1,7 +1,5 @@
 ﻿using System;
 using Cysharp.Threading.Tasks;
-using dnlib.DotNet;
-using TEngine;
 using UnityEngine;
 
 namespace TEngine
@@ -20,6 +18,26 @@ namespace TEngine
 
         private ITimerModule _timerModule;
 
+        public void Update(float elapseSeconds, float realElapseSeconds)
+        {
+            for (int layerIndex = 0; layerIndex < _openUI.Length; layerIndex++)
+            {
+                var layer = _openUI[layerIndex];
+                int count = layer.OrderList.Count;
+                if (count == 0) continue;
+                for (int i = 0; i < count; i++)
+                {
+                    if (layer.OrderList.Count != count)
+                    {
+                        break;
+                    }
+
+                    var window = layer.OrderList[i];
+                    if (window.MetaInfo.NeedUpdate)
+                        window.View.InternalUpdate();
+                }
+            }
+        }
 
         public UniTask<UIBase>? ShowUI(string type, params object[] userDatas)
         {
@@ -32,13 +50,11 @@ namespace TEngine
             return null;
         }
 
-
-        public UniTask<UIBase> ShowUI<T>(params System.Object[] userDatas) where T : UIBase
+        public T ShowUISync<T>(params object[] userDatas) where T : UIBase
         {
-            return ShowUI(MetaTypeCache<T>.Metadata, userDatas);
+            return (T)ShowUIImplSync(MetaTypeCache<T>.Metadata, userDatas);
         }
-
-        public async UniTask<T> ShowUIAsync<T>(params System.Object[] userDatas) where T : UIBase
+        public async UniTask<T> ShowUI<T>(params System.Object[] userDatas) where T : UIBase
         {
             return (T)await ShowUIAsync(MetaTypeCache<T>.Metadata, userDatas);
         }
@@ -51,7 +67,7 @@ namespace TEngine
 
         public T GetUI<T>() where T : UIBase
         {
-            return (T)GetUI(MetaTypeCache<T>.Metadata);
+            return (T)GetUIImpl(MetaTypeCache<T>.Metadata);
         }
 
 
@@ -60,9 +76,9 @@ namespace TEngine
             return ShowUIImplAsync(meta, userDatas);
         }
 
-        private UniTask<UIBase> ShowUIAsync(UIMetadata meta, params System.Object[] userDatas)
+        private async UniTask<UIBase> ShowUIAsync(UIMetadata meta, params System.Object[] userDatas)
         {
-            return ShowUIImplAsync(meta, userDatas);
+            return await ShowUIImplAsync(meta, userDatas);
         }
 
 
@@ -75,32 +91,10 @@ namespace TEngine
             }
         }
 
-        private UIBase GetUI(UIMetadata meta)
-        {
-            return (UIBase)GetUIImpl(meta);
-        }
-
 
         void IUIModule.SetTimerManager(ITimerModule timerModule)
         {
             _timerModule = timerModule;
-        }
-
-        public void Update(float elapseSeconds, float realElapseSeconds)
-        {
-            for (int layerIndex = 0; layerIndex < _openUI.Length; layerIndex++)
-            {
-                ref var layer = ref _openUI[layerIndex];
-                var list = layer.OrderList;
-                int count = list.Count;
-                if (count == 0) continue;
-                for (int i = 0; i < count; i++)
-                {
-                    if (list.Count != count) break;
-                    var window = list[i];
-                    window?.View.InternalUpdate();
-                }
-            }
         }
     }
 }

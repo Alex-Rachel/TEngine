@@ -21,7 +21,7 @@ namespace TEngine
         private RectTransform UICacheLayer;
         private bool _isOrthographic;
 
-        public void Initlize(Transform root, bool isOrthographic)
+        public void Initialize(Transform root, bool isOrthographic)
         {
             UIRoot = root;
             Object.DontDestroyOnLoad(root.gameObject);

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using TEngine;
 using Cysharp.Threading.Tasks;
 
 namespace TEngine
@@ -22,11 +21,22 @@ namespace TEngine
     {
         private readonly LayerData[] _openUI = new LayerData[(int)UILayer.All];
 
-        private async UniTask<UIBase> ShowUIImplAsync(UIMetadata meta, params object[] userDatas)
+        private async UniTask<UIBase> ShowUIImplAsync(UIMetadata metaInfo, params object[] userDatas)
         {
-            var metaInfo = GetOrCreateMeta(meta);
-            await UIHolderFactory.CreateUIResource(metaInfo, UICacheLayer);
-            return await FinalizeShow(metaInfo, userDatas);
+            CreateMetaUI(metaInfo);
+            await UIHolderFactory.CreateUIResourceAsync(metaInfo, UICacheLayer);
+            FinalizeShow(metaInfo, userDatas);
+            await UpdateVisualState(metaInfo);
+            return metaInfo.View;
+        }
+
+        private UIBase ShowUIImplSync(UIMetadata metaInfo, params object[] userDatas)
+        {
+            CreateMetaUI(metaInfo);
+            UIHolderFactory.CreateUIResourceSync(metaInfo, UICacheLayer);
+            FinalizeShow(metaInfo, userDatas);
+            UpdateVisualState(metaInfo).Forget();
+            return metaInfo.View;
         }
 
         private async UniTask CloseUIImpl(UIMetadata meta, bool force)
@@ -35,6 +45,7 @@ namespace TEngine
             {
                 return;
             }
+
             await meta.View.InternalClose();
             Pop(meta);
             SortWindowVisible(meta.MetaInfo.UILayer);
@@ -49,14 +60,13 @@ namespace TEngine
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private UIMetadata GetOrCreateMeta(UIMetadata meta)
+        private void CreateMetaUI(UIMetadata meta)
         {
             if (meta.State == UIState.Uninitialized) meta.CreateUI();
-            return meta;
         }
 
 
-        private async UniTask<UIBase> FinalizeShow(UIMetadata meta, object[] userDatas)
+        private void FinalizeShow(UIMetadata meta, object[] userDatas)
         {
             if (meta.InCache)
             {
@@ -77,8 +87,6 @@ namespace TEngine
             }
 
             meta.View.RefreshParams(userDatas);
-            await UpdateVisualState(meta);
-            return meta.View;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

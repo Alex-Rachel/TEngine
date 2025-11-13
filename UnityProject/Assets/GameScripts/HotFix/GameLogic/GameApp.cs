@@ -35,12 +35,12 @@ public partial class GameApp
         Log.Warning("======= Entrance GameApp =======");
         Utility.Unity.AddDestroyListener(Release);
         Log.Warning("======= StartGameLogic =======");
-        StartGameLogic().Forget();
+        StartGameLogic();
     }
 
-    private static async UniTaskVoid StartGameLogic()
+    private static void StartGameLogic()
     {
-        await GameModule.UI.ShowUIAsync<BattleMainUI>();
+        GameModule.UI.ShowUISync<BattleMainUI>();
         GameEvent.Get<ILoginUI>().ShowLoginUI();
     }
 

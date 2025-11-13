@@ -1,5 +1,4 @@
-﻿
-using TEngine;
+﻿using TEngine;
 using UnityEngine;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
@@ -10,8 +9,12 @@ namespace TEngine
     [UnityEngine.Scripting.Preserve]
     public sealed partial class UIComponent : MonoBehaviour
     {
-        [SerializeField] private GameObject uiRoot = null;
-        [SerializeField] private bool _isOrthographic = true;
+        [SerializeField]
+        private GameObject uiRoot = null;
+
+        [SerializeField]
+        private bool _isOrthographic = true;
+
         private Transform _instanceRoot = null;
 
         private IUIModule _uiModule;
@@ -27,11 +30,12 @@ namespace TEngine
             {
                 throw new GameFrameworkException("UIRoot Prefab is invalid.");
             }
+
             GameObject obj = Instantiate(uiRoot, Vector3.zero, Quaternion.identity);
             obj.name = "[UI Root]";
             _instanceRoot = obj.transform;
             Object.DontDestroyOnLoad(_instanceRoot);
-            _uiModule.Initlize(_instanceRoot,_isOrthographic);
+            _uiModule.Initialize(_instanceRoot, _isOrthographic);
         }
 
         private void Start()

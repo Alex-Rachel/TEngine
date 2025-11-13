@@ -21,8 +21,8 @@ namespace GameLogic
 
         protected override async UniTask OnOpenAsync()
         {
-            _uiMonsterInfoWidget = await CreateWidget<UIMonsterInfoWidget>(baseui.UIMonsterInfoWidget);
-            _uiRoleInfoWidget = await CreateWidget<UIRoleInfoWidget>(baseui.RectTopInfo);
+            _uiMonsterInfoWidget = await CreateWidgetAsync<UIMonsterInfoWidget>(baseui.UIMonsterInfoWidget);
+            _uiRoleInfoWidget = await CreateWidgetAsync<UIRoleInfoWidget>(baseui.RectTopInfo);
         }
 
         protected override void OnRegisterEvent(GameEventMgr proxy)
@@ -35,6 +35,11 @@ namespace GameLogic
         private void OnShowLoginUI()
         {
             Debug.Log("OnShowLoginUI");
+        }
+
+        protected override void OnUpdate()
+        {
+            Debug.Log("Update BattleMainUI");
         }
     }
 }

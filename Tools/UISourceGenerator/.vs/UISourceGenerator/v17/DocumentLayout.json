@@ -3,12 +3,12 @@
   "WorkspaceRootPath": "G:\\UnityProject\\TEngine\\Tools\\UISourceGenerator\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{26B3F75F-AB7F-48F8-B234-F5A26E8CA319}|SourceGenerator\\UISourceGenerator.csproj|g:\\unityproject\\tengine\\tools\\uisourcegenerator\\sourcegenerator\\generator\\uiresregistrygenerator .cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{26B3F75F-AB7F-48F8-B234-F5A26E8CA319}|SourceGenerator\\UISourceGenerator.csproj|solutionrelative:sourcegenerator\\generator\\uiresregistrygenerator .cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{26B3F75F-AB7F-48F8-B234-F5A26E8CA319}|SourceGenerator\\UISourceGenerator.csproj|g:\\unityproject\\tengine\\tools\\uisourcegenerator\\sourcegenerator\\generator\\uimetasourcegenerator .cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{26B3F75F-AB7F-48F8-B234-F5A26E8CA319}|SourceGenerator\\UISourceGenerator.csproj|solutionrelative:sourcegenerator\\generator\\uimetasourcegenerator .cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{26B3F75F-AB7F-48F8-B234-F5A26E8CA319}|SourceGenerator\\UISourceGenerator.csproj|g:\\unityproject\\tengine\\tools\\uisourcegenerator\\sourcegenerator\\generator\\uiresregistrygenerator .cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{26B3F75F-AB7F-48F8-B234-F5A26E8CA319}|SourceGenerator\\UISourceGenerator.csproj|solutionrelative:sourcegenerator\\generator\\uiresregistrygenerator .cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{26B3F75F-AB7F-48F8-B234-F5A26E8CA319}|SourceGenerator\\UISourceGenerator.csproj|g:\\unityproject\\tengine\\tools\\uisourcegenerator\\analyzer\\extension\\analyzerhelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -26,17 +26,17 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 0,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 0,
               "Title": "UIMetaSourceGenerator .cs",
               "DocumentMoniker": "G:\\UnityProject\\TEngine\\Tools\\UISourceGenerator\\SourceGenerator\\Generator\\UIMetaSourceGenerator .cs",
               "RelativeDocumentMoniker": "SourceGenerator\\Generator\\UIMetaSourceGenerator .cs",
               "ToolTip": "G:\\UnityProject\\TEngine\\Tools\\UISourceGenerator\\SourceGenerator\\Generator\\UIMetaSourceGenerator .cs",
               "RelativeToolTip": "SourceGenerator\\Generator\\UIMetaSourceGenerator .cs",
-              "ViewState": "AgIAAKQAAAAAAAAAAAAcwLUAAAAJAAAAAAAAAA==",
+              "ViewState": "AgIAAHQAAAAAAAAAAAAgwIsAAABrAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-04-08T13:05:45.538Z",
               "EditorCaption": ""
@@ -55,13 +55,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "UIResRegistryGenerator .cs",
               "DocumentMoniker": "G:\\UnityProject\\TEngine\\Tools\\UISourceGenerator\\SourceGenerator\\Generator\\UIResRegistryGenerator .cs",
               "RelativeDocumentMoniker": "SourceGenerator\\Generator\\UIResRegistryGenerator .cs",
               "ToolTip": "G:\\UnityProject\\TEngine\\Tools\\UISourceGenerator\\SourceGenerator\\Generator\\UIResRegistryGenerator .cs",
               "RelativeToolTip": "SourceGenerator\\Generator\\UIResRegistryGenerator .cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAWwBUAAAA5AAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABUAAAA5AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-04-08T11:49:31.852Z",
               "EditorCaption": ""

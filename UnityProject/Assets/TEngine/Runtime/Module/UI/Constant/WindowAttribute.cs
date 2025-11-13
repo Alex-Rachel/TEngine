@@ -3,7 +3,6 @@ using UnityEngine;
 
 namespace TEngine
 {
-
     [AttributeUsage(AttributeTargets.Class)]
     public class WindowAttribute : Attribute
     {
@@ -37,6 +36,15 @@ namespace TEngine
     }
 
     [AttributeUsage(AttributeTargets.Class)]
+    public class UIUpdateAttribute : Attribute
+    {
+        public UIUpdateAttribute()
+        {
+        }
+    }
+
+
+    [AttributeUsage(AttributeTargets.Class)]
     public class UIResAttribute : Attribute
     {
         public readonly string ResLocation;
@@ -49,7 +57,7 @@ namespace TEngine
         }
     }
 
-    public enum EUIResLoadType:byte
+    public enum EUIResLoadType : byte
     {
         Resources,
         AssetBundle

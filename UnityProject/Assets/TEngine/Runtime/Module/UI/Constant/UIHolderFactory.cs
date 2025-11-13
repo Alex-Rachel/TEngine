@@ -1,6 +1,5 @@
 ﻿using System;
 using Cysharp.Threading.Tasks;
-using TEngine;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -15,7 +14,7 @@ namespace TEngine
             ResourceModule = ModuleSystem.GetModule<IResourceModule>();
         }
 
-        public static async UniTask<T> CreateUIHolder<T>(Transform parent) where T : UIHolderObjectBase
+        public static async UniTask<T> CreateUIHolderAsync<T>(Transform parent) where T : UIHolderObjectBase
         {
             if (UIResRegistry.TryGet(typeof(T).TypeHandle, out UIResRegistry.UIResInfo resInfo))
             {
@@ -27,6 +26,19 @@ namespace TEngine
             return null;
         }
 
+        public static T CreateUIHolderSync<T>(Transform parent) where T : UIHolderObjectBase
+        {
+            if (UIResRegistry.TryGet(typeof(T).TypeHandle, out UIResRegistry.UIResInfo resInfo))
+            {
+                GameObject obj = LoadUIResourcesSync(resInfo, parent);
+
+                return obj.GetComponent<T>();
+            }
+
+            return null;
+        }
+
+
         internal static async UniTask<GameObject> LoadUIResourcesAsync(UIResRegistry.UIResInfo resInfo, Transform parent)
         {
             return resInfo.LoadType == EUIResLoadType.AssetBundle
@@ -34,24 +46,39 @@ namespace TEngine
                 : await InstantiateResourceAsync(resInfo.Location, parent);
         }
 
-        internal static async UniTask CreateUIResource(UIMetadata meta, Transform parent, UIBase owner = null)
+        internal static GameObject LoadUIResourcesSync(UIResRegistry.UIResInfo resInfo, Transform parent)
+        {
+            return resInfo.LoadType == EUIResLoadType.AssetBundle
+                ? ResourceModule.LoadGameObject(resInfo.Location, parent)
+                : InstantiateResourceSync(resInfo.Location, parent);
+        }
+
+
+        internal static async UniTask CreateUIResourceAsync(UIMetadata meta, Transform parent, UIBase owner = null)
         {
             if (meta.State != UIState.CreatedUI) return;
             GameObject obj = await LoadUIResourcesAsync(meta.ResInfo, parent);
             ValidateAndBind(meta, obj, owner);
         }
 
-        internal static void LoadUIResourcesSync(UIMetadata meta, Transform parent, UIBase owner = null)
+        internal static void CreateUIResourceSync(UIMetadata meta, Transform parent, UIBase owner = null)
         {
             if (meta.State != UIState.CreatedUI) return;
-
-            GameObject obj = meta.ResInfo.LoadType == EUIResLoadType.AssetBundle
-                ? ResourceModule.LoadGameObject(meta.ResInfo.Location, parent)
-                : Object.Instantiate(Resources.Load<GameObject>(meta.ResInfo.Location), parent);
-
+            GameObject obj = LoadUIResourcesSync(meta.ResInfo, parent);
             ValidateAndBind(meta, obj, owner);
         }
 
+        private static async UniTask<GameObject> InstantiateResourceAsync(string location, Transform parent)
+        {
+            GameObject prefab = (GameObject)await Resources.LoadAsync<GameObject>(location);
+            return Object.Instantiate(prefab, parent);
+        }
+
+        private static GameObject InstantiateResourceSync(string location, Transform parent)
+        {
+            GameObject prefab = Resources.Load<GameObject>(location);
+            return Object.Instantiate(prefab, parent);
+        }
 
         private static void ValidateAndBind(UIMetadata meta, GameObject holderObject, UIBase owner)
         {
@@ -65,12 +92,6 @@ namespace TEngine
             }
 
             meta.View?.BindUIHolder(holder, owner);
-        }
-
-        private static async UniTask<GameObject> InstantiateResourceAsync(string location, Transform parent)
-        {
-            GameObject prefab = (GameObject)await Resources.LoadAsync<GameObject>(location);
-            return Object.Instantiate(prefab, parent);
         }
     }
 }
