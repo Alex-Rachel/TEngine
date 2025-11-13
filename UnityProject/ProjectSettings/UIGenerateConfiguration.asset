@@ -60,7 +60,7 @@ MonoBehaviour:
   - uiElementRegex: Video
     componentType: Video.VideoPlayer
   - uiElementRegex: Input
-    componentType: TMPro.TMP_InputField
+    componentType: InputField
   - uiElementRegex: CanvasGroup
     componentType: CanvasGroup
   UIScriptGenerateConfigs:
