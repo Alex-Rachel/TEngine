@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 
 namespace TEngine
@@ -38,19 +40,67 @@ namespace TEngine
         }
 
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TryGet(RuntimeTypeHandle handle, out UIMetaInfo info)
         {
-            return _typeHandleMap.TryGetValue(handle, out info);
+            if (_typeHandleMap.TryGetValue(handle, out info))
+                return true;
+
+            var t = Type.GetTypeFromHandle(handle);
+
+            if (TryReflectAndRegister(t, out info))
+                return true;
+
+            return false;
         }
 
-        public static bool TryGet(string type, out UIMetaInfo info)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryGet(string typeName, out UIMetaInfo info)
         {
-            RuntimeTypeHandle typeHandle;
-            if (_stringHandleMap.TryGetValue(type, out typeHandle))
+            if (_stringHandleMap.TryGetValue(typeName, out var handle))
+                return TryGet(handle, out info);
+
+
+            var type = TEngine.Utility.Assembly.GetType(typeName);
+
+            if (type != null && TryReflectAndRegister(type, out info))
+                return true;
+
+            info = default;
+            return false;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static bool TryReflectAndRegister(Type uiType, out UIMetaInfo info)
+        {
+            Log.Warning($"[UI] UI未注册[{uiType.FullName}] 反射进行缓存");
+            Type baseType = uiType;
+            Type? holderType = baseType.GetGenericArguments()[0];
+
+            UILayer layer = UILayer.UI;
+            bool fullScreen = false;
+            int cacheTime = 0;
+
+            var cad = CustomAttributeData.GetCustomAttributes(uiType)
+                .FirstOrDefault(a => a.AttributeType.Name == nameof(WindowAttribute));
+
+            if (cad != null)
             {
+                var args = cad.ConstructorArguments;
+                if (args.Count > 0) layer = (UILayer)(args[0].Value ?? UILayer.UI);
+                if (args.Count > 1) fullScreen = (bool)(args[1].Value ?? false);
+                if (args.Count > 2) cacheTime = (int)(args[2].Value ?? 0);
             }
 
-            return _typeHandleMap.TryGetValue(typeHandle, out info);
+            if (holderType != null)
+            {
+                Register(uiType, holderType, layer, fullScreen, cacheTime);
+                info = _typeHandleMap[uiType.TypeHandle];
+                return true;
+            }
+
+            info = default;
+            return false;
         }
     }
 }

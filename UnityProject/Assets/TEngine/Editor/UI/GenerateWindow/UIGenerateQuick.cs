@@ -29,7 +29,7 @@ namespace TEngine.UI.Editor
             {
                 if (CheckCanGenerate(selectedObject, config))
                 {
-                    UIScriptGeneratorHelper.GenerateAndAttachScript(selectedObject, config);
+                    UIScriptGeneratorHelper.GenerateUIBindScript(selectedObject, config);
                     return;
                 }
             }

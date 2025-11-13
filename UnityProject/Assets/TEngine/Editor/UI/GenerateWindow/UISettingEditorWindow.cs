@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
-using TEngine;
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
@@ -34,7 +33,6 @@ namespace TEngine.UI.Editor
         private readonly string[] toolbarTitles = { "UI基础设置", "UI构建配置", "UI元素映射" };
 
 
-        private ReorderableList combineList;
         private ReorderableList regexList;
         private ReorderableList projectList;
         private ReorderableList excludeList;
@@ -70,22 +68,6 @@ namespace TEngine.UI.Editor
 
         private void SetupLists()
         {
-            combineList = new ReorderableList(UIGenerateCommonData.CombineWords, typeof(StringPair), true, true, true, true);
-            combineList.drawHeaderCallback = (r) => EditorGUI.LabelField(r, "路径拼接映射 (Key -> Value)");
-            combineList.drawElementCallback = (rect, index, active, focused) =>
-            {
-                var p = UIGenerateCommonData.CombineWords[index];
-                rect.y += 2;
-                float half = rect.width / 2 - 8;
-                p.Key = EditorGUI.TextField(new Rect(rect.x, rect.y, half, EditorGUIUtility.singleLineHeight), p.Key);
-                p.Value = EditorGUI.TextField(new Rect(rect.x + half + 16, rect.y, half, EditorGUIUtility.singleLineHeight), p.Value);
-            };
-            combineList.onAddCallback = (r) => UIGenerateCommonData.CombineWords.Add(new StringPair("Key", "Value"));
-            combineList.onRemoveCallback = (r) =>
-            {
-                if (r.index >= 0) UIGenerateCommonData.CombineWords.RemoveAt(r.index);
-            };
-
 
             excludeList = new ReorderableList(excludeKeywordsList, typeof(string), true, true, true, true);
             excludeList.drawHeaderCallback = (r) => EditorGUI.LabelField(r, "排除关键字（匹配则不生成）");
@@ -192,7 +174,7 @@ namespace TEngine.UI.Editor
         {
             m_ScriptGeneratorHelperTypes = new List<string>();
 
-            m_ScriptGeneratorHelperTypes.AddRange(Utility.Assembly.GetRuntimeTypeNames(typeof(IUIGeneratorRuleHelper)));
+            m_ScriptGeneratorHelperTypes.AddRange(TEngine.Utility.Assembly.GetRuntimeTypeNames(typeof(IUIGeneratorRuleHelper)));
 
             m_ScriptGeneratorHelperSelectIndex = m_ScriptGeneratorHelperTypes.IndexOf(UIGenerateConfiguration.Instance.UIScriptGeneratorRuleHelper);
             if (m_ScriptGeneratorHelperSelectIndex < 0)
@@ -269,7 +251,7 @@ namespace TEngine.UI.Editor
             UIGenerateCommonData.ComCheckEndName = EditorGUILayout.TextField(new GUIContent("组件结尾分隔符", "例如 @End"), UIGenerateCommonData.ComCheckEndName);
             UIGenerateCommonData.ArrayComSplitName = EditorGUILayout.TextField(new GUIContent("数组组件分隔符", "例如 *Item"), UIGenerateCommonData.ArrayComSplitName);
             UIGenerateCommonData.GeneratePrefix = EditorGUILayout.TextField(new GUIContent("生成脚本前缀"), UIGenerateCommonData.GeneratePrefix);
-            m_ScriptGeneratorHelperSelectIndex = EditorGUILayout.Popup("解密服务", m_ScriptGeneratorHelperSelectIndex, m_ScriptGeneratorHelperTypes.ToArray());
+            m_ScriptGeneratorHelperSelectIndex = EditorGUILayout.Popup("UI辅助生成", m_ScriptGeneratorHelperSelectIndex, m_ScriptGeneratorHelperTypes.ToArray());
             string selectService = m_ScriptGeneratorHelperTypes[m_ScriptGeneratorHelperSelectIndex];
             if (uiGenerateConfiguration.UIScriptGeneratorRuleHelper != selectService)
             {
@@ -282,10 +264,6 @@ namespace TEngine.UI.Editor
             GUILayout.Space(8);
 
             excludeList.DoLayoutList();
-
-            GUILayout.Space(8);
-
-            combineList.DoLayoutList();
 
             EditorGUILayout.Space(8);
 
@@ -401,7 +379,7 @@ namespace TEngine.UI.Editor
         {
             if (cacheFilterType == null)
             {
-                cacheFilterType = Utility.Assembly.GetTypes()
+                cacheFilterType = TEngine.Utility.Assembly.GetTypes()
                     .Where(m => !m.FullName.Contains("Editor"))
                     .Where(x => !x.IsAbstract || x.IsInterface)
                     .Where(x => !x.IsGenericTypeDefinition)

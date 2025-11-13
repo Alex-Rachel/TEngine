@@ -25,7 +25,6 @@ namespace Game.UI
 		private gen_UIMonsterInfoWidget mUIMonsterInfoWidget;
 		public gen_UIMonsterInfoWidget UIMonsterInfoWidget => mUIMonsterInfoWidget;
 
-
 		#endregion
 	}
 }

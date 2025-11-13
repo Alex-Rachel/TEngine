@@ -29,7 +29,6 @@ namespace Game.UI
 		private Text mTextMonsterAttr;
 		public Text TextMonsterAttr => mTextMonsterAttr;
 
-
 		#endregion
 	}
 }
