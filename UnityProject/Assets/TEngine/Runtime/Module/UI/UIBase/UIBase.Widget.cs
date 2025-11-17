@@ -82,19 +82,19 @@ namespace TEngine
         protected async UniTask<UIBase> CreateWidgetAsync(string typeName, Transform parent, bool visible = true)
         {
             UIMetaRegistry.TryGet(typeName, out var metaRegistry);
-            UIMetadata metadata = UIMetadataFactory.GetMetadata(metaRegistry.RuntimeTypeHandle);
+            UIMetadata metadata = UIMetadataFactory.GetWidgetMetadata(metaRegistry.RuntimeTypeHandle);
             return await CreateWidgetUIAsync(metadata, parent, visible);
         }
 
         protected async UniTask<T> CreateWidgetAsync<T>(Transform parent, bool visible = true) where T : UIBase
         {
-            UIMetadata metadata = MetaTypeCache<T>.Metadata;
+            UIMetadata metadata =UIMetadataFactory.GetWidgetMetadata<T>();
             return (T)await CreateWidgetUIAsync(metadata, parent, visible);
         }
 
         protected async UniTask<T> CreateWidgetAsync<T>(UIHolderObjectBase holder) where T : UIBase
         {
-            UIMetadata metadata = MetaTypeCache<T>.Metadata;
+            UIMetadata metadata = UIMetadataFactory.GetWidgetMetadata<T>();
             metadata.CreateUI();
             UIBase widget = (UIBase)metadata.View;
             widget.BindUIHolder(holder, this);
@@ -110,19 +110,19 @@ namespace TEngine
         protected UIBase CreateWidgetSync(string typeName, Transform parent, bool visible = true)
         {
             UIMetaRegistry.TryGet(typeName, out var metaRegistry);
-            UIMetadata metadata = UIMetadataFactory.GetMetadata(metaRegistry.RuntimeTypeHandle);
+            UIMetadata metadata = UIMetadataFactory.GetWidgetMetadata(metaRegistry.RuntimeTypeHandle);
             return CreateWidgetUISync(metadata, parent, visible);
         }
 
         protected T CreateWidgetSync<T>(Transform parent, bool visible = true) where T : UIBase
         {
-            UIMetadata metadata = MetaTypeCache<T>.Metadata;
+            UIMetadata metadata = UIMetadataFactory.GetWidgetMetadata<T>();
             return (T)CreateWidgetUISync(metadata, parent, visible);
         }
 
         protected T CreateWidgetSync<T>(UIHolderObjectBase holder) where T : UIBase
         {
-            UIMetadata metadata = MetaTypeCache<T>.Metadata;
+            UIMetadata metadata = UIMetadataFactory.GetWidgetMetadata<T>();
             metadata.CreateUI();
             UIBase widget = (UIBase)metadata.View;
             widget.BindUIHolder(holder, this);
@@ -152,6 +152,7 @@ namespace TEngine
             {
                 Log.Warning("Already has widget:{0}", meta.View);
                 meta.Dispose();
+                UIMetadataFactory.ReturnToPool(meta);
                 return false;
             }
 
@@ -164,6 +165,7 @@ namespace TEngine
             {
                 await widget.InternalClose();
                 meta.Dispose();
+                UIMetadataFactory.ReturnToPool(meta);
             }
         }
     }

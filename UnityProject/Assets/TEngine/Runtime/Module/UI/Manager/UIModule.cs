@@ -43,7 +43,7 @@ namespace TEngine
         {
             if (UIMetaRegistry.TryGet(type, out var metaRegistry))
             {
-                UIMetadata metadata = UIMetadataFactory.GetMetadata(metaRegistry.RuntimeTypeHandle);
+                UIMetadata metadata = UIMetadataFactory.GetWindowMetadata(metaRegistry.RuntimeTypeHandle);
                 return ShowUI(metadata, userDatas);
             }
 
@@ -52,22 +52,23 @@ namespace TEngine
 
         public T ShowUISync<T>(params object[] userDatas) where T : UIBase
         {
-            return (T)ShowUIImplSync(MetaTypeCache<T>.Metadata, userDatas);
+            return (T)ShowUIImplSync(UIMetadataFactory.GetWindowMetadata<T>(), userDatas);
         }
+
         public async UniTask<T> ShowUI<T>(params System.Object[] userDatas) where T : UIBase
         {
-            return (T)await ShowUIAsync(MetaTypeCache<T>.Metadata, userDatas);
+            return (T)await ShowUIAsync(UIMetadataFactory.GetWindowMetadata<T>(), userDatas);
         }
 
 
         public void CloseUI<T>(bool force = false) where T : UIBase
         {
-            CloseUIImpl(MetaTypeCache<T>.Metadata, force).Forget();
+            CloseUIImpl(UIMetadataFactory.GetWindowMetadata<T>(), force).Forget();
         }
 
         public T GetUI<T>() where T : UIBase
         {
-            return (T)GetUIImpl(MetaTypeCache<T>.Metadata);
+            return (T)GetUIImpl(UIMetadataFactory.GetWindowMetadata<T>());
         }
 
 
@@ -84,7 +85,7 @@ namespace TEngine
 
         public void CloseUI(RuntimeTypeHandle handle, bool force = false)
         {
-            var metadata = UIMetadataFactory.GetMetadata(handle);
+            var metadata = UIMetadataFactory.GetWindowMetadata(handle);
             if (metadata.State != UIState.Uninitialized && metadata.State != UIState.Destroying)
             {
                 CloseUIImpl(metadata, force).Forget();

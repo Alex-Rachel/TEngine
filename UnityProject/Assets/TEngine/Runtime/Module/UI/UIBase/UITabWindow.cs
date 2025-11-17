@@ -54,7 +54,7 @@ namespace TEngine
         // 初始化方法（泛型版本）
         protected void InitTabVirtuallyView<TTab>(Transform parent = null) where TTab : UIWidget
         {
-            var metadata = MetaTypeCache<TTab>.Metadata;
+            var metadata = UIMetadataFactory.GetWindowMetadata<TTab>();
             CacheTabMetadata(metadata, parent);
         }
 
@@ -63,7 +63,7 @@ namespace TEngine
         {
             if (UIMetaRegistry.TryGet(typeName, out var metaRegistry))
             {
-                var metadata = UIMetadataFactory.GetMetadata(metaRegistry.RuntimeTypeHandle);
+                var metadata = UIMetadataFactory.GetWindowMetadata(metaRegistry.RuntimeTypeHandle);
                 CacheTabMetadata(metadata, parent);
             }
         }
@@ -101,7 +101,7 @@ namespace TEngine
 
             try
             {
-                var metadata = UIMetadataFactory.GetMetadata(typeHandle);
+                var metadata = UIMetadataFactory.GetWindowMetadata(typeHandle);
                 var parent = _tabCache[typeHandle];
 
                 var widget = await CreateWidgetUIAsync(metadata, parent, false);

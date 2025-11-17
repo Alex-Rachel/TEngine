@@ -26,7 +26,7 @@ namespace TEngine
             CreateMetaUI(metaInfo);
             await UIHolderFactory.CreateUIResourceAsync(metaInfo, UICacheLayer);
             FinalizeShow(metaInfo, userDatas);
-            await UpdateVisualState(metaInfo);
+            UpdateVisualState(metaInfo).Forget();
             return metaInfo.View;
         }
 
