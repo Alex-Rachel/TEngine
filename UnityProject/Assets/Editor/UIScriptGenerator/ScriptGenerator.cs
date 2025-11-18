@@ -140,9 +140,21 @@ namespace TEngine.Editor.UI
             {
                 Transform child = transform.GetChild(i);
                 WriteScript(root, child, ref strVar, ref strBind, ref strOnCreate, ref strCallback, isUniTask);
-                if (child.name.StartsWith("m_item"))
+                
+                var codeStyle = ScriptGeneratorSetting.Instance.CodeStyle;
+                if (codeStyle == UIFieldCodeStyle.MPrefix)
                 {
-                    continue;
+                    if (child.name.StartsWith("m_item"))
+                    {
+                        continue;
+                    }
+                }
+                else
+                {
+                    if (child.name.StartsWith("_item"))
+                    {
+                        continue;
+                    }
                 }
 
                 Ergodic(root, child, ref strVar, ref strBind, ref strOnCreate, ref strCallback, isUniTask);
