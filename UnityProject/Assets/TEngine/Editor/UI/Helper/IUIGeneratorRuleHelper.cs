@@ -180,8 +180,8 @@ namespace TEngine.UI.Editor
             }
 
             uiBindDatas?
-                .Where(bindData => bindData?.BindCom?.FirstOrDefault() != null)
-                .Select(bindData => bindData.BindCom[0].GetType().Namespace)
+                .Where(bindData => bindData?.Objs?.FirstOrDefault() != null)
+                .Select(bindData => bindData.GetFirstOrDefaultType().Namespace)
                 .Where(ns => !string.IsNullOrEmpty(ns))
                 .ToList()
                 .ForEach(ns => namespaceSet.Add(ns));
@@ -206,7 +206,7 @@ namespace TEngine.UI.Editor
         {
             var variableName = bindData.Name;
             var publicName = GetPublicComponentByNameRule(variableName);
-            var firstType = bindData.BindCom?.FirstOrDefault()?.GetType();
+            var firstType = bindData.GetFirstOrDefaultType();
             var typeName = firstType?.Name ?? "Component";
 
             var declaration = new StringBuilder();
@@ -221,7 +221,7 @@ namespace TEngine.UI.Editor
                     break;
 
                 case EBindType.ListCom:
-                    var count = Math.Max(0, bindData.BindCom?.Count ?? 0);
+                    var count = Math.Max(0, bindData.Objs?.Count ?? 0);
                     declaration.AppendLine($"\t\tprivate {typeName}[] {variableName} = new {typeName}[{count}];");
                     declaration.Append($"\t\tpublic {typeName}[] {publicName} => {variableName};");
                     break;

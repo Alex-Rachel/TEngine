@@ -21,18 +21,33 @@ namespace TEngine.UI.Editor
     public class UIBindData
     {
         public string Name { get; }
-        public List<Component> BindCom { get; }
-        public EBindType BindType { get; }
 
-        public UIBindData(string name, List<Component> bindCom, EBindType bindType = EBindType.None)
+        public List<GameObject> Objs { get; set; }
+        public EBindType BindType { get; }
+        public bool IsGameObject => nameof(GameObject).Equals(TypeName);
+
+        public string TypeName = string.Empty;
+
+        public Type GetFirstOrDefaultType()
         {
-            Name = name ?? throw new ArgumentNullException(nameof(name));
-            BindCom = bindCom ?? new List<Component>();
-            BindType = bindType;
+            if (IsGameObject)
+            {
+                return typeof(GameObject);
+            }
+
+            return Objs.FirstOrDefault()?.GetComponent(TypeName).GetType();
         }
 
-        public UIBindData(string name, Component bindCom, EBindType bindType = EBindType.None)
-            : this(name, new List<Component> { bindCom }, bindType)
+        public UIBindData(string name, List<GameObject> objs, string typeName = "", EBindType bindType = EBindType.None)
+        {
+            Name = name;
+            Objs = objs ?? new List<GameObject>();
+            BindType = bindType;
+            TypeName = typeName;
+        }
+
+        public UIBindData(string name, GameObject obj, string typeName = "", EBindType bindType = EBindType.None)
+            : this(name, new List<GameObject> { obj }, typeName, bindType)
         {
         }
     }
@@ -175,11 +190,16 @@ namespace TEngine.UI.Editor
                 var typeName = GetUIElementComponentType(com);
                 if (string.IsNullOrEmpty(typeName)) continue;
 
-                var component = node.GetComponent(typeName);
-                if (component == null)
+
+                bool isGameObject = typeName.Equals(nameof(GameObject));
+                if (!isGameObject)
                 {
-                    Debug.LogError($"{node.name} does not have component of type {typeName}");
-                    continue;
+                    var component = node.GetComponent(typeName);
+                    if (component == null)
+                    {
+                        Debug.LogError($"{node.name} does not have component of type {typeName}");
+                        continue;
+                    }
                 }
 
                 var keyName = UIGeneratorRuleHelper.GetPrivateComponentByNameRule(com, node.name, EBindType.None);
@@ -189,7 +209,7 @@ namespace TEngine.UI.Editor
                     continue;
                 }
 
-                _uiBindDatas.Add(new UIBindData(keyName, component));
+                _uiBindDatas.Add(new UIBindData(keyName, node.gameObject, typeName));
             }
         }
 
@@ -219,7 +239,7 @@ namespace TEngine.UI.Editor
                 return;
             }
 
-            _uiBindDatas.Add(new UIBindData(keyName, component, EBindType.Widget));
+            _uiBindDatas.Add(new UIBindData(keyName, component.gameObject, component.name, EBindType.Widget));
         }
 
         private static void CollectArrayComponent(List<Transform> arrayNode, string nodeName)
@@ -255,7 +275,7 @@ namespace TEngine.UI.Editor
             return componentArray.Select((com, index) =>
             {
                 var keyName = UIGeneratorRuleHelper.GetPrivateComponentByNameRule(com, nodeName, EBindType.ListCom);
-                return new UIBindData(keyName, new List<Component>(), EBindType.ListCom);
+                return new UIBindData(keyName, new List<GameObject>(), com, EBindType.ListCom);
             }).ToList();
         }
 
@@ -268,13 +288,15 @@ namespace TEngine.UI.Editor
 
                 var typeName = GetUIElementComponentType(com);
                 if (string.IsNullOrEmpty(typeName)) continue;
-
+                tempBindDatas[index].TypeName = typeName;
                 foreach (var node in orderedNodes)
                 {
-                    var component = node.GetComponent(typeName);
-                    if (component != null)
+                    var isGameObject = typeName.Equals(nameof(GameObject));
+                    var component = isGameObject ? null : node.GetComponent(typeName);
+
+                    if (component != null || isGameObject)
                     {
-                        tempBindDatas[index].BindCom.Add(component);
+                        tempBindDatas[index].Objs.Add(node.gameObject);
                     }
                     else
                     {
@@ -395,8 +417,8 @@ namespace TEngine.UI.Editor
                 return;
             }
 
-            var component = targetObject.GetOrAddComponent(scriptType);
-            BindFieldsToComponents(component, scriptType);
+            var targetHolder = targetObject.GetOrAddComponent(scriptType);
+            BindFieldsToComponents(targetHolder, scriptType);
         }
 
         private static Type FindScriptType(string scriptClassName)
@@ -409,36 +431,37 @@ namespace TEngine.UI.Editor
                                         type.Name.Equals(scriptClassName, StringComparison.Ordinal));
         }
 
-        private static void BindFieldsToComponents(Component component, Type scriptType)
+        private static void BindFieldsToComponents(Component targetHolder, Type scriptType)
         {
             var fields = scriptType.GetFields(BindingFlags.NonPublic | BindingFlags.Instance);
 
             foreach (var field in fields.Where(field => !string.IsNullOrEmpty(field.Name)))
             {
-                var components = _uiBindDatas.Find(data => data.Name == field.Name)?.BindCom;
+                var bindData = _uiBindDatas.Find(data => data.Name == field.Name);
+                var components = bindData.Objs;
                 if (components == null)
                 {
                     Debug.LogError($"Field {field.Name} did not find matching component binding");
                     continue;
                 }
 
-                SetFieldValue(field, components, component);
+                SetFieldValue(field, components, bindData.TypeName, targetHolder);
             }
         }
 
-        private static void SetFieldValue(FieldInfo field, IReadOnlyList<Component> components, Component targetComponent)
+        private static void SetFieldValue(FieldInfo field, IReadOnlyList<GameObject> components, string typeName, Component targetComponent)
         {
             if (field.FieldType.IsArray)
             {
-                SetArrayFieldValue(field, components, targetComponent);
+                SetArrayFieldValue(field, components, typeName, targetComponent);
             }
             else
             {
-                SetSingleFieldValue(field, components, targetComponent);
+                SetSingleFieldValue(field, components, typeName, targetComponent);
             }
         }
 
-        private static void SetArrayFieldValue(FieldInfo field, IReadOnlyList<Component> components, Component targetComponent)
+        private static void SetArrayFieldValue(FieldInfo field, IReadOnlyList<GameObject> components, string typeName, Component targetComponent)
         {
             var elementType = field.FieldType.GetElementType();
             if (elementType == null)
@@ -452,9 +475,12 @@ namespace TEngine.UI.Editor
             {
                 if (components[i] == null) continue;
 
-                if (elementType.IsInstanceOfType(components[i]))
+                var isGameobject = typeName.Equals(nameof(GameObject));
+                object ComponentObject = isGameobject ? components[i] : components[i].GetComponent(typeName);
+
+                if (elementType.IsInstanceOfType(ComponentObject))
                 {
-                    array.SetValue(components[i], i);
+                    array.SetValue(ComponentObject, i);
                 }
                 else
                 {
@@ -465,11 +491,12 @@ namespace TEngine.UI.Editor
             field.SetValue(targetComponent, array);
         }
 
-        private static void SetSingleFieldValue(FieldInfo field, IReadOnlyList<Component> components, Component targetComponent)
+        private static void SetSingleFieldValue(FieldInfo field, IReadOnlyList<GameObject> components, string typeName, Component targetComponent)
         {
             if (components.Count == 0) return;
 
-            var firstComponent = components[0];
+            var isGameobject = typeName.Equals(nameof(GameObject));
+            object firstComponent = isGameobject ? components[0] : components[0].GetComponent(typeName);
             if (firstComponent == null) return;
 
             if (field.FieldType.IsInstanceOfType(firstComponent))
