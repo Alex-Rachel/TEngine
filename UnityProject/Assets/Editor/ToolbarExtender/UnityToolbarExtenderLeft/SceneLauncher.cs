@@ -1,4 +1,6 @@
-﻿using UnityEditor;
+﻿#if !UNITY_6000_3_OR_NEWER
+
+using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -116,3 +118,5 @@ namespace TEngine
         }
     }
 }
+
+#endif

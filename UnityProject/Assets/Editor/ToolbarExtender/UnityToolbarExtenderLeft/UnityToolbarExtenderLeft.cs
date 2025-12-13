@@ -1,4 +1,6 @@
-﻿using UnityEditor;
+﻿#if !UNITY_6000_3_OR_NEWER
+
+using UnityEditor;
 using UnityToolbarExtender;
 
 namespace TEngine
@@ -14,3 +16,5 @@ namespace TEngine
         }
     }
 }
+
+#endif

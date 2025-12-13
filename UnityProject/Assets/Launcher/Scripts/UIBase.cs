@@ -28,13 +28,15 @@ namespace Launcher
 
         protected object m_param;
 
-        protected virtual void ScriptGenerator()
+        protected virtual void ScriptGenerator() { }
+
+        public void CallScriptGenerator()
         {
+            ScriptGenerator();
         }
 
         public virtual void OnInit(object param)
         {
-            ScriptGenerator();
             m_param = param;
         }
 
