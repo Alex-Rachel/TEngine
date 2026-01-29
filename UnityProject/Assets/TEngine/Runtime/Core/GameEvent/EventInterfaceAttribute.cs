@@ -1,7 +1,4 @@
 ﻿using System;
-#if ENABLE_OBFUZ
-using Obfuz;
-#endif
 
 namespace TEngine
 {
@@ -22,9 +19,6 @@ namespace TEngine
     }
 
     [AttributeUsage(AttributeTargets.Interface)]
-#if ENABLE_OBFUZ
-    [ObfuzIgnore]
-#endif
     public class EventInterfaceAttribute : Attribute
     {
         public EEventGroup EventGroup { get; }

@@ -152,7 +152,8 @@ public class EventInterfaceGenerator : ISourceGenerator
         sb.AppendLine($"        public {interfaceName}_Gen(EventDispatcher dispatcher)");  
         sb.AppendLine("        {");  
         sb.AppendLine("            _dispatcher = dispatcher;");  
-        sb.AppendLine($"             GameEvent.EventMgr.RegWrapInterface(\"{interfaceFullName}\", this);");
+        // sb.AppendLine($"             GameEvent.EventMgr.RegWrapInterface(\"{interfaceFullName}\", this);");
+        sb.AppendLine($"             GameEvent.EventMgr.RegWrapInterface<{interfaceFullName}>(this);");
         sb.AppendLine("        }");  
 
         foreach (var method in interfaceNode.Members.OfType<MethodDeclarationSyntax>())  
