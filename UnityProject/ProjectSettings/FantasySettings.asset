@@ -13,12 +13,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   autoCopyAssembly: 0
-  hotUpdatePath: 
-  hotUpdateAssemblyDefinitions: []
-  linkAssemblyDefinitions:
+  hotUpdatePath: D:/UnityProjects/TEngine/UnityProject/Assets/AssetRaw/DLL
+  hotUpdateAssemblyDefinitions:
   - {fileID: 5897886265953266890, guid: 0b7224b83ba514121aa026f3857f820a, type: 3}
-  - {fileID: 5897886265953266890, guid: af760644fe07b7945b1afa1ccb7cff14, type: 3}
-  - {fileID: 5897886265953266890, guid: 6e76b07590314a543b982daed6af2509, type: 3}
+  linkAssemblyDefinitions: []
   includeAssembly:
   - Assembly-CSharp
   - Fantasy.Unity

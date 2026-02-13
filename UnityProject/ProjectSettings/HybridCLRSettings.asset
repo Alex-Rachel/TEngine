@@ -18,10 +18,11 @@ MonoBehaviour:
   il2cppPlusRepoURL: https://gitee.com/focus-creative-games/il2cpp_plus
   hotUpdateAssemblyDefinitions: []
   hotUpdateAssemblies:
+  - Fantasy.Unity
   - GameProto
   - GameLogic
-  preserveHotUpdateAssemblies:
-  - Fantasy.Unity
+  - Assembly-CSharp
+  preserveHotUpdateAssemblies: []
   hotUpdateDllCompileOutputRootDir: HybridCLRData/HotUpdateDlls
   externalHotUpdateAssembliyDirs: []
   strippedAOTDllOutputRootDir: HybridCLRData/AssembliesPostIl2CppStrip

@@ -181,7 +181,6 @@ namespace Fantasy.Network.Interface
                     try
                     {
                         handler.Invoke((IMessage)message);
-                        Log.Info("测试热更");
                     }
                     catch (Exception e)
                     {
