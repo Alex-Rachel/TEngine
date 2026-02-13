@@ -311,6 +311,4 @@ git checkout demo
 
 **Made with ❤️ by TEngine Team**
 
-[⭐ Star](https://github.com/ALEXTANGXIAO/TEngine) | [🐛 Issues](https://github.com/ALEXTANGXIAO/TEngine/issues) | [📖 Wiki](https://deepwiki.com/Alex-Rachel/TEngine)
-
-</div>
+#### <a href="https://github.com/qq362946/Fantasy"><strong>Fantasy</strong></a> - Fantasy是一套源于ETServer但极为简洁，性能更强，更好上手的一套商业级服务器框架。
