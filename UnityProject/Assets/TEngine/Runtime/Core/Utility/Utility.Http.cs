@@ -6,6 +6,8 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
 
+#pragma warning disable CS0618
+
 namespace TEngine
 {
     public static partial class Utility
@@ -268,3 +270,5 @@ namespace TEngine
         }
     }
 }
+
+#pragma warning disable CS0618

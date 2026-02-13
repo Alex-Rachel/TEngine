@@ -1,0 +1,11 @@
+# Unity YAML 文件使用 LF 换行符
+*.meta text eol=lf
+*.asmdef text eol=lf
+*.unity text eol=lf
+*.prefab text eol=lf
+*.mat text eol=lf
+*.asset text eol=lf
+*.json text eol=lf
+
+# Source Generator DLL 是二进制文件
+*.dll binary

@@ -1,0 +1,575 @@
+#nullable enable
+LightProto.CodedOutputStream
+LightProto.CodedOutputStream.CodedOutputStream(byte[]! flatArray) -> void
+LightProto.CodedOutputStream.CodedOutputStream(System.IO.Stream! output, bool leaveOpen) -> void
+LightProto.CodedOutputStream.CodedOutputStream(System.IO.Stream! output, int bufferSize, bool leaveOpen) -> void
+LightProto.CodedOutputStream.Dispose() -> void
+LightProto.CodedOutputStream.OutOfSpaceException
+LightProto.CompatibilityLevel
+LightProto.CompatibilityLevel.Level200 = 200 -> LightProto.CompatibilityLevel
+LightProto.CompatibilityLevel.Level240 = 240 -> LightProto.CompatibilityLevel
+LightProto.CompatibilityLevel.Level300 = 300 -> LightProto.CompatibilityLevel
+LightProto.CompatibilityLevel.NotSpecified = 0 -> LightProto.CompatibilityLevel
+LightProto.CompatibilityLevelAttribute
+LightProto.CompatibilityLevelAttribute.CompatibilityLevelAttribute(LightProto.CompatibilityLevel level) -> void
+LightProto.CompatibilityLevelAttribute.Level.get -> LightProto.CompatibilityLevel
+LightProto.DataFormat
+LightProto.DataFormat.Default = 0 -> LightProto.DataFormat
+LightProto.DataFormat.FixedSize = 2 -> LightProto.DataFormat
+LightProto.DataFormat.WellKnown = 3 -> LightProto.DataFormat
+LightProto.DataFormat.ZigZag = 1 -> LightProto.DataFormat
+LightProto.Extensible
+LightProto.Extensible.Extensible() -> void
+LightProto.Extensible.GetExtensionObject(bool createIfMissing) -> LightProto.IExtension!
+LightProto.IExtensible
+LightProto.IExtensible.GetExtensionObject(bool createIfMissing) -> LightProto.IExtension!
+LightProto.IExtension
+LightProto.ImplicitFields
+LightProto.ImplicitFields.AllFields = 2 -> LightProto.ImplicitFields
+LightProto.ImplicitFields.AllPublic = 1 -> LightProto.ImplicitFields
+LightProto.ImplicitFields.None = 0 -> LightProto.ImplicitFields
+LightProto.InvalidProtocolBufferException
+LightProto.IProtoParser<T>
+LightProto.IProtoReader<T>
+LightProto.IProtoReader<T>.IsMessage.get -> bool
+LightProto.IProtoReader<T>.ParseFrom(ref LightProto.ReaderContext input) -> T
+LightProto.IProtoReader<T>.WireType.get -> LightProto.WireFormat.WireType
+LightProto.IProtoWriter<T>
+LightProto.IProtoWriter<T>.CalculateSize(T value) -> int
+LightProto.IProtoWriter<T>.IsMessage.get -> bool
+LightProto.IProtoWriter<T>.WireType.get -> LightProto.WireFormat.WireType
+LightProto.IProtoWriter<T>.WriteTo(ref LightProto.WriterContext output, T value) -> void
+LightProto.Parser.ArrayProtoReader<TItem>
+LightProto.Parser.ArrayProtoReader<TItem>.ArrayProtoReader(LightProto.IProtoReader<TItem>! itemReader, uint tag, int itemFixedSize) -> void
+LightProto.Parser.ArrayProtoReader<TItem>.Empty.get -> TItem[]!
+LightProto.Parser.ArrayProtoReader<TItem>.IsMessage.get -> bool
+LightProto.Parser.ArrayProtoReader<TItem>.ItemFixedSize.get -> int
+LightProto.Parser.ArrayProtoReader<TItem>.ItemReader.get -> LightProto.IProtoReader<TItem>!
+LightProto.Parser.ArrayProtoReader<TItem>.ItemWireType.get -> LightProto.WireFormat.WireType
+LightProto.Parser.ArrayProtoReader<TItem>.ParseFrom(ref LightProto.ReaderContext ctx) -> TItem[]!
+LightProto.Parser.ArrayProtoReader<TItem>.WireType.get -> LightProto.WireFormat.WireType
+LightProto.Parser.ArrayProtoWriter<T>
+LightProto.Parser.ArrayProtoWriter<T>.ArrayProtoWriter(LightProto.IProtoWriter<T>! itemWriter, uint tag, int itemFixedSize) -> void
+LightProto.Parser.BigIntegerProtoParser
+LightProto.Parser.BigIntegerProtoParser.BigIntegerProtoParser() -> void
+LightProto.Parser.BitArrayProtoParser
+LightProto.Parser.BitArrayProtoParser.BitArrayProtoParser() -> void
+LightProto.Parser.BlockingCollectionProtoReader<T>
+LightProto.Parser.BlockingCollectionProtoReader<T>.BlockingCollectionProtoReader(LightProto.IProtoReader<T>! itemReader, uint tag, int itemFixedSize) -> void
+LightProto.Parser.BlockingCollectionProtoWriter<T>
+LightProto.Parser.BlockingCollectionProtoWriter<T>.BlockingCollectionProtoWriter(LightProto.IProtoWriter<T>! itemWriter, uint tag, int itemFixedSize) -> void
+LightProto.Parser.BooleanProtoParser
+LightProto.Parser.BooleanProtoParser.BooleanProtoParser() -> void
+LightProto.Parser.ByteArrayProtoParser
+LightProto.Parser.ByteArrayProtoParser.ByteArrayProtoParser() -> void
+LightProto.Parser.ByteListProtoParser
+LightProto.Parser.ByteListProtoParser.ByteListProtoParser() -> void
+LightProto.Parser.CollectionProtoReader<T>
+LightProto.Parser.CollectionProtoReader<T>.CollectionProtoReader(LightProto.IProtoReader<T>! itemReader, uint tag, int itemFixedSize) -> void
+LightProto.Parser.CollectionProtoWriter<T>
+LightProto.Parser.CollectionProtoWriter<T>.CollectionProtoWriter(LightProto.IProtoWriter<T>! itemWriter, uint tag, int itemFixedSize) -> void
+LightProto.Parser.ComplexProtoParser
+LightProto.Parser.ComplexProtoParser.ComplexProtoParser() -> void
+LightProto.Parser.ConcurrentBagProtoReader<T>
+LightProto.Parser.ConcurrentBagProtoReader<T>.ConcurrentBagProtoReader(LightProto.IProtoReader<T>! itemReader, uint tag, int itemFixedSize) -> void
+LightProto.Parser.ConcurrentBagProtoWriter<T>
+LightProto.Parser.ConcurrentBagProtoWriter<T>.ConcurrentBagProtoWriter(LightProto.IProtoWriter<T>! itemWriter, uint tag, int itemFixedSize) -> void
+LightProto.Parser.ConcurrentDictionaryProtoReader<TKey, TValue>
+LightProto.Parser.ConcurrentDictionaryProtoReader<TKey, TValue>.ConcurrentDictionaryProtoReader(LightProto.IProtoReader<TKey>! keyReader, LightProto.IProtoReader<TValue>! valueReader, uint tag) -> void
+LightProto.Parser.ConcurrentDictionaryProtoWriter<TKey, TValue>
+LightProto.Parser.ConcurrentDictionaryProtoWriter<TKey, TValue>.ConcurrentDictionaryProtoWriter(LightProto.IProtoWriter<TKey>! keyWriter, LightProto.IProtoWriter<TValue>! valueWriter, uint tag) -> void
+LightProto.Parser.ConcurrentQueueProtoReader<T>
+LightProto.Parser.ConcurrentQueueProtoReader<T>.ConcurrentQueueProtoReader(LightProto.IProtoReader<T>! itemReader, uint tag, int itemFixedSize) -> void
+LightProto.Parser.ConcurrentQueueProtoWriter<T>
+LightProto.Parser.ConcurrentQueueProtoWriter<T>.ConcurrentQueueProtoWriter(LightProto.IProtoWriter<T>! itemWriter, uint tag, int itemFixedSize) -> void
+LightProto.Parser.ConcurrentStackProtoReader<T>
+LightProto.Parser.ConcurrentStackProtoReader<T>.ConcurrentStackProtoReader(LightProto.IProtoReader<T>! itemReader, uint tag, int itemFixedSize) -> void
+LightProto.Parser.ConcurrentStackProtoWriter<T>
+LightProto.Parser.ConcurrentStackProtoWriter<T>.ConcurrentStackProtoWriter(LightProto.IProtoWriter<T>! itemWriter, uint tag, int itemFixedSize) -> void
+LightProto.Parser.CultureInfoProtoParser
+LightProto.Parser.CultureInfoProtoParser.CultureInfoProtoParser() -> void
+LightProto.Parser.DateTime240ProtoParser
+LightProto.Parser.DateTime240ProtoParser.DateTime240ProtoParser() -> void
+LightProto.Parser.DateTimeOffsetProtoParser
+LightProto.Parser.DateTimeOffsetProtoParser.DateTimeOffsetProtoParser() -> void
+LightProto.Parser.DateTimeProtoParser
+LightProto.Parser.DateTimeProtoParser.DateTimeProtoParser() -> void
+LightProto.Parser.Decimal300ProtoParser
+LightProto.Parser.Decimal300ProtoParser.Decimal300ProtoParser() -> void
+LightProto.Parser.DecimalProtoParser
+LightProto.Parser.DecimalProtoParser.DecimalProtoParser() -> void
+LightProto.Parser.DictionaryProtoReader<TKey, TValue>
+LightProto.Parser.DictionaryProtoReader<TKey, TValue>.DictionaryProtoReader(LightProto.IProtoReader<TKey>! keyReader, LightProto.IProtoReader<TValue>! valueReader, uint tag) -> void
+LightProto.Parser.DictionaryProtoWriter<TKey, TValue>
+LightProto.Parser.DictionaryProtoWriter<TKey, TValue>.DictionaryProtoWriter(LightProto.IProtoWriter<TKey>! keyWriter, LightProto.IProtoWriter<TValue>! valueWriter, uint tag) -> void
+LightProto.Parser.DoubleProtoParser
+LightProto.Parser.DoubleProtoParser.DoubleProtoParser() -> void
+LightProto.Parser.EnumProtoParser<T>
+LightProto.Parser.EnumProtoParser<T>.EnumProtoParser() -> void
+LightProto.Parser.Fixed32ProtoParser
+LightProto.Parser.Fixed32ProtoParser.Fixed32ProtoParser() -> void
+LightProto.Parser.Fixed64ProtoParser
+LightProto.Parser.Fixed64ProtoParser.Fixed64ProtoParser() -> void
+LightProto.Parser.Guid300ProtoParser
+LightProto.Parser.Guid300ProtoParser.Guid300ProtoParser() -> void
+LightProto.Parser.GuidProtoParser
+LightProto.Parser.GuidProtoParser.GuidProtoParser() -> void
+LightProto.Parser.HashSetProtoReader<T>
+LightProto.Parser.HashSetProtoReader<T>.HashSetProtoReader(LightProto.IProtoReader<T>! itemReader, uint tag, int itemFixedSize) -> void
+LightProto.Parser.HashSetProtoWriter<T>
+LightProto.Parser.HashSetProtoWriter<T>.HashSetProtoWriter(LightProto.IProtoWriter<T>! itemWriter, uint tag, int itemFixedSize) -> void
+LightProto.Parser.ICollectionItemReader<TItem>
+LightProto.Parser.ICollectionItemReader<TItem>.ItemReader.get -> LightProto.IProtoReader<TItem>!
+LightProto.Parser.ICollectionProtoWriter<T>
+LightProto.Parser.ICollectionProtoWriter<T>.ICollectionProtoWriter(LightProto.IProtoWriter<T>! itemWriter, uint tag, int itemFixedSize) -> void
+LightProto.Parser.ICollectionReader
+LightProto.Parser.ICollectionReader.ItemWireType.get -> LightProto.WireFormat.WireType
+LightProto.Parser.ICollectionReader<TCollection, TItem>
+LightProto.Parser.ICollectionReader<TCollection>
+LightProto.Parser.ICollectionReader<TCollection>.Empty.get -> TCollection
+LightProto.Parser.ICollectionWriter
+LightProto.Parser.IEnumerableKeyValuePairProtoReader<TDictionary, TKey, TValue>
+LightProto.Parser.IEnumerableKeyValuePairProtoReader<TDictionary, TKey, TValue>.IEnumerableKeyValuePairProtoReader(LightProto.IProtoReader<TKey>! keyReader, LightProto.IProtoReader<TValue>! valueReader, System.Func<int, TDictionary>! factory, System.Func<TDictionary, System.Collections.Generic.KeyValuePair<TKey, TValue>, TDictionary>! addItem) -> void
+LightProto.Parser.IEnumerableKeyValuePairProtoWriter<TDictionary, TKey, TValue>
+LightProto.Parser.IEnumerableKeyValuePairProtoWriter<TDictionary, TKey, TValue>.IEnumerableKeyValuePairProtoWriter(LightProto.IProtoWriter<TKey>! keyWriter, LightProto.IProtoWriter<TValue>! valueWriter, uint tag, System.Func<TDictionary, int>! getCount) -> void
+LightProto.Parser.IEnumerableProtoReader<TCollection, TItem>
+LightProto.Parser.IEnumerableProtoReader<TCollection, TItem>.AddItem.get -> System.Func<TCollection, TItem, TCollection>!
+LightProto.Parser.IEnumerableProtoReader<TCollection, TItem>.CreateWithCapacity.get -> System.Func<int, TCollection>!
+LightProto.Parser.IEnumerableProtoReader<TCollection, TItem>.Empty.get -> TCollection
+LightProto.Parser.IEnumerableProtoReader<TCollection, TItem>.IEnumerableProtoReader(LightProto.IProtoReader<TItem>! itemReader, System.Func<int, TCollection>! createWithCapacity, System.Func<TCollection, TItem, TCollection>! addItem, int itemFixedSize, System.Func<TCollection, TCollection>? completeAction = null) -> void
+LightProto.Parser.IEnumerableProtoReader<TCollection, TItem>.IsMessage.get -> bool
+LightProto.Parser.IEnumerableProtoReader<TCollection, TItem>.ItemFixedSize.get -> int
+LightProto.Parser.IEnumerableProtoReader<TCollection, TItem>.ItemReader.get -> LightProto.IProtoReader<TItem>!
+LightProto.Parser.IEnumerableProtoReader<TCollection, TItem>.ItemWireType.get -> LightProto.WireFormat.WireType
+LightProto.Parser.IEnumerableProtoReader<TCollection, TItem>.ParseFrom(ref LightProto.ReaderContext ctx) -> TCollection
+LightProto.Parser.IEnumerableProtoReader<TCollection, TItem>.WireType.get -> LightProto.WireFormat.WireType
+LightProto.Parser.IEnumerableProtoWriter<TCollection, TItem>
+LightProto.Parser.IEnumerableProtoWriter<TCollection, TItem>.CalculateSize(TCollection value) -> int
+LightProto.Parser.IEnumerableProtoWriter<TCollection, TItem>.GetCount.get -> System.Func<TCollection, int>!
+LightProto.Parser.IEnumerableProtoWriter<TCollection, TItem>.IEnumerableProtoWriter(LightProto.IProtoWriter<TItem>! itemWriter, uint tag, System.Func<TCollection, int>! getCount, int itemFixedSize) -> void
+LightProto.Parser.IEnumerableProtoWriter<TCollection, TItem>.IsMessage.get -> bool
+LightProto.Parser.IEnumerableProtoWriter<TCollection, TItem>.IsPacked.get -> bool
+LightProto.Parser.IEnumerableProtoWriter<TCollection, TItem>.ItemFixedSize.get -> int
+LightProto.Parser.IEnumerableProtoWriter<TCollection, TItem>.ItemWriter.get -> LightProto.IProtoWriter<TItem>!
+LightProto.Parser.IEnumerableProtoWriter<TCollection, TItem>.Tag.get -> uint
+LightProto.Parser.IEnumerableProtoWriter<TCollection, TItem>.Tag.set -> void
+LightProto.Parser.IEnumerableProtoWriter<TCollection, TItem>.WireType.get -> LightProto.WireFormat.WireType
+LightProto.Parser.IEnumerableProtoWriter<TCollection, TItem>.WriteTo(ref LightProto.WriterContext output, TCollection collection) -> void
+LightProto.Parser.ImmutableArrayProtoReader<TItem>
+LightProto.Parser.ImmutableArrayProtoReader<TItem>.Empty.get -> System.Collections.Immutable.ImmutableArray<TItem>
+LightProto.Parser.ImmutableArrayProtoReader<TItem>.ImmutableArrayProtoReader(LightProto.IProtoReader<TItem>! itemReader, int itemFixedSize) -> void
+LightProto.Parser.ImmutableArrayProtoReader<TItem>.ImmutableArrayProtoReader(LightProto.IProtoReader<TItem>! itemReader, uint tag, int itemFixedSize) -> void
+LightProto.Parser.ImmutableArrayProtoReader<TItem>.IsMessage.get -> bool
+LightProto.Parser.ImmutableArrayProtoReader<TItem>.ItemFixedSize.get -> int
+LightProto.Parser.ImmutableArrayProtoReader<TItem>.ItemReader.get -> LightProto.IProtoReader<TItem>!
+LightProto.Parser.ImmutableArrayProtoReader<TItem>.ItemWireType.get -> LightProto.WireFormat.WireType
+LightProto.Parser.ImmutableArrayProtoReader<TItem>.ParseFrom(ref LightProto.ReaderContext input) -> System.Collections.Immutable.ImmutableArray<TItem>
+LightProto.Parser.ImmutableArrayProtoReader<TItem>.WireType.get -> LightProto.WireFormat.WireType
+LightProto.Parser.ImmutableArrayProtoWriter<T>
+LightProto.Parser.ImmutableArrayProtoWriter<T>.ImmutableArrayProtoWriter(LightProto.IProtoWriter<T>! itemWriter, uint tag, int itemFixedSize) -> void
+LightProto.Parser.ImmutableDictionaryProtoReader<TKey, TValue>
+LightProto.Parser.ImmutableDictionaryProtoReader<TKey, TValue>.Empty.get -> System.Collections.Immutable.ImmutableDictionary<TKey, TValue>!
+LightProto.Parser.ImmutableDictionaryProtoReader<TKey, TValue>.ImmutableDictionaryProtoReader(LightProto.IProtoReader<TKey>! keyReader, LightProto.IProtoReader<TValue>! valueReader, uint tag) -> void
+LightProto.Parser.ImmutableDictionaryProtoReader<TKey, TValue>.IsMessage.get -> bool
+LightProto.Parser.ImmutableDictionaryProtoReader<TKey, TValue>.ItemReader.get -> LightProto.IProtoReader<System.Collections.Generic.KeyValuePair<TKey, TValue>>!
+LightProto.Parser.ImmutableDictionaryProtoReader<TKey, TValue>.ItemWireType.get -> LightProto.WireFormat.WireType
+LightProto.Parser.ImmutableDictionaryProtoReader<TKey, TValue>.WireType.get -> LightProto.WireFormat.WireType
+LightProto.Parser.ImmutableDictionaryProtoWriter<TKey, TValue>
+LightProto.Parser.ImmutableDictionaryProtoWriter<TKey, TValue>.ImmutableDictionaryProtoWriter(LightProto.IProtoWriter<TKey>! keyWriter, LightProto.IProtoWriter<TValue>! valueWriter, uint tag) -> void
+LightProto.Parser.ImmutableHashSetProtoReader<TItem>
+LightProto.Parser.ImmutableHashSetProtoReader<TItem>.Empty.get -> System.Collections.Immutable.ImmutableHashSet<TItem>!
+LightProto.Parser.ImmutableHashSetProtoReader<TItem>.ImmutableHashSetProtoReader(LightProto.IProtoReader<TItem>! itemReader, int itemFixedSize) -> void
+LightProto.Parser.ImmutableHashSetProtoReader<TItem>.ImmutableHashSetProtoReader(LightProto.IProtoReader<TItem>! itemReader, uint tag, int itemFixedSize) -> void
+LightProto.Parser.ImmutableHashSetProtoReader<TItem>.IsMessage.get -> bool
+LightProto.Parser.ImmutableHashSetProtoReader<TItem>.ItemFixedSize.get -> int
+LightProto.Parser.ImmutableHashSetProtoReader<TItem>.ItemReader.get -> LightProto.IProtoReader<TItem>!
+LightProto.Parser.ImmutableHashSetProtoReader<TItem>.ItemWireType.get -> LightProto.WireFormat.WireType
+LightProto.Parser.ImmutableHashSetProtoReader<TItem>.ParseFrom(ref LightProto.ReaderContext input) -> System.Collections.Immutable.ImmutableHashSet<TItem>!
+LightProto.Parser.ImmutableHashSetProtoReader<TItem>.WireType.get -> LightProto.WireFormat.WireType
+LightProto.Parser.ImmutableHashSetProtoWriter<T>
+LightProto.Parser.ImmutableHashSetProtoWriter<T>.ImmutableHashSetProtoWriter(LightProto.IProtoWriter<T>! itemWriter, uint tag, int itemFixedSize) -> void
+LightProto.Parser.ImmutableListProtoReader<TItem>
+LightProto.Parser.ImmutableListProtoReader<TItem>.Empty.get -> System.Collections.Immutable.ImmutableList<TItem>!
+LightProto.Parser.ImmutableListProtoReader<TItem>.ImmutableListProtoReader(LightProto.IProtoReader<TItem>! itemReader, int itemFixedSize) -> void
+LightProto.Parser.ImmutableListProtoReader<TItem>.ImmutableListProtoReader(LightProto.IProtoReader<TItem>! itemReader, uint tag, int itemFixedSize) -> void
+LightProto.Parser.ImmutableListProtoReader<TItem>.IsMessage.get -> bool
+LightProto.Parser.ImmutableListProtoReader<TItem>.ItemFixedSize.get -> int
+LightProto.Parser.ImmutableListProtoReader<TItem>.ItemReader.get -> LightProto.IProtoReader<TItem>!
+LightProto.Parser.ImmutableListProtoReader<TItem>.ItemWireType.get -> LightProto.WireFormat.WireType
+LightProto.Parser.ImmutableListProtoReader<TItem>.ParseFrom(ref LightProto.ReaderContext input) -> System.Collections.Immutable.ImmutableList<TItem>!
+LightProto.Parser.ImmutableListProtoReader<TItem>.WireType.get -> LightProto.WireFormat.WireType
+LightProto.Parser.ImmutableListProtoWriter<T>
+LightProto.Parser.ImmutableListProtoWriter<T>.ImmutableListProtoWriter(LightProto.IProtoWriter<T>! itemWriter, uint tag, int itemFixedSize) -> void
+LightProto.Parser.Int32ProtoParser
+LightProto.Parser.Int32ProtoParser.Int32ProtoParser() -> void
+LightProto.Parser.Int64ProtoParser
+LightProto.Parser.Int64ProtoParser.Int64ProtoParser() -> void
+LightProto.Parser.InternedStringProtoParser
+LightProto.Parser.InternedStringProtoParser.InternedStringProtoParser() -> void
+LightProto.Parser.IReadOnlyDictionaryProtoWriter<TKey, TValue>
+LightProto.Parser.IReadOnlyDictionaryProtoWriter<TKey, TValue>.IReadOnlyDictionaryProtoWriter(LightProto.IProtoWriter<TKey>! keyWriter, LightProto.IProtoWriter<TValue>! valueWriter, uint tag) -> void
+LightProto.Parser.KeyValuePairProtoReader<TKey, TValue>
+LightProto.Parser.KeyValuePairProtoReader<TKey, TValue>.IsMessage.get -> bool
+LightProto.Parser.KeyValuePairProtoReader<TKey, TValue>.KeyValuePairProtoReader(LightProto.IProtoReader<TKey>! keyReader, LightProto.IProtoReader<TValue>! valueReader) -> void
+LightProto.Parser.KeyValuePairProtoReader<TKey, TValue>.ParseFrom(ref LightProto.ReaderContext ctx) -> System.Collections.Generic.KeyValuePair<TKey, TValue>
+LightProto.Parser.KeyValuePairProtoReader<TKey, TValue>.WireType.get -> LightProto.WireFormat.WireType
+LightProto.Parser.KeyValuePairProtoWriter<TKey, TValue>
+LightProto.Parser.KeyValuePairProtoWriter<TKey, TValue>.CalculateSize(System.Collections.Generic.KeyValuePair<TKey, TValue> value) -> int
+LightProto.Parser.KeyValuePairProtoWriter<TKey, TValue>.IsMessage.get -> bool
+LightProto.Parser.KeyValuePairProtoWriter<TKey, TValue>.KeyValuePairProtoWriter(LightProto.IProtoWriter<TKey>! keyWriter, LightProto.IProtoWriter<TValue>! valueWriter) -> void
+LightProto.Parser.KeyValuePairProtoWriter<TKey, TValue>.WireType.get -> LightProto.WireFormat.WireType
+LightProto.Parser.KeyValuePairProtoWriter<TKey, TValue>.WriteTo(ref LightProto.WriterContext output, System.Collections.Generic.KeyValuePair<TKey, TValue> pair) -> void
+LightProto.Parser.LazyProtoReader<T>
+LightProto.Parser.LazyProtoReader<T>.IsMessage.get -> bool
+LightProto.Parser.LazyProtoReader<T>.LazyProtoReader(LightProto.IProtoReader<T>! valueReader) -> void
+LightProto.Parser.LazyProtoReader<T>.ParseFrom(ref LightProto.ReaderContext input) -> System.Lazy<T>!
+LightProto.Parser.LazyProtoReader<T>.ValueReader.get -> LightProto.IProtoReader<T>!
+LightProto.Parser.LazyProtoReader<T>.WireType.get -> LightProto.WireFormat.WireType
+LightProto.Parser.LazyProtoWriter<T>
+LightProto.Parser.LazyProtoWriter<T>.CalculateSize(System.Lazy<T>! value) -> int
+LightProto.Parser.LazyProtoWriter<T>.IsMessage.get -> bool
+LightProto.Parser.LazyProtoWriter<T>.LazyProtoWriter(LightProto.IProtoWriter<T>! valueWriter) -> void
+LightProto.Parser.LazyProtoWriter<T>.ValueWriter.get -> LightProto.IProtoWriter<T>!
+LightProto.Parser.LazyProtoWriter<T>.WireType.get -> LightProto.WireFormat.WireType
+LightProto.Parser.LazyProtoWriter<T>.WriteTo(ref LightProto.WriterContext output, System.Lazy<T>! value) -> void
+LightProto.Parser.LinkedListProtoReader<T>
+LightProto.Parser.LinkedListProtoReader<T>.LinkedListProtoReader(LightProto.IProtoReader<T>! itemReader, uint tag, int itemFixedSize) -> void
+LightProto.Parser.LinkedListProtoWriter<T>
+LightProto.Parser.LinkedListProtoWriter<T>.LinkedListProtoWriter(LightProto.IProtoWriter<T>! itemWriter, uint tag, int itemFixedSize) -> void
+LightProto.Parser.ListProtoReader<T>
+LightProto.Parser.ListProtoReader<T>.ListProtoReader(LightProto.IProtoReader<T>! itemReader, int itemFixedSize) -> void
+LightProto.Parser.ListProtoReader<T>.ListProtoReader(LightProto.IProtoReader<T>! itemReader, uint tag, int itemFixedSize) -> void
+LightProto.Parser.ListProtoWriter<T>
+LightProto.Parser.ListProtoWriter<T>.ListProtoWriter(LightProto.IProtoWriter<T>! itemWriter, uint tag, int itemFixedSize) -> void
+LightProto.Parser.NullableProtoReader<T>
+LightProto.Parser.NullableProtoReader<T>.IsMessage.get -> bool
+LightProto.Parser.NullableProtoReader<T>.NullableProtoReader(LightProto.IProtoReader<T>! valueReader) -> void
+LightProto.Parser.NullableProtoReader<T>.ParseFrom(ref LightProto.ReaderContext input) -> T?
+LightProto.Parser.NullableProtoReader<T>.ValueReader.get -> LightProto.IProtoReader<T>!
+LightProto.Parser.NullableProtoReader<T>.WireType.get -> LightProto.WireFormat.WireType
+LightProto.Parser.NullableProtoWriter<T>
+LightProto.Parser.NullableProtoWriter<T>.CalculateSize(T? value) -> int
+LightProto.Parser.NullableProtoWriter<T>.IsMessage.get -> bool
+LightProto.Parser.NullableProtoWriter<T>.NullableProtoWriter(LightProto.IProtoWriter<T>! valueWriter) -> void
+LightProto.Parser.NullableProtoWriter<T>.ValueWriter.get -> LightProto.IProtoWriter<T>!
+LightProto.Parser.NullableProtoWriter<T>.WireType.get -> LightProto.WireFormat.WireType
+LightProto.Parser.NullableProtoWriter<T>.WriteTo(ref LightProto.WriterContext output, T? value) -> void
+LightProto.Parser.ObservableCollectionProtoReader<T>
+LightProto.Parser.ObservableCollectionProtoReader<T>.ObservableCollectionProtoReader(LightProto.IProtoReader<T>! itemReader, int itemFixedSize) -> void
+LightProto.Parser.ObservableCollectionProtoReader<T>.ObservableCollectionProtoReader(LightProto.IProtoReader<T>! itemReader, uint tag, int itemFixedSize) -> void
+LightProto.Parser.ObservableCollectionProtoWriter<T>
+LightProto.Parser.ObservableCollectionProtoWriter<T>.ObservableCollectionProtoWriter(LightProto.IProtoWriter<T>! itemWriter, uint tag, int itemFixedSize) -> void
+LightProto.Parser.QueueProtoReader<T>
+LightProto.Parser.QueueProtoReader<T>.QueueProtoReader(LightProto.IProtoReader<T>! itemReader, uint tag, int itemFixedSize) -> void
+LightProto.Parser.QueueProtoWriter<T>
+LightProto.Parser.QueueProtoWriter<T>.QueueProtoWriter(LightProto.IProtoWriter<T>! itemWriter, uint tag, int itemFixedSize) -> void
+LightProto.Parser.ReadOnlyCollectionProtoReader<TItem>
+LightProto.Parser.ReadOnlyCollectionProtoReader<TItem>.Empty.get -> System.Collections.ObjectModel.ReadOnlyCollection<TItem>!
+LightProto.Parser.ReadOnlyCollectionProtoReader<TItem>.IsMessage.get -> bool
+LightProto.Parser.ReadOnlyCollectionProtoReader<TItem>.ItemFixedSize.get -> int
+LightProto.Parser.ReadOnlyCollectionProtoReader<TItem>.ItemReader.get -> LightProto.IProtoReader<TItem>!
+LightProto.Parser.ReadOnlyCollectionProtoReader<TItem>.ItemWireType.get -> LightProto.WireFormat.WireType
+LightProto.Parser.ReadOnlyCollectionProtoReader<TItem>.ParseFrom(ref LightProto.ReaderContext input) -> System.Collections.ObjectModel.ReadOnlyCollection<TItem>!
+LightProto.Parser.ReadOnlyCollectionProtoReader<TItem>.ReadOnlyCollectionProtoReader(LightProto.IProtoReader<TItem>! itemReader, int itemFixedSize) -> void
+LightProto.Parser.ReadOnlyCollectionProtoReader<TItem>.ReadOnlyCollectionProtoReader(LightProto.IProtoReader<TItem>! itemReader, uint tag, int itemFixedSize) -> void
+LightProto.Parser.ReadOnlyCollectionProtoReader<TItem>.WireType.get -> LightProto.WireFormat.WireType
+LightProto.Parser.ReadOnlyCollectionProtoWriter<T>
+LightProto.Parser.ReadOnlyCollectionProtoWriter<T>.ReadOnlyCollectionProtoWriter(LightProto.IProtoWriter<T>! itemWriter, uint tag, int itemFixedSize) -> void
+LightProto.Parser.ReadOnlyDictionaryProtoReader<TKey, TValue>
+LightProto.Parser.ReadOnlyDictionaryProtoReader<TKey, TValue>.Empty.get -> System.Collections.ObjectModel.ReadOnlyDictionary<TKey, TValue>!
+LightProto.Parser.ReadOnlyDictionaryProtoReader<TKey, TValue>.IsMessage.get -> bool
+LightProto.Parser.ReadOnlyDictionaryProtoReader<TKey, TValue>.ItemReader.get -> LightProto.IProtoReader<System.Collections.Generic.KeyValuePair<TKey, TValue>>!
+LightProto.Parser.ReadOnlyDictionaryProtoReader<TKey, TValue>.ItemWireType.get -> LightProto.WireFormat.WireType
+LightProto.Parser.ReadOnlyDictionaryProtoReader<TKey, TValue>.ReadOnlyDictionaryProtoReader(LightProto.IProtoReader<TKey>! keyReader, LightProto.IProtoReader<TValue>! valueReader, uint tag) -> void
+LightProto.Parser.ReadOnlyDictionaryProtoReader<TKey, TValue>.WireType.get -> LightProto.WireFormat.WireType
+LightProto.Parser.ReadOnlyDictionaryProtoWriter<TKey, TValue>
+LightProto.Parser.ReadOnlyDictionaryProtoWriter<TKey, TValue>.ReadOnlyDictionaryProtoWriter(LightProto.IProtoWriter<TKey>! keyWriter, LightProto.IProtoWriter<TValue>! valueWriter, uint tag) -> void
+LightProto.Parser.ReadOnlyObservableCollectionProtoReader<TItem>
+LightProto.Parser.ReadOnlyObservableCollectionProtoReader<TItem>.Empty.get -> System.Collections.ObjectModel.ReadOnlyObservableCollection<TItem>!
+LightProto.Parser.ReadOnlyObservableCollectionProtoReader<TItem>.IsMessage.get -> bool
+LightProto.Parser.ReadOnlyObservableCollectionProtoReader<TItem>.ItemFixedSize.get -> int
+LightProto.Parser.ReadOnlyObservableCollectionProtoReader<TItem>.ItemReader.get -> LightProto.IProtoReader<TItem>!
+LightProto.Parser.ReadOnlyObservableCollectionProtoReader<TItem>.ItemWireType.get -> LightProto.WireFormat.WireType
+LightProto.Parser.ReadOnlyObservableCollectionProtoReader<TItem>.ParseFrom(ref LightProto.ReaderContext input) -> System.Collections.ObjectModel.ReadOnlyObservableCollection<TItem>!
+LightProto.Parser.ReadOnlyObservableCollectionProtoReader<TItem>.ReadOnlyObservableCollectionProtoReader(LightProto.IProtoReader<TItem>! itemReader, int itemFixedSize) -> void
+LightProto.Parser.ReadOnlyObservableCollectionProtoReader<TItem>.ReadOnlyObservableCollectionProtoReader(LightProto.IProtoReader<TItem>! itemReader, uint tag, int itemFixedSize) -> void
+LightProto.Parser.ReadOnlyObservableCollectionProtoReader<TItem>.WireType.get -> LightProto.WireFormat.WireType
+LightProto.Parser.ReadOnlyObservableCollectionProtoWriter<T>
+LightProto.Parser.ReadOnlyObservableCollectionProtoWriter<T>.ReadOnlyObservableCollectionProtoWriter(LightProto.IProtoWriter<T>! itemWriter, uint tag, int itemFixedSize) -> void
+LightProto.Parser.SFixed32ProtoParser
+LightProto.Parser.SFixed32ProtoParser.SFixed32ProtoParser() -> void
+LightProto.Parser.SFixed64ProtoParser
+LightProto.Parser.SFixed64ProtoParser.SFixed64ProtoParser() -> void
+LightProto.Parser.SingleProtoParser
+LightProto.Parser.SingleProtoParser.SingleProtoParser() -> void
+LightProto.Parser.SInt32ProtoParser
+LightProto.Parser.SInt32ProtoParser.SInt32ProtoParser() -> void
+LightProto.Parser.SInt64ProtoParser
+LightProto.Parser.SInt64ProtoParser.SInt64ProtoParser() -> void
+LightProto.Parser.SortedDictionaryProtoReader<TKey, TValue>
+LightProto.Parser.SortedDictionaryProtoReader<TKey, TValue>.SortedDictionaryProtoReader(LightProto.IProtoReader<TKey>! keyReader, LightProto.IProtoReader<TValue>! valueReader, uint tag) -> void
+LightProto.Parser.SortedDictionaryProtoWriter<TKey, TValue>
+LightProto.Parser.SortedDictionaryProtoWriter<TKey, TValue>.SortedDictionaryProtoWriter(LightProto.IProtoWriter<TKey>! keyWriter, LightProto.IProtoWriter<TValue>! valueWriter, uint tag) -> void
+LightProto.Parser.SortedListProtoReader<TKey, TValue>
+LightProto.Parser.SortedListProtoReader<TKey, TValue>.SortedListProtoReader(LightProto.IProtoReader<TKey>! keyReader, LightProto.IProtoReader<TValue>! valueReader, uint tag) -> void
+LightProto.Parser.SortedListProtoWriter<TKey, TValue>
+LightProto.Parser.SortedListProtoWriter<TKey, TValue>.SortedListProtoWriter(LightProto.IProtoWriter<TKey>! keyWriter, LightProto.IProtoWriter<TValue>! valueWriter, uint tag) -> void
+LightProto.Parser.SortedSetProtoReader<T>
+LightProto.Parser.SortedSetProtoReader<T>.SortedSetProtoReader(LightProto.IProtoReader<T>! itemReader, uint tag, int itemFixedSize) -> void
+LightProto.Parser.SortedSetProtoWriter<T>
+LightProto.Parser.SortedSetProtoWriter<T>.SortedSetProtoWriter(LightProto.IProtoWriter<T>! itemWriter, uint tag, int itemFixedSize) -> void
+LightProto.Parser.StackProtoReader<T>
+LightProto.Parser.StackProtoReader<T>.StackProtoReader(LightProto.IProtoReader<T>! itemReader, uint tag, int itemFixedSize) -> void
+LightProto.Parser.StackProtoWriter<T>
+LightProto.Parser.StackProtoWriter<T>.StackProtoWriter(LightProto.IProtoWriter<T>! itemWriter, uint tag, int itemFixedSize) -> void
+LightProto.Parser.StringBuilderProtoParser
+LightProto.Parser.StringBuilderProtoParser.StringBuilderProtoParser() -> void
+LightProto.Parser.StringProtoParser
+LightProto.Parser.StringProtoParser.StringProtoParser() -> void
+LightProto.Parser.TimeSpan240ProtoParser
+LightProto.Parser.TimeSpan240ProtoParser.TimeSpan240ProtoParser() -> void
+LightProto.Parser.TimeSpanProtoParser
+LightProto.Parser.TimeSpanProtoParser.TimeSpanProtoParser() -> void
+LightProto.Parser.TimeZoneInfoProtoParser
+LightProto.Parser.TimeZoneInfoProtoParser.TimeZoneInfoProtoParser() -> void
+LightProto.Parser.UInt32ProtoParser
+LightProto.Parser.UInt32ProtoParser.UInt32ProtoParser() -> void
+LightProto.Parser.UInt64ProtoParser
+LightProto.Parser.UInt64ProtoParser.UInt64ProtoParser() -> void
+LightProto.Parser.UriProtoParser
+LightProto.Parser.UriProtoParser.UriProtoParser() -> void
+LightProto.Parser.VersionProtoParser
+LightProto.Parser.VersionProtoParser.VersionProtoParser() -> void
+LightProto.PrefixStyle
+LightProto.PrefixStyle.Base128 = 1 -> LightProto.PrefixStyle
+LightProto.PrefixStyle.Fixed32 = 2 -> LightProto.PrefixStyle
+LightProto.PrefixStyle.Fixed32BigEndian = 3 -> LightProto.PrefixStyle
+LightProto.PrefixStyle.None = 0 -> LightProto.PrefixStyle
+LightProto.ProtoContractAttribute
+LightProto.ProtoContractAttribute.ImplicitFields.get -> LightProto.ImplicitFields
+LightProto.ProtoContractAttribute.ImplicitFields.set -> void
+LightProto.ProtoContractAttribute.ImplicitFirstTag.get -> uint
+LightProto.ProtoContractAttribute.ImplicitFirstTag.set -> void
+LightProto.ProtoContractAttribute.Name.get -> string!
+LightProto.ProtoContractAttribute.Name.set -> void
+LightProto.ProtoContractAttribute.ProtoContractAttribute() -> void
+LightProto.ProtoContractAttribute.SkipConstructor.get -> bool
+LightProto.ProtoContractAttribute.SkipConstructor.set -> void
+LightProto.ProtoIgnoreAttribute
+LightProto.ProtoIgnoreAttribute.ProtoIgnoreAttribute() -> void
+LightProto.ProtoIncludeAttribute
+LightProto.ProtoIncludeAttribute.KnownType.get -> System.Type!
+LightProto.ProtoIncludeAttribute.ProtoIncludeAttribute(uint tag, System.Type! knownType) -> void
+LightProto.ProtoIncludeAttribute.Tag.get -> uint
+LightProto.ProtoMapAttribute
+LightProto.ProtoMapAttribute.KeyFormat.get -> LightProto.DataFormat
+LightProto.ProtoMapAttribute.KeyFormat.set -> void
+LightProto.ProtoMapAttribute.ProtoMapAttribute() -> void
+LightProto.ProtoMapAttribute.ValueFormat.get -> LightProto.DataFormat
+LightProto.ProtoMapAttribute.ValueFormat.set -> void
+LightProto.ProtoMemberAttribute
+LightProto.ProtoMemberAttribute.DataFormat.get -> LightProto.DataFormat
+LightProto.ProtoMemberAttribute.DataFormat.set -> void
+LightProto.ProtoMemberAttribute.IsPacked.get -> bool
+LightProto.ProtoMemberAttribute.IsPacked.set -> void
+LightProto.ProtoMemberAttribute.IsRequired.get -> bool
+LightProto.ProtoMemberAttribute.IsRequired.set -> void
+LightProto.ProtoMemberAttribute.Name.get -> string!
+LightProto.ProtoMemberAttribute.Name.set -> void
+LightProto.ProtoMemberAttribute.ParserType.get -> System.Type?
+LightProto.ProtoMemberAttribute.ParserType.set -> void
+LightProto.ProtoMemberAttribute.ProtoMemberAttribute(uint tag) -> void
+LightProto.ProtoMemberAttribute.Tag.get -> uint
+LightProto.ProtoParserTypeAttribute
+LightProto.ProtoParserTypeAttribute.ParserType.get -> System.Type!
+LightProto.ProtoParserTypeAttribute.ProtoParserTypeAttribute(System.Type! parserType) -> void
+LightProto.ProtoParserTypeMapAttribute
+LightProto.ProtoParserTypeMapAttribute.MessageType.get -> System.Type!
+LightProto.ProtoParserTypeMapAttribute.ParserType.get -> System.Type!
+LightProto.ProtoParserTypeMapAttribute.ProtoParserTypeMapAttribute(System.Type! messageType, System.Type! parserType) -> void
+LightProto.ProtoSurrogateForAttribute
+LightProto.ProtoSurrogateForAttribute.ProtoSurrogateForAttribute(System.Type! type) -> void
+LightProto.ProtoSurrogateForAttribute.Type.get -> System.Type!
+LightProto.ProtoSurrogateForAttribute<T>
+LightProto.ProtoSurrogateForAttribute<T>.ProtoSurrogateForAttribute() -> void
+LightProto.ReaderContext
+LightProto.ReaderContext.ReadBool() -> bool
+LightProto.ReaderContext.ReadDouble() -> double
+LightProto.ReaderContext.ReadEnum() -> int
+LightProto.ReaderContext.ReaderContext() -> void
+LightProto.ReaderContext.ReadFixed32() -> uint
+LightProto.ReaderContext.ReadFixed64() -> ulong
+LightProto.ReaderContext.ReadFloat() -> float
+LightProto.ReaderContext.ReadInt32() -> int
+LightProto.ReaderContext.ReadInt64() -> long
+LightProto.ReaderContext.ReadLength() -> int
+LightProto.ReaderContext.ReadSFixed32() -> int
+LightProto.ReaderContext.ReadSFixed64() -> long
+LightProto.ReaderContext.ReadSInt32() -> int
+LightProto.ReaderContext.ReadSInt64() -> long
+LightProto.ReaderContext.ReadString() -> string!
+LightProto.ReaderContext.ReadTag() -> uint
+LightProto.ReaderContext.ReadUInt32() -> uint
+LightProto.ReaderContext.ReadUInt64() -> ulong
+LightProto.ReaderContext.SkipLastField() -> void
+LightProto.Serializer
+LightProto.StringInternAttribute
+LightProto.StringInternAttribute.StringInternAttribute() -> void
+LightProto.WireFormat
+LightProto.WireFormat.WireType
+LightProto.WireFormat.WireType.EndGroup = 4 -> LightProto.WireFormat.WireType
+LightProto.WireFormat.WireType.Fixed32 = 5 -> LightProto.WireFormat.WireType
+LightProto.WireFormat.WireType.Fixed64 = 1 -> LightProto.WireFormat.WireType
+LightProto.WireFormat.WireType.LengthDelimited = 2 -> LightProto.WireFormat.WireType
+LightProto.WireFormat.WireType.StartGroup = 3 -> LightProto.WireFormat.WireType
+LightProto.WireFormat.WireType.Varint = 0 -> LightProto.WireFormat.WireType
+LightProto.WriterContext
+LightProto.WriterContext.WriteBool(bool value) -> void
+LightProto.WriterContext.WriteDouble(double value) -> void
+LightProto.WriterContext.WriteEnum(int value) -> void
+LightProto.WriterContext.WriteFixed32(uint value) -> void
+LightProto.WriterContext.WriteFixed64(ulong value) -> void
+LightProto.WriterContext.WriteFixedBigEndian32(uint value) -> void
+LightProto.WriterContext.WriteFloat(float value) -> void
+LightProto.WriterContext.WriteInt32(int value) -> void
+LightProto.WriterContext.WriteInt64(long value) -> void
+LightProto.WriterContext.WriteLength(int length) -> void
+LightProto.WriterContext.WriterContext() -> void
+LightProto.WriterContext.WriteSFixed32(int value) -> void
+LightProto.WriterContext.WriteSFixed64(long value) -> void
+LightProto.WriterContext.WriteSInt32(int value) -> void
+LightProto.WriterContext.WriteSInt64(long value) -> void
+LightProto.WriterContext.WriteString(string! value) -> void
+LightProto.WriterContext.WriteTag(uint tag) -> void
+LightProto.WriterContext.WriteUInt32(uint value) -> void
+LightProto.WriterContext.WriteUInt64(ulong value) -> void
+static LightProto.CodedOutputStream.ComputeBoolSize(bool value) -> int
+static LightProto.CodedOutputStream.ComputeDoubleSize(double value) -> int
+static LightProto.CodedOutputStream.ComputeEnumSize(int value) -> int
+static LightProto.CodedOutputStream.ComputeFixed32Size(uint value) -> int
+static LightProto.CodedOutputStream.ComputeFixed64Size(ulong value) -> int
+static LightProto.CodedOutputStream.ComputeFloatSize(float value) -> int
+static LightProto.CodedOutputStream.ComputeInt32Size(int value) -> int
+static LightProto.CodedOutputStream.ComputeInt64Size(long value) -> int
+static LightProto.CodedOutputStream.ComputeLengthSize(int length) -> int
+static LightProto.CodedOutputStream.ComputeRawVarint32Size(uint value) -> int
+static LightProto.CodedOutputStream.ComputeRawVarint64Size(ulong value) -> int
+static LightProto.CodedOutputStream.ComputeSFixed32Size(int value) -> int
+static LightProto.CodedOutputStream.ComputeSFixed64Size(long value) -> int
+static LightProto.CodedOutputStream.ComputeSInt32Size(int value) -> int
+static LightProto.CodedOutputStream.ComputeSInt64Size(long value) -> int
+static LightProto.CodedOutputStream.ComputeStringSize(string! value) -> int
+static LightProto.CodedOutputStream.ComputeUInt32Size(uint value) -> int
+static LightProto.CodedOutputStream.ComputeUInt64Size(ulong value) -> int
+static LightProto.Extensible.GetExtensionObject(ref LightProto.IExtension! extensionObject, bool createIfMissing) -> LightProto.IExtension!
+static LightProto.Parser.BigIntegerProtoParser.ProtoReader.get -> LightProto.IProtoReader<System.Numerics.BigInteger>!
+static LightProto.Parser.BigIntegerProtoParser.ProtoWriter.get -> LightProto.IProtoWriter<System.Numerics.BigInteger>!
+static LightProto.Parser.BitArrayProtoParser.implicit operator LightProto.Parser.BitArrayProtoParser(System.Collections.BitArray! value) -> LightProto.Parser.BitArrayProtoParser
+static LightProto.Parser.BitArrayProtoParser.implicit operator System.Collections.BitArray!(LightProto.Parser.BitArrayProtoParser proxy) -> System.Collections.BitArray!
+static LightProto.Parser.BooleanProtoParser.ProtoReader.get -> LightProto.IProtoReader<bool>!
+static LightProto.Parser.BooleanProtoParser.ProtoWriter.get -> LightProto.IProtoWriter<bool>!
+static LightProto.Parser.ByteArrayProtoParser.ProtoReader.get -> LightProto.IProtoReader<byte[]!>!
+static LightProto.Parser.ByteArrayProtoParser.ProtoWriter.get -> LightProto.IProtoWriter<byte[]!>!
+static LightProto.Parser.ByteListProtoParser.ProtoReader.get -> LightProto.IProtoReader<System.Collections.Generic.List<byte>!>!
+static LightProto.Parser.ByteListProtoParser.ProtoWriter.get -> LightProto.IProtoWriter<System.Collections.Generic.List<byte>!>!
+static LightProto.Parser.ComplexProtoParser.implicit operator LightProto.Parser.ComplexProtoParser(System.Numerics.Complex dt) -> LightProto.Parser.ComplexProtoParser
+static LightProto.Parser.ComplexProtoParser.implicit operator System.Numerics.Complex(LightProto.Parser.ComplexProtoParser proxy) -> System.Numerics.Complex
+static LightProto.Parser.CultureInfoProtoParser.ProtoReader.get -> LightProto.IProtoReader<System.Globalization.CultureInfo!>!
+static LightProto.Parser.CultureInfoProtoParser.ProtoWriter.get -> LightProto.IProtoWriter<System.Globalization.CultureInfo!>!
+static LightProto.Parser.DateTime240ProtoParser.implicit operator LightProto.Parser.DateTime240ProtoParser(System.DateTime dateTime) -> LightProto.Parser.DateTime240ProtoParser
+static LightProto.Parser.DateTime240ProtoParser.implicit operator System.DateTime(LightProto.Parser.DateTime240ProtoParser protoParser) -> System.DateTime
+static LightProto.Parser.DateTimeOffsetProtoParser.implicit operator LightProto.Parser.DateTimeOffsetProtoParser(System.DateTimeOffset dt) -> LightProto.Parser.DateTimeOffsetProtoParser
+static LightProto.Parser.DateTimeOffsetProtoParser.implicit operator System.DateTimeOffset(LightProto.Parser.DateTimeOffsetProtoParser proxy) -> System.DateTimeOffset
+static LightProto.Parser.DateTimeProtoParser.implicit operator LightProto.Parser.DateTimeProtoParser(System.DateTime dt) -> LightProto.Parser.DateTimeProtoParser
+static LightProto.Parser.DateTimeProtoParser.implicit operator System.DateTime(LightProto.Parser.DateTimeProtoParser proxy) -> System.DateTime
+static LightProto.Parser.Decimal300ProtoParser.ProtoReader.get -> LightProto.IProtoReader<decimal>!
+static LightProto.Parser.Decimal300ProtoParser.ProtoWriter.get -> LightProto.IProtoWriter<decimal>!
+static LightProto.Parser.DecimalProtoParser.implicit operator decimal(LightProto.Parser.DecimalProtoParser protoParser) -> decimal
+static LightProto.Parser.DecimalProtoParser.implicit operator LightProto.Parser.DecimalProtoParser(decimal value) -> LightProto.Parser.DecimalProtoParser
+static LightProto.Parser.DoubleProtoParser.ProtoReader.get -> LightProto.IProtoReader<double>!
+static LightProto.Parser.DoubleProtoParser.ProtoWriter.get -> LightProto.IProtoWriter<double>!
+static LightProto.Parser.EnumProtoParser<T>.ProtoReader.get -> LightProto.IProtoReader<T>!
+static LightProto.Parser.EnumProtoParser<T>.ProtoWriter.get -> LightProto.IProtoWriter<T>!
+static LightProto.Parser.Fixed32ProtoParser.ProtoReader.get -> LightProto.IProtoReader<uint>!
+static LightProto.Parser.Fixed32ProtoParser.ProtoWriter.get -> LightProto.IProtoWriter<uint>!
+static LightProto.Parser.Fixed64ProtoParser.ProtoReader.get -> LightProto.IProtoReader<ulong>!
+static LightProto.Parser.Fixed64ProtoParser.ProtoWriter.get -> LightProto.IProtoWriter<ulong>!
+static LightProto.Parser.Guid300ProtoParser.ProtoReader.get -> LightProto.IProtoReader<System.Guid>!
+static LightProto.Parser.Guid300ProtoParser.ProtoWriter.get -> LightProto.IProtoWriter<System.Guid>!
+static LightProto.Parser.GuidProtoParser.implicit operator LightProto.Parser.GuidProtoParser(System.Guid value) -> LightProto.Parser.GuidProtoParser
+static LightProto.Parser.GuidProtoParser.implicit operator System.Guid(LightProto.Parser.GuidProtoParser protoParser) -> System.Guid
+static LightProto.Parser.Int32ProtoParser.ProtoReader.get -> LightProto.IProtoReader<int>!
+static LightProto.Parser.Int32ProtoParser.ProtoWriter.get -> LightProto.IProtoWriter<int>!
+static LightProto.Parser.Int64ProtoParser.ProtoReader.get -> LightProto.IProtoReader<long>!
+static LightProto.Parser.Int64ProtoParser.ProtoWriter.get -> LightProto.IProtoWriter<long>!
+static LightProto.Parser.InternedStringProtoParser.ProtoReader.get -> LightProto.IProtoReader<string!>!
+static LightProto.Parser.InternedStringProtoParser.ProtoWriter.get -> LightProto.IProtoWriter<string!>!
+static LightProto.Parser.SFixed32ProtoParser.ProtoReader.get -> LightProto.IProtoReader<int>!
+static LightProto.Parser.SFixed32ProtoParser.ProtoWriter.get -> LightProto.IProtoWriter<int>!
+static LightProto.Parser.SFixed64ProtoParser.ProtoReader.get -> LightProto.IProtoReader<long>!
+static LightProto.Parser.SFixed64ProtoParser.ProtoWriter.get -> LightProto.IProtoWriter<long>!
+static LightProto.Parser.SingleProtoParser.ProtoReader.get -> LightProto.IProtoReader<float>!
+static LightProto.Parser.SingleProtoParser.ProtoWriter.get -> LightProto.IProtoWriter<float>!
+static LightProto.Parser.SInt32ProtoParser.ProtoReader.get -> LightProto.IProtoReader<int>!
+static LightProto.Parser.SInt32ProtoParser.ProtoWriter.get -> LightProto.IProtoWriter<int>!
+static LightProto.Parser.SInt64ProtoParser.ProtoReader.get -> LightProto.IProtoReader<long>!
+static LightProto.Parser.SInt64ProtoParser.ProtoWriter.get -> LightProto.IProtoWriter<long>!
+static LightProto.Parser.StringBuilderProtoParser.ProtoReader.get -> LightProto.IProtoReader<System.Text.StringBuilder!>!
+static LightProto.Parser.StringBuilderProtoParser.ProtoWriter.get -> LightProto.IProtoWriter<System.Text.StringBuilder!>!
+static LightProto.Parser.StringProtoParser.ProtoReader.get -> LightProto.IProtoReader<string!>!
+static LightProto.Parser.StringProtoParser.ProtoWriter.get -> LightProto.IProtoWriter<string!>!
+static LightProto.Parser.TimeSpan240ProtoParser.implicit operator LightProto.Parser.TimeSpan240ProtoParser!(System.TimeSpan timeSpan) -> LightProto.Parser.TimeSpan240ProtoParser!
+static LightProto.Parser.TimeSpan240ProtoParser.implicit operator System.TimeSpan(LightProto.Parser.TimeSpan240ProtoParser! protoParser) -> System.TimeSpan
+static LightProto.Parser.TimeSpanProtoParser.implicit operator LightProto.Parser.TimeSpanProtoParser(System.TimeSpan dt) -> LightProto.Parser.TimeSpanProtoParser
+static LightProto.Parser.TimeSpanProtoParser.implicit operator System.TimeSpan(LightProto.Parser.TimeSpanProtoParser protoParser) -> System.TimeSpan
+static LightProto.Parser.TimeZoneInfoProtoParser.ProtoReader.get -> LightProto.IProtoReader<System.TimeZoneInfo!>!
+static LightProto.Parser.TimeZoneInfoProtoParser.ProtoWriter.get -> LightProto.IProtoWriter<System.TimeZoneInfo!>!
+static LightProto.Parser.UInt32ProtoParser.ProtoReader.get -> LightProto.IProtoReader<uint>!
+static LightProto.Parser.UInt32ProtoParser.ProtoWriter.get -> LightProto.IProtoWriter<uint>!
+static LightProto.Parser.UInt64ProtoParser.ProtoReader.get -> LightProto.IProtoReader<ulong>!
+static LightProto.Parser.UInt64ProtoParser.ProtoWriter.get -> LightProto.IProtoWriter<ulong>!
+static LightProto.Parser.UriProtoParser.ProtoReader.get -> LightProto.IProtoReader<System.Uri?>!
+static LightProto.Parser.UriProtoParser.ProtoWriter.get -> LightProto.IProtoWriter<System.Uri?>!
+static LightProto.Parser.VersionProtoParser.implicit operator LightProto.Parser.VersionProtoParser(System.Version! value) -> LightProto.Parser.VersionProtoParser
+static LightProto.Parser.VersionProtoParser.implicit operator System.Version!(LightProto.Parser.VersionProtoParser protoParser) -> System.Version!
+static LightProto.Serializer.CalculateMessageSize<T>(this LightProto.IProtoWriter<T>! writer, T value) -> int
+static LightProto.Serializer.DeepClone<T>(T message, LightProto.IProtoReader<T>! reader, LightProto.IProtoWriter<T>! writer) -> T
+static LightProto.Serializer.DeepCloneDynamically<T>(T message) -> T
+static LightProto.Serializer.Deserialize<T>(System.Buffers.ReadOnlySequence<byte> source, LightProto.IProtoReader<T>! reader) -> T
+static LightProto.Serializer.Deserialize<T>(System.IO.Stream! source, LightProto.IProtoReader<T>! reader) -> T
+static LightProto.Serializer.Deserialize<T>(System.ReadOnlySpan<byte> source, LightProto.IProtoReader<T>! reader) -> T
+static LightProto.Serializer.DeserializeDynamically<T>(System.Buffers.ReadOnlySequence<byte> source) -> T
+static LightProto.Serializer.DeserializeDynamically<T>(System.IO.Stream! source) -> T
+static LightProto.Serializer.DeserializeDynamically<T>(System.ReadOnlySpan<byte> source) -> T
+static LightProto.Serializer.DeserializeItems<T>(System.IO.Stream! source, LightProto.PrefixStyle style, int fieldNumber, LightProto.IProtoReader<T>! reader) -> System.Collections.Generic.IEnumerable<T>!
+static LightProto.Serializer.DeserializeItems<T>(System.IO.Stream! source, LightProto.PrefixStyle style, LightProto.IProtoReader<T>! reader) -> System.Collections.Generic.IEnumerable<T>!
+static LightProto.Serializer.DeserializeWithLengthPrefix<T>(System.IO.Stream! source, LightProto.PrefixStyle style, int fieldNumber, LightProto.IProtoReader<T>! reader) -> T
+static LightProto.Serializer.DeserializeWithLengthPrefix<T>(System.IO.Stream! source, LightProto.PrefixStyle style, LightProto.IProtoReader<T>! reader) -> T
+static LightProto.Serializer.GetArrayReader<TItem>(this LightProto.IProtoReader<TItem>! reader) -> LightProto.Parser.ArrayProtoReader<TItem>!
+static LightProto.Serializer.GetBlockingCollectionReader<TItem>(this LightProto.IProtoReader<TItem>! reader) -> LightProto.IProtoReader<System.Collections.Concurrent.BlockingCollection<TItem>!>!
+static LightProto.Serializer.GetCollectionReader<TItem>(this LightProto.IProtoReader<TItem>! reader) -> LightProto.IProtoReader<System.Collections.ObjectModel.Collection<TItem>!>!
+static LightProto.Serializer.GetCollectionWriter<T>(this LightProto.IProtoWriter<T>! writer) -> LightProto.IProtoWriter<System.Collections.Generic.ICollection<T>!>!
+static LightProto.Serializer.GetConcurrentBagReader<TItem>(this LightProto.IProtoReader<TItem>! reader) -> LightProto.IProtoReader<System.Collections.Concurrent.ConcurrentBag<TItem>!>!
+static LightProto.Serializer.GetConcurrentQueueReader<TItem>(this LightProto.IProtoReader<TItem>! reader) -> LightProto.IProtoReader<System.Collections.Concurrent.ConcurrentQueue<TItem>!>!
+static LightProto.Serializer.GetDictionaryReader<TDictionary, TKey, TValue>(this LightProto.IProtoReader<TKey>! keyReader, LightProto.IProtoReader<TValue>! valueReader) -> LightProto.IProtoReader<TDictionary>!
+static LightProto.Serializer.GetDictionaryWriter<TKey, TValue>(this LightProto.IProtoWriter<TKey>! keyWriter, LightProto.IProtoWriter<TValue>! valueWriter) -> LightProto.IProtoWriter<System.Collections.Generic.IDictionary<TKey, TValue>!>!
+static LightProto.Serializer.GetHashSetReader<TItem>(this LightProto.IProtoReader<TItem>! reader) -> LightProto.IProtoReader<System.Collections.Generic.HashSet<TItem>!>!
+static LightProto.Serializer.GetLinkedListReader<TItem>(this LightProto.IProtoReader<TItem>! reader) -> LightProto.IProtoReader<System.Collections.Generic.LinkedList<TItem>!>!
+static LightProto.Serializer.GetListReader<TItem>(this LightProto.IProtoReader<TItem>! reader) -> LightProto.IProtoReader<System.Collections.Generic.List<TItem>!>!
+static LightProto.Serializer.GetObservableCollectionReader<TItem>(this LightProto.IProtoReader<TItem>! reader) -> LightProto.IProtoReader<System.Collections.ObjectModel.ObservableCollection<TItem>!>!
+static LightProto.Serializer.GetReadOnlyCollectionReader<TItem>(this LightProto.IProtoReader<TItem>! reader) -> LightProto.IProtoReader<System.Collections.ObjectModel.ReadOnlyCollection<TItem>!>!
+static LightProto.Serializer.GetReadOnlyObservableCollectionReader<TItem>(this LightProto.IProtoReader<TItem>! reader) -> LightProto.IProtoReader<System.Collections.ObjectModel.ReadOnlyObservableCollection<TItem>!>!
+static LightProto.Serializer.ParseMessageFrom<T>(this LightProto.IProtoReader<T>! reader, ref LightProto.ReaderContext input) -> T
+static LightProto.Serializer.Serialize<T>(System.Buffers.IBufferWriter<byte>! destination, T instance, LightProto.IProtoWriter<T>! writer) -> void
+static LightProto.Serializer.Serialize<T>(System.IO.Stream! destination, T instance, LightProto.IProtoWriter<T>! writer) -> void
+static LightProto.Serializer.SerializeDynamically<T>(System.Buffers.IBufferWriter<byte>! destination, T instance) -> void
+static LightProto.Serializer.SerializeDynamically<T>(System.IO.Stream! destination, T instance) -> void
+static LightProto.Serializer.SerializeTo<T>(this T instance, System.Buffers.IBufferWriter<byte>! destination, LightProto.IProtoWriter<T>! writer) -> void
+static LightProto.Serializer.SerializeTo<T>(this T instance, System.IO.Stream! destination, LightProto.IProtoWriter<T>! writer) -> void
+static LightProto.Serializer.SerializeWithLengthPrefix<T>(System.IO.Stream! destination, T instance, LightProto.PrefixStyle style, int fieldNumber, LightProto.IProtoWriter<T>! writer) -> void
+static LightProto.Serializer.SerializeWithLengthPrefix<T>(System.IO.Stream! destination, T instance, LightProto.PrefixStyle style, LightProto.IProtoWriter<T>! writer) -> void
+static LightProto.Serializer.ToByteArray<T>(this T message, LightProto.IProtoWriter<T>! writer) -> byte[]!
+static LightProto.Serializer.WriteMessageTo<T>(this LightProto.IProtoWriter<T>! writer, ref LightProto.WriterContext output, T value) -> void
+static LightProto.WireFormat.GetTagFieldNumber(uint tag) -> int
+static LightProto.WireFormat.GetTagWireType(uint tag) -> LightProto.WireFormat.WireType
+static LightProto.WireFormat.MakeTag(int fieldNumber, LightProto.WireFormat.WireType wireType) -> uint

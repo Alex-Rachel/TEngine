@@ -1,0 +1,25 @@
+{
+  "name": "com.fantasy.unity",
+  "version": "2025.2.1422",
+  "displayName": "Fantasy.Unity",
+  "description": "Fantasy is a cross platform distributed server framework.",
+  "category": "Network Framework",
+  "documentationUrl": "https://www.code-fantasy.com/",
+  "changelogUrl": "https://www.code-fantasy.com/",
+  "licensesUrl": "https://www.code-fantasy.com/",
+  "keywords": [
+    "Fantasy",
+    "Framework",
+    "hotfix",
+    "Server",
+    "Network"
+  ],
+  "author": {
+    "name": "Fantasy",
+    "email": "362946@qq.com",
+    "url": "https://www.code-fantasy.com/"
+  },
+  "dependencies": {
+    "com.unity.nuget.newtonsoft-json": "3.2.1"
+  }
+}

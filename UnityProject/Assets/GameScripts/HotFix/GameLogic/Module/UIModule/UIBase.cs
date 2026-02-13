@@ -7,6 +7,8 @@ using UnityEngine;
 using Obfuz;
 #endif
 
+#pragma warning disable CS8632
+
 namespace GameLogic
 {
     /// <summary>
@@ -606,3 +608,5 @@ namespace GameLogic
         #endregion
     }
 }
+
+#pragma warning disable CS0618

@@ -1,0 +1,16 @@
+obj/
+Bin/
+bin/
+Temp/
+Library/
+Logs/
+temp/
+DocFx/
+global.json
+
+.idea
+.vs
+.vscode
+*.DS_Store
+
+Fantasy-main.zip

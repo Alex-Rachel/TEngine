@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://fantasy.net/config"
+           xmlns="http://fantasy.net/config"
+           elementFormDefault="qualified">
+
+  <!-- Root element -->
+  <xs:element name="fantasy">
+    <xs:annotation>
+      <xs:documentation>Fantasy框架配置文件根元素</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="configTable" type="configTableType" minOccurs="0" maxOccurs="1">
+          <xs:annotation>
+            <xs:documentation>配置表路径设置</xs:documentation>
+          </xs:annotation>
+        </xs:element>
+        <xs:element name="idFactory" type="idFactoryType" minOccurs="0" maxOccurs="1">
+          <xs:annotation>
+            <xs:documentation>ID生成器配置</xs:documentation>
+          </xs:annotation>
+        </xs:element>
+        <xs:element name="network" type="networkRuntimeType" minOccurs="0" maxOccurs="1">
+          <xs:annotation>
+            <xs:documentation>网络运行时配置</xs:documentation>
+          </xs:annotation>
+        </xs:element>
+        <xs:element name="session" type="sessionRuntimeType" minOccurs="0" maxOccurs="1">
+          <xs:annotation>
+            <xs:documentation>会话运行时配置</xs:documentation>
+          </xs:annotation>
+        </xs:element>
+        <xs:element name="server" type="serverType" minOccurs="1" maxOccurs="1">
+          <xs:annotation>
+            <xs:documentation>服务器配置</xs:documentation>
+          </xs:annotation>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- ConfigTable type -->
+  <xs:complexType name="configTableType">
+    <xs:attribute name="path" type="xs:string" use="required">
+      <xs:annotation>
+        <xs:documentation>配置表文件路径</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <!-- IdFactory type -->
+  <xs:complexType name="idFactoryType">
+    <xs:attribute name="type" use="optional" default="Default">
+      <xs:annotation>
+        <xs:documentation>ID生成器类型：Default(支持最多65535个Scene) 或 World(ID中包含WorldId，支持最多255个Scene，但解决合区ID重复问题)</xs:documentation>
+      </xs:annotation>
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:enumeration value="None"/>
+          <xs:enumeration value="Default"/>
+          <xs:enumeration value="World"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:complexType>
+
+  <!-- Server type -->
+  <xs:complexType name="serverType">
+    <xs:sequence>
+      <xs:element name="machines" type="machinesType" minOccurs="0" maxOccurs="1">
+        <xs:annotation>
+          <xs:documentation>机器配置列表</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="processes" type="processesType" minOccurs="0" maxOccurs="1">
+        <xs:annotation>
+          <xs:documentation>进程配置列表</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="worlds" type="worldsType" minOccurs="0" maxOccurs="1">
+        <xs:annotation>
+          <xs:documentation>世界配置列表</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="scenes" type="scenesType" minOccurs="0" maxOccurs="1">
+        <xs:annotation>
+          <xs:documentation>场景配置列表</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Machines types -->
+  <xs:complexType name="machinesType">
+    <xs:sequence>
+      <xs:element name="machine" type="machineType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="machineType">
+    <xs:attribute name="id" type="xs:unsignedInt" use="required">
+      <xs:annotation>
+        <xs:documentation>机器ID</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="outerIP" type="xs:string" use="required">
+      <xs:annotation>
+        <xs:documentation>外网IP地址</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="outerBindIP" type="xs:string" use="required">
+      <xs:annotation>
+        <xs:documentation>外网绑定IP地址</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="innerBindIP" type="xs:string" use="required">
+      <xs:annotation>
+        <xs:documentation>内网绑定IP地址</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <!-- Processes types -->
+  <xs:complexType name="processesType">
+    <xs:sequence>
+      <xs:element name="process" type="processType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="processType">
+    <xs:attribute name="id" type="xs:unsignedInt" use="required">
+      <xs:annotation>
+        <xs:documentation>进程ID</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="machineId" type="xs:unsignedInt" use="required">
+      <xs:annotation>
+        <xs:documentation>所属机器ID</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="startupGroup" type="xs:unsignedInt" use="required">
+      <xs:annotation>
+        <xs:documentation>启动分组</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <!-- Worlds types -->
+  <xs:complexType name="worldsType">
+    <xs:sequence>
+      <xs:element name="world" type="worldType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- database的选择 -->
+  <xs:complexType name="databaseType">
+    <xs:attribute name="dbType" use="required">
+      <xs:annotation>
+        <xs:documentation>数据库类型</xs:documentation>
+      </xs:annotation>
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <!-- PostgreSQL -->
+          <xs:enumeration value="PostgreSQL"/>
+          <xs:enumeration value="Postgres"/>
+          <xs:enumeration value="PgSQL"/>
+          <xs:enumeration value="Pg"/>
+          <xs:enumeration value="PG"/>
+          <!-- MongoDB -->
+          <xs:enumeration value="MongoDB"/>
+          <xs:enumeration value="Mongo"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="dbName" type="xs:string" use="required">
+      <xs:annotation>
+        <xs:documentation>数据库名称</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="dbConnection" type="xs:string" use="optional">
+      <xs:annotation>
+        <xs:documentation>数据库连接字符串</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <xs:complexType name="worldType">
+    <!-- 每个world允许包含1或n个database -->
+    <xs:sequence>
+      <xs:annotation>
+        <xs:documentation>世界中配置的数据库</xs:documentation>
+      </xs:annotation>
+      <xs:element name="database" type="databaseType" minOccurs="1" maxOccurs="unbounded"/>
+    </xs:sequence>
+
+    <!-- world需要id和worldName -->
+    <xs:attribute name="id" type="xs:unsignedInt" use="required">
+      <xs:annotation>
+        <xs:documentation>世界ID</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="worldName" type="xs:string" use="required">
+      <xs:annotation>
+        <xs:documentation>世界名称</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <!-- Scenes types -->
+  <xs:complexType name="scenesType">
+    <xs:sequence>
+      <xs:element name="scene" type="sceneType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="sceneType">
+    <xs:attribute name="id" type="xs:unsignedInt" use="required">
+      <xs:annotation>
+        <xs:documentation>场景ID</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="processConfigId" type="xs:unsignedInt" use="required">
+      <xs:annotation>
+        <xs:documentation>进程配置ID</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="worldConfigId" type="xs:unsignedInt" use="required">
+      <xs:annotation>
+        <xs:documentation>世界配置ID</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="sceneRuntimeMode" use="required">
+      <xs:annotation>
+        <xs:documentation>场景运行模式</xs:documentation>
+      </xs:annotation>
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:enumeration value="MainThread"/>
+          <xs:enumeration value="MultiThread"/>
+          <xs:enumeration value="ThreadPool"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="sceneTypeString" type="xs:string" use="required">
+      <xs:annotation>
+        <xs:documentation>场景类型字符串</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="networkProtocol" use="optional">
+      <xs:annotation>
+        <xs:documentation>网络协议类型</xs:documentation>
+      </xs:annotation>
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:enumeration value="TCP"/>
+          <xs:enumeration value="KCP"/>
+          <xs:enumeration value="WebSocket"/>
+          <xs:enumeration value="HTTP"/>
+          <xs:enumeration value=""/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="outerPort" type="xs:unsignedInt" use="optional" default="0">
+      <xs:annotation>
+        <xs:documentation>外网端口</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="innerPort" type="xs:unsignedInt" use="required">
+      <xs:annotation>
+        <xs:documentation>内网端口</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <!-- Network Runtime type -->
+  <xs:complexType name="networkRuntimeType">
+    <xs:attribute name="inner" use="optional" default="TCP">
+      <xs:annotation>
+        <xs:documentation>服务器内部网络协议</xs:documentation>
+      </xs:annotation>
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:enumeration value="TCP"/>
+          <xs:enumeration value="KCP"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="maxMessageSize" type="xs:int" use="optional" default="1048560">
+      <xs:annotation>
+        <xs:documentation>消息体最大长度(字节)，默认1048560字节(约1.02MB)</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <!-- Session Runtime type -->
+  <xs:complexType name="sessionRuntimeType">
+    <xs:attribute name="idleTimeout" type="xs:int" use="optional" default="8000">
+      <xs:annotation>
+        <xs:documentation>Session idle check timeout (in milliseconds)</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="idleInterval" type="xs:int" use="optional" default="5000">
+      <xs:annotation>
+        <xs:documentation>Session idle check interval (in milliseconds)</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType> 
+
+</xs:schema>

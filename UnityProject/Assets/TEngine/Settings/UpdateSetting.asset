@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   projectName: Demo
   HotUpdateAssemblies:
+  - Fantasy.Unity.dll
   - GameProto.dll
   - GameLogic.dll
   AOTMetaAssemblies:
@@ -34,3 +35,4 @@ MonoBehaviour:
   LoadResWayWebGL: 0
   isAutoAssetCopeToBuildAddress: 0
   BuildAddress: ../../Builds/Unity_Data/StreamingAssets
+  ReplaceAssetPathWithAddress: 0

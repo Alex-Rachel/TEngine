@@ -1,0 +1,15 @@
+syntax = "proto3";
+package Sining.Message;
+
+// 协议分为:
+// ProtoBuf:可以在Outer和Inner文件里使用。
+// MemoryPack:可以在Outer和Inner文件里使用。
+
+// 目前工具支持以下几种特殊用法:
+// 在message协议上方添加// Protocol+空格+协议名字
+// 例如: // Protocol ProtoBuf 或 // Protocol MemoryPack
+
+// 分别代表使用Protobuf序列化或使用MemoryPack序列化
+// 通过添加 // using 导出时添加自定义命名空间
+// 例如: // using System.Runtime // using System.Reflection
+

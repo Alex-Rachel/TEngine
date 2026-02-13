@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Reflection;
+using Cysharp.Threading.Tasks;
 using GameLogic;
 #if ENABLE_OBFUZ
 using Obfuz;
@@ -35,8 +36,15 @@ public partial class GameApp
     
     private static void StartGameLogic()
     {
-        // GameEvent.Get<ILoginUI>().ShowLoginUI();
-        GameModule.UI.ShowUIAsync<BattleMainUI>();
+        Init().Forget();
+
+        async UniTaskVoid Init()
+        {
+            // 初始化 Fantasy 网络模块
+            await GameClient.Instance.InitAsync(_hotfixAssembly);
+            // GameEvent.Get<ILoginUI>().ShowLoginUI();
+            GameModule.UI.ShowUIAsync<LoginUI>();
+        }
     }
     
     private static void Release()

@@ -1,5 +1,7 @@
 ﻿using UnityEngine;
 
+#pragma warning disable CS0618
+
 namespace TEngine
 {
     public sealed partial class Debugger
@@ -89,3 +91,5 @@ namespace TEngine
         }
     }
 }
+
+#pragma warning disable CS0618

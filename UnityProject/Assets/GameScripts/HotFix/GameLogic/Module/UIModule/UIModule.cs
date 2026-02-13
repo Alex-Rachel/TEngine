@@ -39,6 +39,35 @@ namespace GameLogic
         /// UI摄像机访问属性
         /// </summary>
         public Camera UICamera => _uiCamera;
+
+        #region UIController
+
+        private List<IUIController> m_uiControllers = new List<IUIController>();
+
+        private void RegisterAllController()
+        {
+            AddUIController<CommonUIController>();
+        }
+
+        private void AddUIController<T>() where T : IUIController, new()
+        {
+            for (int i = 0; i < m_uiControllers.Count; i++)
+            {
+                var type = m_uiControllers[i].GetType();
+                if (type == typeof(T))
+                {
+                    Log.Fatal("repeat controller type: {0}", typeof(T).Name);
+                    return;
+                }
+            }
+
+            var controller = new T();
+            m_uiControllers.Add(controller);
+
+            controller.RegUIMessage();
+        }
+
+        #endregion
         
         /// <summary>
         /// 模块初始化（自动调用）。
@@ -65,6 +94,7 @@ namespace GameLogic
             UnityEngine.Object.DontDestroyOnLoad(_instanceRoot.parent != null ? _instanceRoot.parent : _instanceRoot);
 
             _instanceRoot.gameObject.layer = LayerMask.NameToLayer("UI");
+            RegisterAllController();
 
             if (Debugger.Instance != null)
             {
