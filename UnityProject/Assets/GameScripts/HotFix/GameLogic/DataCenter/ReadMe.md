@@ -85,7 +85,7 @@ public MessageDispatcherComponent MessageDispatcherComponent { get; internal set
 
 ---
 
-### 3. Log.cs - 确认条件宏定义与 DLogger 保持一致
+### 3. Log.cs - 确认条件宏定义与 TEngine.Log 保持一致
 
 **文件位置**: `Fantasy.Unity/Runtime/Core/Log/Log.cs`
 
