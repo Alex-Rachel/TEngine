@@ -131,7 +131,7 @@ public static void Warning(string msg) { ... }
 public static void Error(string msg) { ... }
 ```
 
-> **参考文件**: `DGame/Runtime/Core/DGameLog/DLogger.cs`
+> **参考文件**: `TEngine/Runtime/Core/Log/Log.cs`
 
 ---
 
