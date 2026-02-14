@@ -1,7 +1,0 @@
-{"List":[
-{"Id":1024,"MachineId":1,"InnerPort":11001,"ReleaseMode":false},
-{"Id":2048,"MachineId":1,"InnerPort":11002,"ReleaseMode":false},
-{"Id":3072,"MachineId":1,"InnerPort":11003,"ReleaseMode":false},
-{"Id":4096,"MachineId":1,"InnerPort":11004,"ReleaseMode":false},
-{"Id":5120,"MachineId":1,"InnerPort":11005,"ReleaseMode":false}
-]}

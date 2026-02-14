@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &1
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 27a37e930ca3454fb57bc895f50d2106, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  autoCopyAssembly: 0
+  hotUpdatePath: D:/UnityProjects/TEngine/UnityProject/Assets/AssetRaw/DLL
+  hotUpdateAssemblyDefinitions:
+  - {fileID: 5897886265953266890, guid: 0b7224b83ba514121aa026f3857f820a, type: 3}
+  linkAssemblyDefinitions: []
+  includeAssembly:
+  - Assembly-CSharp
+  - Fantasy.Unity

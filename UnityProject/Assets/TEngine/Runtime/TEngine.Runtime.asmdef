@@ -1,0 +1,29 @@
+{
+    "name": "TEngine.Runtime",
+    "rootNamespace": "TEngine",
+    "references": [
+        "GUID:e34a5702dd353724aa315fb8011f08c3",
+        "GUID:3fe1a3e70da50184f9897101cad7e4f2",
+        "GUID:f51ebe6a0ceec4240a699833d6309b23",
+        "GUID:6055be8ebefd69e48b49212b09b47b2f",
+        "GUID:5efd170ecd8084500bed5692932fe14e",
+        "GUID:839b8c2cb327b8a43afe86fd33563571",
+        "GUID:d7fc4d49301802c4d997d63a24928ab3",
+        "GUID:75469ad4d38634e559750d17036d5f7c"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.inputsystem",
+            "expression": "",
+            "define": "ENABLE_INPUT_SYSTEM"
+        }
+    ],
+    "noEngineReferences": false
+}

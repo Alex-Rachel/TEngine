@@ -1,0 +1,22 @@
+<linker>
+    <!-- Fantasy 框架核心类型 -->
+    <assembly fullname="Fantasy.Unity" preserve="all"/>
+
+    <!-- Source Generator 生成的类型 -->
+    <assembly fullname="Assembly-CSharp">
+        <type fullname="Fantasy.Generated.AssemblyInitializer" preserve="all"/>
+        <type fullname="Fantasy.Generated.EntitySystemRegistrar" preserve="all"/>
+        <type fullname="Fantasy.Generated.EntityTypeCollectionRegistrar" preserve="all"/>
+        <type fullname="Fantasy.Generated.EventSystemRegistrar" preserve="all"/>
+        <type fullname="Fantasy.Generated.MessageHandlerResolverRegistrar" preserve="all"/>
+        <type fullname="Fantasy.Generated.NetworkProtocolRegistrar" preserve="all"/>
+    </assembly>
+
+    <!-- 热更新程序集 - 保留 Fantasy.Generated 命名空间下的所有生成代码 -->
+    <assembly fullname="GameLogic">
+        <namespace fullname="Fantasy.Generated" preserve="all"/>
+    </assembly>
+
+    <!-- 保留所有网络协议类型 -->
+    <assembly fullname="NetworkProtocol" preserve="all"/>
+</linker>

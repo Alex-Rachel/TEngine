@@ -1,0 +1,46 @@
+<module name="">
+    <bean name="vector2" valueType="1" sep=",">
+        <var name="x" type="float" />
+        <var name="y" type="float" />
+        <mapper target="client" codeTarget="cs-bin,cs-simple-json,cs-newtonsoft-json">
+            <option name="type" value="UnityEngine.Vector2" />
+            <option name="constructor" value="ExternalTypeUtil.NewVector2" />
+        </mapper>
+    </bean>
+    <bean name="vector3" valueType="1" sep=",">
+        <var name="x" type="float" />
+        <var name="y" type="float" />
+        <var name="z" type="float" />
+        <mapper target="client" codeTarget="cs-bin,cs-simple-json,cs-newtonsoft-json">
+            <option name="type" value="UnityEngine.Vector3" />
+            <option name="constructor" value="ExternalTypeUtil.NewVector3" />
+        </mapper>
+    </bean>
+    <bean name="vector4" valueType="1" sep=",">
+        <var name="x" type="float" />
+        <var name="y" type="float" />
+        <var name="z" type="float" />
+        <var name="w" type="float" />
+        <mapper target="client" codeTarget="cs-bin,cs-simple-json,cs-newtonsoft-json">
+            <option name="type" value="UnityEngine.Vector4" />
+            <option name="constructor" value="ExternalTypeUtil.NewVector4" />
+        </mapper>
+    </bean>
+    <bean name="vector2int" valueType="1" sep=",">
+        <var name="x" type="int" />
+        <var name="y" type="int" />
+        <mapper target="client" codeTarget="cs-bin,cs-simple-json,cs-newtonsoft-json">
+            <option name="type" value="UnityEngine.Vector2Int" />
+            <option name="constructor" value="ExternalTypeUtil.NewVector2Int" />
+        </mapper>
+    </bean>
+    <bean name="vector3int" valueType="1" sep=",">
+        <var name="x" type="int" />
+        <var name="y" type="int" />
+        <var name="z" type="int" />
+        <mapper target="client" codeTarget="cs-bin,cs-simple-json,cs-newtonsoft-json">
+            <option name="type" value="UnityEngine.Vector3" />
+            <option name="constructor" value="ExternalTypeUtil.NewVector3" />
+        </mapper>
+    </bean>
+</module>

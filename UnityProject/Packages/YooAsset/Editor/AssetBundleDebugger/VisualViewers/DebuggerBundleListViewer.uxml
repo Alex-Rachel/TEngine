@@ -1,0 +1,9 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:VisualElement name="TopGroup" style="flex-grow: 1; border-left-width: 1px; border-right-width: 1px; border-top-width: 1px; border-bottom-width: 1px; border-left-color: rgb(0, 0, 0); border-right-color: rgb(0, 0, 0); border-top-color: rgb(0, 0, 0); border-bottom-color: rgb(0, 0, 0); margin-left: 0; margin-right: 0; margin-top: 2px; margin-bottom: 1px; display: flex;">
+        <YooAsset.Editor.TableViewer name="BundleTableView" />
+    </ui:VisualElement>
+    <ui:VisualElement name="BottomGroup" style="height: 400px; border-left-width: 1px; border-right-width: 1px; border-top-width: 1px; border-bottom-width: 1px; border-left-color: rgb(0, 0, 0); border-right-color: rgb(0, 0, 0); border-top-color: rgb(0, 0, 0); border-bottom-color: rgb(0, 0, 0); margin-left: 0; margin-right: 0; margin-top: 1px; margin-bottom: 1px; display: flex;">
+        <YooAsset.Editor.TableViewer name="UsingTableView" />
+        <YooAsset.Editor.TableViewer name="ReferenceTableView" />
+    </ui:VisualElement>
+</ui:UXML>

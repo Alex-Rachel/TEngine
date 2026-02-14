@@ -1,0 +1,28 @@
+{
+    "author": {
+        "name": "Alex",
+        "email": "574809918@qq.com",
+        "url": "https://github.com/Alex-Rachel"
+    },
+    "name": "com.alex.tengine",
+    "displayName": "TEngine",
+    "version": "6.0.0",
+    "license": "MIT",
+    "unity": "2021.3.30f1",
+    "description": "TEngine for Unity.\nSupports the following features:\n-Efficient Background Rendering\n-Horizontal Planes\n-Depth Data\n-Anchors\n-Hit Testing\n-Occlusion",
+    "keywords": [
+        "TEngine",
+        "Unity",
+        "Hotfix",
+        "hotupdate",
+        "core"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Alex-Rachel/TEngine.git"
+    },
+    "documentationUrl": "https://github.com/Alex-Rachel/TEngine/blob/main/README.md",
+    "changelogUrl": "https://github.com/Alex-Rachel/TEngine/blob/main/CHANGELOG.md",
+    "licensesUrl": "https://github.com/Alex-Rachel/TEngine/blob/main/LICENSE",
+    "dependencies": {}
+}

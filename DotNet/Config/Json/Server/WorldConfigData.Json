@@ -1,3 +1,0 @@
-{"List":[
-{"Id":1,"WorldName":"测试服","DbConnection":"mongodb://root:root@127.0.0.1","DbName":"tengine_main","DbType":"MongoDB","IsGameWorld":true}
-]}

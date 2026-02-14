@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d605bb4ba4d4712863b19bb98dc4617, type: 3}
+  m_Name: AudioSetting
+  m_EditorClassIdentifier: 
+  audioGroupConfigs:
+  - name: Music
+    mute: 0
+    volume: 0.5
+    agentHelperCount: 1
+    AudioType: 2
+    audioRolloffMode: 1
+    minDistance: 15
+    maxDistance: 50
+  - name: Sound
+    mute: 0
+    volume: 0.5
+    agentHelperCount: 4
+    AudioType: 0
+    audioRolloffMode: 0
+    minDistance: 1
+    maxDistance: 500
+  - name: UISound
+    mute: 0
+    volume: 0.5
+    agentHelperCount: 4
+    AudioType: 1
+    audioRolloffMode: 0
+    minDistance: 1
+    maxDistance: 500
+  - name: Voice
+    mute: 0
+    volume: 0.5
+    agentHelperCount: 1
+    AudioType: 3
+    audioRolloffMode: 0
+    minDistance: 1
+    maxDistance: 500

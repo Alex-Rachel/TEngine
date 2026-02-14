@@ -1,0 +1,48 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root Version="v2.0.0">
+  <Common ShowPackageView="True" ShowEditorAlias="False" UniqueBundleName="True" />
+  <Package PackageName="DefaultPackage" PackageDesc="" AutoAddressable="True" LocationToLower="False" IncludeAssetGUID="False" IgnoreDefaultType="True">
+    <Group GroupActiveRule="EnableGroup" GroupName="Actor" GroupDesc="" AssetTags="">
+      <Collector CollectPath="Assets/AssetRaw/Actor" CollectGUID="9c67ce0c9edfd4e4aa1006ee39846d66" CollectType="MainAssetCollector" AddressRule="AddressByFileName" PackRule="PackDirectory" FilterRule="CollectAll" UserData="" AssetTags="" />
+    </Group>
+    <Group GroupActiveRule="EnableGroup" GroupName="Audios" GroupDesc="" AssetTags="">
+      <Collector CollectPath="Assets/AssetRaw/Audios" CollectGUID="8ef7a411b66e70f4cb65c2233c9a0868" CollectType="MainAssetCollector" AddressRule="AddressByFileName" PackRule="PackDirectory" FilterRule="CollectAll" UserData="" AssetTags="" />
+    </Group>
+    <Group GroupActiveRule="EnableGroup" GroupName="Configs" GroupDesc="" AssetTags="">
+      <Collector CollectPath="Assets/AssetRaw/Configs" CollectGUID="dd2928019aef34248af368b99bc53bea" CollectType="MainAssetCollector" AddressRule="AddressByFileName" PackRule="PackDirectory" FilterRule="CollectAll" UserData="" AssetTags="" />
+    </Group>
+    <Group GroupActiveRule="EnableGroup" GroupName="DLL" GroupDesc="" AssetTags="">
+      <Collector CollectPath="Assets/AssetRaw/DLL" CollectGUID="3aad79ec1ea08c24c891bd3c669d4125" CollectType="MainAssetCollector" AddressRule="AddressByFileName" PackRule="PackDirectory" FilterRule="CollectAll" UserData="" AssetTags="" />
+    </Group>
+    <Group GroupActiveRule="EnableGroup" GroupName="Effects" GroupDesc="" AssetTags="">
+      <Collector CollectPath="Assets/AssetRaw/Effects" CollectGUID="0fe175e1e1bd49a4ca71e66b6a9b7237" CollectType="MainAssetCollector" AddressRule="AddressByFileName" PackRule="PackDirectory" FilterRule="CollectAll" UserData="" AssetTags="" />
+    </Group>
+    <Group GroupActiveRule="EnableGroup" GroupName="Fonts" GroupDesc="" AssetTags="">
+      <Collector CollectPath="Assets/AssetRaw/Fonts" CollectGUID="2473375c9ee163a4b861278b38091455" CollectType="MainAssetCollector" AddressRule="AddressByFileName" PackRule="PackDirectory" FilterRule="CollectAll" UserData="" AssetTags="" />
+    </Group>
+    <Group GroupActiveRule="EnableGroup" GroupName="Materials" GroupDesc="" AssetTags="">
+      <Collector CollectPath="Assets/AssetRaw/Materials" CollectGUID="228b1547e7065d546ad0bf215fd6a276" CollectType="MainAssetCollector" AddressRule="AddressByFileName" PackRule="PackDirectory" FilterRule="CollectAll" UserData="" AssetTags="" />
+    </Group>
+    <Group GroupActiveRule="EnableGroup" GroupName="Scenes" GroupDesc="" AssetTags="">
+      <Collector CollectPath="Assets/AssetRaw/Scenes" CollectGUID="cace6ee6539f661419b5e5f8ae1c0146" CollectType="MainAssetCollector" AddressRule="AddressByFileName" PackRule="PackDirectory" FilterRule="CollectAll" UserData="" AssetTags="" />
+    </Group>
+    <Group GroupActiveRule="EnableGroup" GroupName="UI" GroupDesc="" AssetTags="">
+      <Collector CollectPath="Assets/AssetRaw/UI" CollectGUID="27e87d83814156648b58f380b834e046" CollectType="MainAssetCollector" AddressRule="AddressByFileName" PackRule="PackDirectory" FilterRule="CollectAll" UserData="" AssetTags="" />
+    </Group>
+    <Group GroupActiveRule="EnableGroup" GroupName="UIRaw" GroupDesc="" AssetTags="">
+      <Collector CollectPath="Assets/AssetRaw/UIRaw/Atlas" CollectGUID="6d11fa91acc253840a648b58f23db139" CollectType="MainAssetCollector" AddressRule="AddressByFileName" PackRule="PackDirectory" FilterRule="CollectAll" UserData="" AssetTags="" />
+      <Collector CollectPath="Assets/AssetRaw/UIRaw/Raw" CollectGUID="6bc134b912ac6bb4399ea1bec4c11636" CollectType="MainAssetCollector" AddressRule="AddressByFileName" PackRule="PackDirectory" FilterRule="CollectAll" UserData="" AssetTags="" />
+    </Group>
+  </Package>
+  <Package PackageName="OtherPackage" PackageDesc="" AutoAddressable="True" LocationToLower="False" IncludeAssetGUID="False" IgnoreDefaultType="True">
+    <Group GroupActiveRule="EnableGroup" GroupName="ModelGroup" GroupDesc="" AssetTags="models" />
+    <Group GroupActiveRule="EnableGroup" GroupName="SceneGroup" GroupDesc="" AssetTags="scenes" />
+  </Package>
+  <Package PackageName="Dlc1Package" PackageDesc="" AutoAddressable="True" LocationToLower="False" IncludeAssetGUID="False" IgnoreDefaultType="True">
+    <Group GroupActiveRule="EnableGroup" GroupName="ModelGroup" GroupDesc="" AssetTags="models" />
+    <Group GroupActiveRule="EnableGroup" GroupName="SceneGroup" GroupDesc="" AssetTags="scenes" />
+  </Package>
+  <Package PackageName="Dlc2Package" PackageDesc="" AutoAddressable="True" LocationToLower="False" IncludeAssetGUID="False" IgnoreDefaultType="True">
+    <Group GroupActiveRule="EnableGroup" GroupName="ModelGroup" GroupDesc="" AssetTags="models" />
+  </Package>
+</root>

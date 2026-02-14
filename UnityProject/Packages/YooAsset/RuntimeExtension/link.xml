@@ -1,0 +1,3 @@
+<linker>
+  <assembly fullname="YooAsset.RuntimeExtension" preserve="all"/>
+</linker>

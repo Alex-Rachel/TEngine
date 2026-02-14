@@ -1,0 +1,5 @@
+[*]
+
+# ReSharper properties
+resharper_csharp_max_line_length = 180
+resharper_place_attribute_on_same_line = false

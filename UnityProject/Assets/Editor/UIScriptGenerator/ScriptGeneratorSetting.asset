@@ -1,0 +1,93 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8a0dfbcd6854965bb6ae78627009a53, type: 3}
+  m_Name: ScriptGeneratorSetting
+  m_EditorClassIdentifier: 
+  useBindComponent: 1
+  genCodePath: Assets/GameScripts/HotFix/GameLogic/UI/Gen
+  impCodePath: Assets/GameScripts/HotFix/GameLogic/UI
+  _namespace: GameLogic
+  _widgetName: item
+  CodeStyle: 1
+  uiGenTypes:
+  - uiTypeName: UIWindow
+    isGeneric: 0
+  - uiTypeName: UIWidget
+    isGeneric: 0
+  NullableEnable: 1
+  scriptGenerateRule:
+  - uiElementRegex: m_go
+    componentName: 0
+    isUIWidget: 0
+  - uiElementRegex: m_item
+    componentName: 0
+    isUIWidget: 1
+  - uiElementRegex: m_tf
+    componentName: 1
+    isUIWidget: 0
+  - uiElementRegex: m_rect
+    componentName: 2
+    isUIWidget: 0
+  - uiElementRegex: m_text
+    componentName: 3
+    isUIWidget: 0
+  - uiElementRegex: m_richText
+    componentName: 4
+    isUIWidget: 0
+  - uiElementRegex: m_btn
+    componentName: 5
+    isUIWidget: 0
+  - uiElementRegex: m_img
+    componentName: 6
+    isUIWidget: 0
+  - uiElementRegex: m_rimg
+    componentName: 7
+    isUIWidget: 0
+  - uiElementRegex: m_scrollBar
+    componentName: 9
+    isUIWidget: 0
+  - uiElementRegex: m_scroll
+    componentName: 8
+    isUIWidget: 0
+  - uiElementRegex: m_input
+    componentName: 10
+    isUIWidget: 0
+  - uiElementRegex: m_grid
+    componentName: 11
+    isUIWidget: 0
+  - uiElementRegex: m_hlay
+    componentName: 12
+    isUIWidget: 0
+  - uiElementRegex: m_vlay
+    componentName: 13
+    isUIWidget: 0
+  - uiElementRegex: m_slider
+    componentName: 14
+    isUIWidget: 0
+  - uiElementRegex: m_group
+    componentName: 16
+    isUIWidget: 0
+  - uiElementRegex: m_curve
+    componentName: 17
+    isUIWidget: 0
+  - uiElementRegex: m_canvasGroup
+    componentName: 18
+    isUIWidget: 0
+  - uiElementRegex: m_toggle
+    componentName: 15
+    isUIWidget: 0
+  - uiElementRegex: m_tmp
+    componentName: 19
+    isUIWidget: 0
+  - uiElementRegex: m_tInput
+    componentName: 22
+    isUIWidget: 0

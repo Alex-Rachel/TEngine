@@ -1,0 +1,25 @@
+{
+    "name": "TEngine.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:24c092aee38482f4e80715eaa8148782",
+        "GUID:e34a5702dd353724aa315fb8011f08c3",
+        "GUID:4d1926c9df5b052469a1c63448b7609a",
+        "GUID:6e76b07590314a543b982daed6af2509",
+        "GUID:2373f786d14518f44b0f475db77ba4de",
+        "GUID:6055be8ebefd69e48b49212b09b47b2f",
+        "GUID:3743e71edcd5bd8499007797ef02cbfb",
+        "GUID:66e09fc524ec6594b8d6ca1d91aa1a41"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

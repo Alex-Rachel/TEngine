@@ -1,0 +1,55 @@
+using Luban;
+
+{{namespace_with_grace_begin __namespace}}
+public partial class {{__name}}
+{
+    #region The Tables
+
+    {{~for table in __tables ~}}
+{{~if table.comment != '' ~}}
+    /// <summary>
+    /// {{escape_comment table.comment}}
+    /// </summary>
+{{~end~}}
+    private {{table.full_name}} m_{{table.name}};
+    public {{table.full_name}} {{format_property_name __code_style table.name}} 
+    {
+        get
+        {
+            if (m_{{table.name}} == null)
+            {
+                m_{{table.name}} = new {{table.full_name}}(defaultLoader("{{table.output_data_file}}"));
+                m_{{table.name}}.ResolveRef(this);
+            }
+            return m_{{table.name}};
+        }
+        set
+        {
+            m_{{table.name}} = value;
+            m_{{table.name}}.ResolveRef(this);
+        }
+    }
+    {{~end~}}
+
+    #endregion
+
+    System.Func<string, ByteBuf> defaultLoader;
+
+    public {{__name}}(System.Func<string, ByteBuf> loader)
+    {
+        SetDefaultLoader(loader);
+        Init();
+    }
+    
+    public void SetDefaultLoader(System.Func<string, ByteBuf> loader)
+    {
+        defaultLoader = null;
+        defaultLoader = loader;
+    }
+
+    //public partial void Init();
+
+    public void Init(){}
+}
+
+{{namespace_with_grace_end __namespace}}
