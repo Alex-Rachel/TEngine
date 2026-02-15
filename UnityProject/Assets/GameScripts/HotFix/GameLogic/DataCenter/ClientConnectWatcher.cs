@@ -6,15 +6,40 @@ using YooAsset;
 
 namespace GameLogic
 {
+    /// <summary>
+    /// 网络连接监控器状态。
+    /// </summary>
     public enum ClientConnectWatcherStatus
     {
+        /// <summary>
+        /// 初始状态
+        /// </summary>
         StatusInit,
+
+        /// <summary>
+        /// 自动重连中
+        /// </summary>
         StatusReconnectAuto,
+
+        /// <summary>
+        /// 等待玩家确认重连
+        /// </summary>
         StatusReconnectConfirm,
+
+        /// <summary>
+        /// 检查客户端版本中
+        /// </summary>
         StatusCheckingClientVersion,
+
+        /// <summary>
+        /// 等待退出
+        /// </summary>
         StatusWaitExit
     }
 
+    /// <summary>
+    /// 网络连接监控器，负责检测网络断开并处理自动重连。
+    /// </summary>
     public class ClientConnectWatcher
     {
         // 自动重连次数
@@ -30,6 +55,9 @@ namespace GameLogic
         private bool m_enabled;
         private CancellationTokenSource m_versionCheckCts;  // 用于取消检测版本的异步操作
 
+        /// <summary>
+        /// 获取或设置是否启用网络监控。
+        /// </summary>
         public bool Enabled
         {
             get => m_enabled;
@@ -51,6 +79,9 @@ namespace GameLogic
             }
         }
 
+        /// <summary>
+        /// 获取或设置当前监控器状态。
+        /// </summary>
         public ClientConnectWatcherStatus Status
         {
             get => m_status;
@@ -64,6 +95,10 @@ namespace GameLogic
             }
         }
 
+        /// <summary>
+        /// 初始化网络连接监控器。
+        /// </summary>
+        /// <param name="client">游戏客户端实例</param>
         public ClientConnectWatcher(GameClient client)
         {
             m_client = client;
@@ -88,6 +123,9 @@ namespace GameLogic
             m_versionCheckCts = null;
         }
 
+        /// <summary>
+        /// 重置监控器状态，取消正在进行的版本检查。
+        /// </summary>
         public void Reset()
         {
             CancelVersionCheck();
@@ -95,6 +133,9 @@ namespace GameLogic
             m_reconnectCount = 0;
         }
 
+        /// <summary>
+        /// 每帧更新监控器状态，处理网络重连逻辑。
+        /// </summary>
         public void Update()
         {
             if (!m_enabled || m_client.IsStatusEnter)
@@ -130,6 +171,9 @@ namespace GameLogic
         {
         }
 
+        /// <summary>
+        /// 触发重连操作，仅在等待玩家确认重连状态下有效。
+        /// </summary>
         public void Reconnect()
         {
             if (m_status == ClientConnectWatcherStatus.StatusReconnectConfirm)

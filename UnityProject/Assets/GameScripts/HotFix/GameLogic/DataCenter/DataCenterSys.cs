@@ -27,9 +27,16 @@ namespace GameLogic
 
         #region 网络操作
 
+        /// <summary>
+        /// 注册新账号。
+        /// </summary>
+        /// <param name="address">服务器地址</param>
+        /// <param name="port">服务器端口</param>
+        /// <param name="userName">用户名</param>
+        /// <param name="password">密码</param>
         public async FTask Register(string address, int port, string userName, string password)
         {
-            GameClient.Instance.Connect(address, port);
+            await GameClient.Instance.ConnectAsync(address, port);
             GameClient.Instance.Status = GameClientStatus.StatusRegister;
             var response = (A2C_RegisterResponse)await GameClient.Instance.Call(new C2A_RegisterRequest()
             {
@@ -44,11 +51,16 @@ namespace GameLogic
             Log.Info("Registered Successfully");
         }
 
+        /// <summary>
+        /// 登录账号并连接到 Gate 服务器。
+        /// </summary>
+        /// <param name="address">认证服务器地址</param>
+        /// <param name="port">认证服务器端口</param>
+        /// <param name="userName">用户名</param>
+        /// <param name="password">密码</param>
         public async FTask Login(string address, int port, string userName, string password)
         {
-            GameClient.Instance.Connect(address, port);
-            // todo:这里注册网络监听模块是为了测试 实际情况应该在InitModule里注册 DataCenterSys的初始化时机也应该自行把握
-            RegisterModule(LoginNetMgr.Instance);
+            await GameClient.Instance.ConnectAsync(address, port);
             GameClient.Instance.Status = GameClientStatus.StatusLogin;
             var response = (A2C_LoginResponse)await GameClient.Instance.Call(new C2A_LoginRequest()
             {
@@ -76,9 +88,13 @@ namespace GameLogic
 
         private void InitModule()
         {
-            // RegisterModule(LoginNetMgr.Instance);
+            RegisterModule(LoginNetMgr.Instance);
         }
 
+        /// <summary>
+        /// 注册数据中心模块。
+        /// </summary>
+        /// <param name="module">要注册的模块</param>
         public void RegisterModule(IDataCenterModule module)
         {
             if (m_dataCenterModuleList.Contains(module))
@@ -92,6 +108,9 @@ namespace GameLogic
 
         #endregion
 
+        /// <summary>
+        /// 每帧更新所有已注册的模块。
+        /// </summary>
         public void OnUpdate()
         {
             foreach (var module in m_dataCenterModuleList)
@@ -100,6 +119,9 @@ namespace GameLogic
             }
         }
 
+        /// <summary>
+        /// 清除客户端数据，关闭所有窗口并通知所有模块角色登出。
+        /// </summary>
         public void ClearClientData()
         {
             UIModule.Instance.CloseAll();
