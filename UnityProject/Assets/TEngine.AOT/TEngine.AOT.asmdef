@@ -1,5 +1,5 @@
 {
-    "name": "AOT",
+    "name": "TEngine.AOT",
     "rootNamespace": "",
     "references": [
         "GUID:24c092aee38482f4e80715eaa8148782",
