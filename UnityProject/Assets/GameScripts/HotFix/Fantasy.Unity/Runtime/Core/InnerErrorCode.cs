@@ -27,10 +27,6 @@ namespace Fantasy.Network
         /// </summary>
         public const uint ErrEntityNotFound = 100000008; 
         /// <summary>
-        /// 表示传送过程中发生错误的错误代码。
-        /// </summary>
-        public const uint ErrTransfer = 100000009;
-        /// <summary>
         /// 表示连接Roaming时候已经存在同RoamingType的Roaming了。
         /// </summary>
         public const uint ErrLinkRoamingAlreadyExists = 100000009;
@@ -110,5 +106,9 @@ namespace Fantasy.Network
         /// 表示创建漫游终端时 RoamingId 无效的错误代码。
         /// </summary>
         public const uint ErrCreateTerminusInvalidRoamingId = 100000028;
+        /// <summary>
+        /// 表示传送过程中发生错误的错误代码。
+        /// </summary>
+        public const uint ErrTransfer = 100000029;
     }
 }

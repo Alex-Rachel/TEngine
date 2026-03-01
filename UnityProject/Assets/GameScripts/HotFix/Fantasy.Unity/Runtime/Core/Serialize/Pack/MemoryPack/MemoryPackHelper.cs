@@ -52,6 +52,7 @@ namespace Fantasy.Serialize
             MemoryPackFormatterProvider.Register(new EntityFormatter());
             MemoryPackFormatterProvider.Register(new EntityTreeCollectionFormatter());
             MemoryPackFormatterProvider.Register(new EntityMultiCollectionFormatter());
+            MemoryPackFormatterProvider.Register(new IPAddressFormatter());
             await AssemblyLifecycle.Add(this);
             return this;
         }

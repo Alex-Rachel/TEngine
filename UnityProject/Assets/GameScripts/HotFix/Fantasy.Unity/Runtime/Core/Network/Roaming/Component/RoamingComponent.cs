@@ -166,9 +166,9 @@ public sealed class RoamingComponent : Entity
                 await sessionRoamingComponent.SetForwardSessionAddress(session);
                 status = CreateRoamingStatus.AlreadyExists;
             }
+            
+            session.AddComponent<SessionRoamingFlgComponent>(roamingId).DelayRemove = delayRemove;
         }
-
-        session.AddComponent<SessionRoamingFlgComponent>(roamingId).DelayRemove = delayRemove;
 
         return new CreateRoamingResult(status, sessionRoamingComponent!);
     }

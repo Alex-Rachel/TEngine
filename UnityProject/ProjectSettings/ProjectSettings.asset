@@ -793,7 +793,7 @@ PlayerSettings:
   webGLMemoryGeometricGrowthCap: 96
   webGLPowerPreference: 2
   scriptingDefineSymbols:
-    Android: ENABLE_LOG;TextMeshPro;ENABLE_HYBRIDCLR
+    Android: TextMeshPro;ENABLE_HYBRIDCLR;ENABLE_LOG
     EmbeddedLinux: UNITY_POST_PROCESSING_STACK_V2;TextMeshPro
     GameCoreXboxOne: UNITY_POST_PROCESSING_STACK_V2;TextMeshPro
     Lumin: UNITY_POST_PROCESSING_STACK_V2;TextMeshPro
@@ -802,12 +802,12 @@ PlayerSettings:
     PS5: UNITY_POST_PROCESSING_STACK_V2;TextMeshPro
     QNX: TextMeshPro
     Stadia: UNITY_POST_PROCESSING_STACK_V2;TextMeshPro
-    Standalone: ENABLE_LOG;TextMeshPro;ENABLE_HYBRIDCLR
+    Standalone: TextMeshPro;ENABLE_HYBRIDCLR;ENABLE_LOG
     VisionOS: TextMeshPro
-    WebGL: UNITY_POST_PROCESSING_STACK_V2;TextMeshPro;ENABLE_LOG;ENABLE_HYBRIDCLR
-    Windows Store Apps: UNITY_POST_PROCESSING_STACK_V2;TextMeshPro;ENABLE_LOG;ENABLE_HYBRIDCLR
+    WebGL: UNITY_POST_PROCESSING_STACK_V2;TextMeshPro;ENABLE_HYBRIDCLR;ENABLE_LOG
+    Windows Store Apps: UNITY_POST_PROCESSING_STACK_V2;TextMeshPro;ENABLE_HYBRIDCLR;ENABLE_LOG
     XboxOne: UNITY_POST_PROCESSING_STACK_V2;TextMeshPro
-    iPhone: ENABLE_LOG;TextMeshPro;ENABLE_HYBRIDCLR
+    iPhone: TextMeshPro;ENABLE_HYBRIDCLR;ENABLE_LOG
     tvOS: UNITY_POST_PROCESSING_STACK_V2;TextMeshPro
   additionalCompilerArguments: {}
   platformArchitecture: {}
