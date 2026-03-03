@@ -17,6 +17,7 @@ MonoBehaviour:
   - Fantasy.Unity.dll
   - GameProto.dll
   - GameLogic.dll
+  - Assembly-CSharp.dll
   AOTMetaAssemblies:
   - mscorlib.dll
   - System.dll

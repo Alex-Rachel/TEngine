@@ -12,6 +12,7 @@ namespace TEngine.Editor
         {
             "TEngine.Runtime",
             "Assembly-CSharp",
+            "TEngine.AOT",
             "Launcher",
         };
 
@@ -20,6 +21,7 @@ namespace TEngine.Editor
             "TEngine.Runtime",
             "Assembly-CSharp",
             "TEngine.Editor",
+            "TEngine.AOT",
             "Assembly-CSharp-Editor",
             "Launcher",
         };

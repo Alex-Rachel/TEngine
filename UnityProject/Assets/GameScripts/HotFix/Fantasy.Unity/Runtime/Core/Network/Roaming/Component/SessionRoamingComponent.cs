@@ -115,6 +115,13 @@ public sealed class SessionRoamingComponent : Entity
     #region Link
 
     /// <summary>
+    /// 判断指定的漫游类型是否已经建立了漫游关系。
+    /// </summary>
+    /// <param name="roamingType">要检查的漫游协议类型。</param>
+    /// <returns>如果已建立漫游关系返回 true，否则返回 false。</returns>
+    public bool IsLinked(int roamingType) => _roaming.ContainsKey(roamingType);
+
+    /// <summary>
     /// 重新设定ForwardSessionAddress
     /// </summary>
     /// <param name="session"></param>
@@ -150,11 +157,11 @@ public sealed class SessionRoamingComponent : Entity
     /// <summary>
     /// 建立漫游关系。
     /// </summary>
-    /// <param name="session">要建立漫游协议的目标Scene的SceneConfig。</param>
-    /// <param name="targetSceneConfig">需要转发的Session</param>
+    /// <param name="session">需要转发的 Session。</param>
+    /// <param name="targetSceneConfig">要建立漫游协议的目标 Scene 的 SceneConfig。</param>
     /// <param name="roamingType">要创建的漫游协议类型。</param>
-    /// <param name="args">要传递的Entity类型参数</param>
-    /// <returns>如果建立完成会返回为0，其余不为0的都是发生错误了。可以通过InnerErrorCode.cs来查看错误。</returns>
+    /// <param name="args">要传递的 Entity 类型参数。</param>
+    /// <returns>建立完成返回 0，其余非 0 值表示发生错误，可通过 InnerErrorCode.cs 查看错误定义。</returns>
     public async FTask<uint> Link(Session session, SceneConfig targetSceneConfig, int roamingType, Entity? args = null)
     {
         return await Link(targetSceneConfig.Address, session.RuntimeId, roamingType, args);
@@ -163,54 +170,75 @@ public sealed class SessionRoamingComponent : Entity
     /// <summary>
     /// 建立漫游关系。
     /// </summary>
-    /// <param name="targetSceneAddress">要建立漫游协议的目标Scene的Address。</param>
-    /// <param name="forwardSessionAddress">需要转发的Session的Address。</param>
+    /// <param name="targetSceneAddress">要建立漫游协议的目标 Scene 的 Address。</param>
+    /// <param name="forwardSessionAddress">需要转发的 Session 的 Address。</param>
     /// <param name="roamingType">要创建的漫游协议类型。</param>
-    /// <param name="args">要传递的Entity类型参数</param>
-    /// <returns>如果建立完成会返回为0，其余不为0的都是发生错误了。可以通过InnerErrorCode.cs来查看错误。</returns>
+    /// <param name="args">要传递的 Entity 类型参数。</param>
+    /// <returns>建立完成返回 0，其余非 0 值表示发生错误，可通过 InnerErrorCode.cs 查看错误定义。</returns>
     public async FTask<uint> Link(long targetSceneAddress, long forwardSessionAddress, int roamingType, Entity? args = null)
     {
-        if (_roaming.ContainsKey(roamingType))
+        if (roamingType == 0)
         {
-            return InnerErrorCode.ErrLinkRoamingAlreadyExists;
+            throw new ArgumentException("roamingType cannot be 0.", nameof(roamingType));
         }
 
-        var response = (I_LinkRoamingResponse)await Scene.NetworkMessagingComponent.Call(targetSceneAddress,
-            new I_LinkRoamingRequest()
+        var request = I_LinkRoamingRequest.Create();
+
+        request.RoamingId = Id;
+        request.RoamingType = roamingType;
+        request.ForwardSessionAddress = forwardSessionAddress;
+        request.SceneAddress = Scene.RuntimeId;
+        request.Args = args;
+
+        if (!_roaming.TryGetValue(roamingType, out var roaming))
+        {
+            request.LinkType = 0;
+            
+            var response = (I_LinkRoamingResponse)await Scene.NetworkMessagingComponent.Call(targetSceneAddress, request);
+
+            if (response.ErrorCode != 0)
             {
-                RoamingId = Id,
-                RoamingType = roamingType,
-                ForwardSessionAddress = forwardSessionAddress,
-                SceneAddress = Scene.RuntimeId,
-                LinkType = 0, 
-                Args = args
-            });
-        
-        if (response.ErrorCode != 0)
+                return response.ErrorCode;
+            }
+
+            roaming = Entity.Create<Roaming>(Scene, true, true);
+            roaming.TerminusId = response.TerminusId;
+            roaming.TargetSceneAddress = targetSceneAddress;
+            roaming.ForwardSessionAddress = forwardSessionAddress;
+            roaming.SessionRoamingComponent = this;
+            roaming.RoamingType = roamingType;
+            roaming.RoamingLock = _roamingLock;
+            _roaming.Add(roamingType, roaming);
+        }
+        else
         {
-            return response.ErrorCode;
+            roaming.TerminusId = 0;
+            roaming.TargetSceneAddress = targetSceneAddress;
+            roaming.ForwardSessionAddress = forwardSessionAddress;
+            request.LinkType = 1;
+            
+            var response = (I_LinkRoamingResponse)await Scene.NetworkMessagingComponent.Call(targetSceneAddress, request);
+
+            if (response.ErrorCode != 0)
+            {
+                return response.ErrorCode;
+            }
+
+            roaming.TerminusId = response.TerminusId;
         }
 
-        var roaming = Entity.Create<Roaming>(Scene, true, true);
-        roaming.TerminusId = response.TerminusId;
-        roaming.TargetSceneAddress = targetSceneAddress;
-        roaming.ForwardSessionAddress = forwardSessionAddress;
-        roaming.SessionRoamingComponent = this;
-        roaming.RoamingType = roamingType;
-        roaming.RoamingLock = _roamingLock;
-        _roaming.Add(roamingType, roaming);
         return 0;
     }
-
 
     /// <summary>
     /// 重新连接到目标服务器。用于目标服务器重启或迁移后重新建立连接。
     /// </summary>
-    /// <param name="session">需要转发的Session</param>
-    /// <param name="targetSceneConfig">要建立漫游协议的目标Scene的SceneConfig</param>
-    /// <param name="roamingType">要重新连接的漫游类型</param>
-    /// <param name="args">要传递的Entity类型参数</param>
-    /// <returns></returns>
+    /// <param name="session">需要转发的 Session。</param>
+    /// <param name="targetSceneConfig">要建立漫游协议的目标 Scene 的 SceneConfig。</param>
+    /// <param name="roamingType">要重新连接的漫游类型。</param>
+    /// <param name="args">要传递的 Entity 类型参数。</param>
+    /// <returns>建立完成返回 0，其余非 0 值表示发生错误，可通过 InnerErrorCode.cs 查看错误定义。</returns>
+    [Obsolete("ReLink will be merged into Link in a future version. Use Link() instead, which automatically handles both first-time linking and relinking.")]
     public async FTask<uint> ReLink(Session session, SceneConfig targetSceneConfig, int roamingType, Entity? args = null)
     {
         return await ReLink(targetSceneConfig.Address, session.RuntimeId, roamingType, args);
@@ -219,12 +247,13 @@ public sealed class SessionRoamingComponent : Entity
     /// <summary>
     /// 重新连接到目标服务器。用于目标服务器重启或迁移后重新建立连接。
     /// </summary>
-    /// <param name="targetSceneAddress">要建立漫游协议的目标Scene的Address。</param>
-    /// <param name="forwardSessionAddress">需要转发的Session的Address。</param>
-    /// <param name="roamingType">要重新连接的漫游类型</param>
-    /// <param name="args">要传递的Entity类型参数</param>
-    /// <returns></returns>
+    /// <param name="targetSceneAddress">要建立漫游协议的目标 Scene 的 Address。</param>
+    /// <param name="forwardSessionAddress">需要转发的 Session 的 Address。</param>
+    /// <param name="roamingType">要重新连接的漫游类型。</param>
+    /// <param name="args">要传递的 Entity 类型参数。</param>
+    /// <returns>建立完成返回 0，其余非 0 值表示发生错误，可通过 InnerErrorCode.cs 查看错误定义。</returns>
     /// <exception cref="ArgumentException"></exception>
+    [Obsolete("ReLink will be merged into Link in a future version. Use Link() instead, which automatically handles both first-time linking and relinking.")]
     public async FTask<uint> ReLink(long targetSceneAddress, long forwardSessionAddress, int roamingType, Entity? args = null)
     {
         if (roamingType == 0)

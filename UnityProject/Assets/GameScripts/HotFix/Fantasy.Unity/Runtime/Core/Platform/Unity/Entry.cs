@@ -105,7 +105,7 @@ namespace Fantasy.Platform.Unity
                 Scene = null;
             }
             SerializerManager.Dispose();
-            await AssemblyManifest.Dispose();
+            // await AssemblyManifest.Dispose();
             _isInit = false;
             // 设置当前程序已经在停止中
             ProgramDefine.IsAppRunning = false;

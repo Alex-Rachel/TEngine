@@ -91,6 +91,7 @@ namespace Fantasy.Entitas
         /// <summary>
         /// 实体的真实Type的HashCode
         /// </summary>
+        [MemoryPackInclude]
         public long TypeHashCode { get; protected set; }
 
         [BsonElement("t")] [BsonIgnoreIfNull] [MemoryPackInclude] protected EntityTreeCollection Tree;

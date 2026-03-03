@@ -37,7 +37,6 @@ namespace Fantasy.Network.Interface
         private readonly UInt32MergerFrozenDictionary<int> _customRouteMerger = new();
         private readonly UInt32MergerFrozenDictionary<Func<Session, Entity, uint, object, FTask>> _routeMessageHandlerMerger = new();
 #endif
-
 #if FANTASY_UNITY
         /*
          * 方便客户端通过 GameClient RegisterMsgHandler 注册的回调
@@ -64,7 +63,6 @@ namespace Fantasy.Network.Interface
             }
         }
 #endif
-
         public override void Dispose()
         {
             if (IsDisposed)

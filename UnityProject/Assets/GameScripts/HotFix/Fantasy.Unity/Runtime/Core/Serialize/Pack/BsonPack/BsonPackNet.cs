@@ -1,5 +1,6 @@
 #if FANTASY_NET
 using System.Buffers;
+using System.Net;
 using Fantasy.Assembly;
 using Fantasy.Async;
 using Fantasy.Entitas;
@@ -31,6 +32,7 @@ namespace Fantasy.Serialize
         {
             BsonSerializer.RegisterSerializer(typeof(EntityTreeCollection), new EntityTreeCollectionSerializer());
             BsonSerializer.RegisterSerializer(typeof(EntityMultiCollection), new EntityMultiCollectionSerializer());
+            BsonSerializer.RegisterSerializer(typeof(IPAddress), new IPAddressSerializer());
             // 初始化 ConventionRegistry，注册 IgnoreExtraElements 约定，忽略反序列化时多余的字段
             ConventionRegistry.Register("IgnoreExtraElements",
                 new ConventionPack { new IgnoreExtraElementsConvention(true) }, type => true);

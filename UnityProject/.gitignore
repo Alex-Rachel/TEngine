@@ -77,6 +77,10 @@ crashlytics-build.properties
 #Rider
 /.idea/
 
+#vs
+.vsconfig
+.vscode
+
 #Bundles
 Bundles/
 

@@ -137,7 +137,7 @@ namespace Fantasy
         /// <summary>
         /// Scene下的网络消息派发组件 改成 public 方便客户端通过GameClient和协议号直接监听服务器数据的下发
         /// </summary>
-        public MessageDispatcherComponent MessageDispatcherComponent { get; set; }
+        public MessageDispatcherComponent MessageDispatcherComponent { get; internal set; }
         /// <summary>
         /// 池生成器组件
         /// </summary>
