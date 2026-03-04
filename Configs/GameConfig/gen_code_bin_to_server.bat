@@ -4,8 +4,10 @@ echo %CD%
 set WORKSPACE=../../
 set LUBAN_DLL=%WORKSPACE%/Tools/Luban/Luban.dll
 set CONF_ROOT=.
-set DATA_OUTPATH=%WORKSPACE%/Server/GameConfig 
-set CODE_OUTPATH=%WORKSPACE%/Server/Hotfix/Config/GameConfig
+set DATA_OUTPATH=%WORKSPACE%/GameServer/GameConfig/Binary
+set CODE_OUTPATH=%WORKSPACE%/GameServer/Server/Entity/Generate/GameConfig
+
+xcopy /s /e /i /y "%CONF_ROOT%\CustomTemplate\ServerConfigSystem.cs" "%WORKSPACE%\GameServer\Server\Entity\Generate\ServerConfigSystem.cs"
 
 dotnet %LUBAN_DLL% ^
     -t server^
@@ -14,6 +16,9 @@ dotnet %LUBAN_DLL% ^
     --conf %CONF_ROOT%\luban.conf ^
     -x code.lineEnding=crlf ^
     -x outputCodeDir=%CODE_OUTPATH% ^
-    -x outputDataDir=%DATA_OUTPATH% 
+    -x outputDataDir=%DATA_OUTPATH% ^
+    -x outputSaver.bin.cleanUpOutputDir=1 ^
+    -x outputSaver.json.cleanUpOutputDir=1 ^
+    -x outputSaver.cs-bin.cleanUpOutputDir=1 
 pause
 
