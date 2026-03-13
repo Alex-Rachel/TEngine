@@ -20,3 +20,6 @@ Tools/GameEventSourceGenerator/GameEventAnalyzer/bin
 Tools/GameEventSourceGenerator/GameEventAnalyzer/obj
 Tools/GameEventSourceGenerator/SourceGenerator/bin
 Tools/GameEventSourceGenerator/SourceGenerator/obj
+
+#openspec
+openspec/
