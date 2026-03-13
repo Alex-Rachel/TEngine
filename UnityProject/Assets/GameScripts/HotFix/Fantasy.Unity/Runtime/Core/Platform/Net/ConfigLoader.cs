@@ -11,6 +11,7 @@ using Fantasy.IdFactory;
 using Fantasy.Network;
 using Fantasy.Platform.Net;
 // ReSharper disable ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+#pragma warning disable CS8604 // Possible null reference argument.
 
 namespace Fantasy;
 
@@ -173,6 +174,22 @@ public static class ConfigLoader
         ProcessConfigData.Initialize(processList);
     }
 
+    private static DatabaseConfig GetDatabaseConfig(XmlNode dbNode)
+    {
+        var dbConnection = GetOptionalAttribute(dbNode, "dbConnection");
+        var dbType = GetRequiredAttribute(dbNode, "dbType");
+        var dbName = GetRequiredAttribute(dbNode, "dbName");
+        var isDefault = GetOptionalAttribute(dbNode, "isDefault") ?? "false";
+        
+        if (string.IsNullOrWhiteSpace(dbConnection))
+        {
+            // Log.Warning($"(Fantasy.config) \"DbConnection\" is empty, thus the database-config \"{dbName}({dbType})\" in {worldName} (World Id: {id}) will be ignoured.");
+            dbConnection = string.Empty; 
+        }
+        
+        return new DatabaseConfig(dbConnection, dbName, dbType,bool.Parse(isDefault));
+    }
+
     private static void LoadWorldConfig(XmlNode serverNode, XmlNamespaceManager nsManager)
     {
         var worldsNode = serverNode.SelectSingleNode("f:worlds", nsManager);
@@ -199,24 +216,30 @@ public static class ConfigLoader
             var worldConfig = new WorldConfig
             {
                 Id = id,
-                WorldName = worldName
+                WorldName = worldName,
+                DatabaseConfig = new DatabaseConfig[databaseNodes.Count]
             };
 
-            var index = 0;
-            worldConfig.DatabaseConfig = new DatabaseConfig[databaseNodes.Count];
-            foreach (XmlNode dbNode in databaseNodes)
+            if (databaseNodes.Count > 0)
             {
-                var dbConnection = GetOptionalAttribute(dbNode, "dbConnection");
-                var dbType = GetRequiredAttribute(dbNode, "dbType");
-                var dbName = GetRequiredAttribute(dbNode, "dbName");
-
-                if (string.IsNullOrWhiteSpace(dbConnection))
-                {
-                    // Log.Warning($"(Fantasy.config) \"DbConnection\" is empty, thus the database-config \"{dbName}({dbType})\" in {worldName} (World Id: {id}) will be ignoured.");
-                    dbConnection = string.Empty; 
-                }
+                var databaseNode = databaseNodes[0];
+                var databaseConfig = GetDatabaseConfig(databaseNode);
                 
-                worldConfig.DatabaseConfig[index++] = new DatabaseConfig(dbConnection, dbName, dbType);
+                worldConfig.Default = databaseConfig;
+                worldConfig.DatabaseConfig[0] = databaseConfig;
+
+                for (var index = 1; index < databaseNodes.Count; index++)
+                {
+                    databaseNode = databaseNodes[index];
+                    databaseConfig = GetDatabaseConfig(databaseNode);
+
+                    if (databaseConfig.IsDefault && worldConfig.Default == null)
+                    {
+                        worldConfig.Default = databaseConfig;
+                    }
+                    
+                    worldConfig.DatabaseConfig[index] = databaseConfig;
+                }
             }
             
             worldList.Add(worldConfig);

@@ -237,7 +237,7 @@ namespace Fantasy.PacketParser
                 {
                     // 通过现代API直接读取协议编号、messagePacketLength protocolCode rpcId address
 #if FANTASY_UNITY
-                    ref var messageRef = ref MemoryMarshal.GetReference(buffer.Span);
+                    ref var messageRef = ref MemoryMarshal.GetReference(MessageHead.AsSpan());
 #else
                     ref var messageRef = ref MemoryMarshal.GetArrayDataReference(MessageHead);
 #endif

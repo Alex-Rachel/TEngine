@@ -92,15 +92,19 @@ namespace Fantasy.Platform.Net
 	/// 表示一个世界配置信息
 	/// </summary>
 	public sealed class WorldConfig
-    {
+	{
 		/// <summary>
 		/// Id
 		/// </summary>
-		public uint Id { get; set; } 
+		public uint Id;
 		/// <summary>
 		/// 名称
 		/// </summary>
-		public string WorldName { get; set; }
+		public string WorldName;
+		/// <summary>
+		/// 默认数据库配置
+		/// </summary>
+		public DatabaseConfig? Default;
 		/// <summary>
 		/// 数据库配置
 		/// </summary>
@@ -113,6 +117,6 @@ namespace Fantasy.Platform.Net
 	/// <param name="DbConnection">数据库连接字符串</param>
 	/// <param name="DbName">数据库名称</param>
 	/// <param name="DbType">数据库类型</param>
-	public sealed record DatabaseConfig(string? DbConnection, string DbName, string DbType);
+	public sealed record DatabaseConfig(string? DbConnection, string DbName, string DbType, bool IsDefault = false);
 }
 #endif

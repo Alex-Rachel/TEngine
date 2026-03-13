@@ -120,7 +120,7 @@ namespace Fantasy.IdFactory
                     _lastSequence = 0;
                 }
 
-                return new WorldEntityIdStruct(time, _sceneId, _worldId, _lastSequence);
+                return new WorldEntityIdStruct(_lastTime, _sceneId, _worldId, _lastSequence);
             }
         }
     }

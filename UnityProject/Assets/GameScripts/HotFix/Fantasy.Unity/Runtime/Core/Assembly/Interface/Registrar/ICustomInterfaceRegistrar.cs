@@ -8,7 +8,7 @@ namespace Fantasy.Assembly
     /// </summary>
     public interface ICustomInterface
     {
-    
+        
     }
 
     /// <summary>

@@ -19,17 +19,6 @@ public static class DataBaseSetting
 }
 
 /// <summary>
-/// 数据库配置帮助配
-/// </summary>
-public static class DataBaseHelper
-{
-    /// <summary>
-    /// 数据库名字常量字典，对应数据库名称和索引
-    /// </summary>
-    internal static FrozenDictionary<string, int> DatabaseDbName;
-}
-
-/// <summary>
 /// 数据库自定义连接参数
 /// </summary>
 public sealed class DataBaseCustomConfig
