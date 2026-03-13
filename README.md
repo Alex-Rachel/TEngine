@@ -37,6 +37,7 @@
 ## 📚 目录
 
 - [快速开始](#-快速开始)
+- [AI 开发工作流](#-ai-开发工作流)
 - [文档导航](#-文档导航)
 - [核心模块](#-核心模块)
 - [项目结构](#-项目结构)
@@ -85,6 +86,35 @@
 
 ---
 
+## 🤖 AI 开发工作流
+
+TEngine 提供了一套完整的 AI 辅助开发工作流，结合 openspec 规范驱动开发和 tengine-dev 开发技能。
+
+### 核心工具
+
+| 工具 | 用途 |
+|------|------|
+| **openspec** | 规范驱动的变更管理 |
+| **tengine-dev** | Claude Code 专用 TEngine 开发技能 |
+| **Unity-MCP** | Unity Editor 自动化操作 |
+
+### 快速开始
+
+```bash
+# 安装 openspec
+npm install -g openspec
+
+# 创建新变更
+openspec new change "my-feature"
+
+# 查看变更状态
+openspec status --change "my-feature"
+```
+
+详细指南请参考：[AI 开发工作流指南](Books/AI-Development-Workflow.md)
+
+---
+
 ## 📚 文档导航
 
 ### 基础文档
@@ -95,6 +125,7 @@
 | [🏗️ 框架概览](Books/2-框架概览.md) | 框架架构与设计理念 |
 | [🚀 快速开始](Books/1-快速开始.md) | 5 分钟快速上手教程 |
 | [🌍 全平台运行](Books/99-各平台运行RunAble.md) | 各平台运行截图展示 |
+| [🤖 AI 开发工作流](Books/AI-Development-Workflow.md) | openspec + tengine-dev AI 开发指南 |
 
 ### 核心模块文档
 

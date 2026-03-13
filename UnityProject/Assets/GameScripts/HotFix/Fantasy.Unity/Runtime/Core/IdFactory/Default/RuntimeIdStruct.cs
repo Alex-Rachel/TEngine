@@ -109,7 +109,7 @@ namespace Fantasy.IdFactory
                 _lastSequence = 0;
             }
 
-            return new RuntimeIdStruct(isPool, time, _sceneId, _lastSequence);
+            return new RuntimeIdStruct(isPool, _lastTime, _sceneId, _lastSequence);
         }
     }
 

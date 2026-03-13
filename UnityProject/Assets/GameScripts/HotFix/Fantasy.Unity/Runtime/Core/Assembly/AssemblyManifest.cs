@@ -190,19 +190,14 @@ namespace Fantasy.Assembly
                 ProtoBufDispatcherRegistrar = protoBufDispatcherRegistrar,
                 MemoryPackEntityGenerator = memoryPackEntityGenerator
             };
-
-            // 设置数据库名字字典
-            var databaseNameDictionary = fantasyConfigRegistrar.GetDatabaseNameDictionary();
-            if (databaseNameDictionary.Any())
-            {
-                Fantasy.Database.DataBaseHelper.DatabaseDbName = databaseNameDictionary.ToFrozenDictionary();
-            }
+            
             // 设置SceneType字典
             var sceneTypeDictionary = fantasyConfigRegistrar.GetSceneTypeDictionary();
             if (sceneTypeDictionary.Any())
             { 
                 Scene.SceneTypeDictionary = sceneTypeDictionary.ToFrozenDictionary();
             }
+            
             customInterfaceRegistrar.Register(manifest._customInterfaces);
             Manifests.TryAdd(assemblyManifestId, manifest);
             AssemblyLifecycle.OnLoad(manifest).Coroutine();

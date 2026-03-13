@@ -107,7 +107,7 @@ namespace Fantasy.IdFactory
                     _lastSequence = 0;
                 }
 
-                return new EntityIdStruct(time, _sceneId, _lastSequence);
+                return new EntityIdStruct(_lastTime, _sceneId, _lastSequence);
             }
         }
     }

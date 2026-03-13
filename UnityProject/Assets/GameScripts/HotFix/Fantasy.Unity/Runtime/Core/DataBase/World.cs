@@ -1,5 +1,6 @@
 #if FANTASY_NET
 using System;
+using System.Collections.Concurrent;
 using Fantasy.Database;
 using Fantasy.Platform.Net;
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
@@ -26,28 +27,11 @@ namespace Fantasy
         /// <summary>
         /// 第一个数据库
         /// </summary>
-        public Fantasy.Database.IDatabase Database { get; private set; }
+        public IDatabase Database { get; private set; }
         /// <summary>
         /// 本世界所有数据库, 按照数据库名字生成的索引来存取。
         /// </summary>
-        private Fantasy.Database.IDatabase[] AllDatabase { get; init; }
-
-        /// <summary>
-        /// 选择数据库为当前使用数据库，成功后会可以用World.Database使用，避免再次查询一下
-        /// </summary>
-        /// <param name="dbName">数据库名字</param>
-        /// <returns></returns>
-        public Fantasy.Database.IDatabase SelectDatabase(int dbName)
-        {
-            var database = this[dbName];
-            if (database == null)
-            {
-                return null;
-            }
-
-            Database = database;
-            return database;
-        }
+        private ConcurrentDictionary<string, IDatabase> AllDatabase { get; init; }
 
         /// <summary>
         /// 根据数据库名字获取某个类型的数据库。
@@ -56,7 +40,7 @@ namespace Fantasy
         /// <param name="dbName">数据库名字</param>
         /// <param name="database">返回的数据库实例</param>
         /// <returns></returns>
-        public bool TryGetDatabase<T>(int dbName, out T database) where T : class, Fantasy.Database.IDatabase
+        public bool TryGetDatabase(string dbName, out IDatabase database)
         {
             var currentDatabase = this[dbName];
             
@@ -66,7 +50,7 @@ namespace Fantasy
                 return false;
             }
 
-            database = currentDatabase as T;
+            database = currentDatabase;
             return true;
         }
 
@@ -74,7 +58,24 @@ namespace Fantasy
         /// 根据数据库名字获取某个类型的数据库。
         /// </summary>
         /// <param name="dbName"></param>
-        public Fantasy.Database.IDatabase? this[int dbName] => dbName >= 0 && dbName < AllDatabase.Length ? AllDatabase[dbName] : null;
+        public Fantasy.Database.IDatabase? this[string dbName]
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(dbName))
+                {
+                    throw new ArgumentNullException(nameof(dbName));
+                }
+
+                if (AllDatabase.TryGetValue(dbName, out var database))
+                {
+                    return database;
+                }
+                
+                Log.Error($"dbName:{dbName} Database not found.");
+                return null;
+            }
+        }
 
         /// <summary>
         /// 获取游戏世界的配置信息。
@@ -88,25 +89,26 @@ namespace Fantasy
         /// <param name="worldConfigId"></param>
         private World(Scene scene, byte worldConfigId)
         {
+            Id = worldConfigId;  
+            Name = WorldConfigData.Instance.Get(worldConfigId).WorldName;
+            AllDatabase = new ConcurrentDictionary<string, IDatabase>();
+            
             var worldConfig = WorldConfigData.Instance.Get(worldConfigId);
             var dataBaseConfigList = worldConfig.DatabaseConfig;
-            Id = worldConfigId;  
-            Name = Config.WorldName;
 
             if (dataBaseConfigList == null || dataBaseConfigList.Length == 0)
             {
-                AllDatabase = [];
                 return;
             }
-            
-            AllDatabase = new Fantasy.Database.IDatabase[DataBaseHelper.DatabaseDbName.Count];
             
             for (var i = 0; i < dataBaseConfigList.Length; i++)
             {
                 var dataBaseConfig = dataBaseConfigList[i];
+                
                 if (dataBaseConfig.DbConnection != null && !string.IsNullOrWhiteSpace(dataBaseConfig.DbConnection))
                 {
                     var dbType = dataBaseConfig.DbType.ToLower();
+                    
                     switch (dbType)
                     {
                         case "mongodb":
@@ -117,9 +119,13 @@ namespace Fantasy
                                 try
                                 {
                                     var mongoDataBase = new MongoDatabase();
-                                    var mongoDataBaseIndex = DataBaseHelper.DatabaseDbName[dataBaseConfig.DbName];
                                     mongoDataBase.Initialize(scene, dataBaseConfig.DbConnection, dataBaseConfig.DbName);
-                                    AllDatabase[mongoDataBaseIndex] = mongoDataBase;
+                                    AllDatabase.TryAdd(dataBaseConfig.DbName, mongoDataBase);
+
+                                    if (dataBaseConfig.IsDefault)
+                                    {
+                                        Database = mongoDataBase;
+                                    }
                                 }
                                 catch (Exception e)
                                 {
@@ -131,8 +137,6 @@ namespace Fantasy
                     }
                 }
             }
-            
-            Database = AllDatabase.Length > 0 ? AllDatabase[0] : null;
         }
 
         /// <summary>
@@ -161,7 +165,7 @@ namespace Fantasy
         /// </summary>
         public void Dispose()
         {
-            Array.Clear(AllDatabase);
+            AllDatabase.Clear();
         }
     }
 }

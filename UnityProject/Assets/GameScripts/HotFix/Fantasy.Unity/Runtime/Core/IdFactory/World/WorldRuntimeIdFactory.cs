@@ -123,7 +123,7 @@ namespace Fantasy.IdFactory
                 _lastSequence = 0;
             }
 
-            return new WorldRuntimeIdStruct(isPool, time, _sceneId, _worldId, _lastSequence);
+            return new WorldRuntimeIdStruct(isPool, _lastTime, _sceneId, _worldId, _lastSequence);
         }
     }
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 using Fantasy.Helper;
 #pragma warning disable CS8604 // Possible null reference argument.
 
@@ -20,6 +21,12 @@ namespace Fantasy.Entitas.Interface
         /// 使用 ConcurrentDictionary 保证线程安全。
         /// </summary>
         private static readonly ConcurrentDictionary<RuntimeTypeHandle, long> RuntimeCache = new();
+        /// <summary>
+        /// 过滤程序集版本号的正则表达式
+        /// </summary>
+        private static readonly Regex AssemblyInfoRegex = new Regex(
+            @", [^\[\],]+, Version=[^,\]]+, Culture=[^,\]]+, PublicKeyToken=[^\]]+",
+            RegexOptions.Compiled);
     
         /// <summary>
         /// 获取指定实体类型的哈希码（运行时查找）。
@@ -35,8 +42,59 @@ namespace Fantasy.Entitas.Interface
         public static long GetHashCode(Type type)
         {
             return RuntimeCache.GetOrAdd(type.TypeHandle,
-                static (_, fullName) => HashCodeHelper.ComputeHash64(fullName),
-                type.FullName);
+                static (_, t) => HashCodeHelper.ComputeHash64(GetSimplifiedFullName(t)),
+                type);
+        }
+
+        /// <summary>
+        /// 获取简化的类型全名（移除程序集版本信息），用于 TypeHashCode 计算
+        /// </summary>
+        /// <param name="type">类型</param>
+        /// <returns>简化的类型全名，格式：命名空间.类型名`N[[参数类型, 程序集名],[...]]</returns>
+        /// <remarks>
+        /// 示例：
+        /// - 非泛型：System.String
+        /// - 泛型：Fantasy.GenericTest.TestEntity3`1[[System.Int32, System.Private.CoreLib]]
+        /// 移除了 Version、Culture、PublicKeyToken 信息，确保热重载和跨版本兼容
+        /// </remarks>
+        private static string GetSimplifiedFullName(Type type)
+        {
+            if (type == null)
+            {
+                throw new ArgumentNullException(nameof(type));
+            }
+            
+            // 处理数组类型
+            if (type.IsArray)
+            {
+                var elementType = type.GetElementType();
+                var rank = type.GetArrayRank();
+                var brackets = rank == 1 ? "[]" : $"[{new string(',', rank - 1)}]";
+                return GetSimplifiedFullName(elementType) + brackets;
+            }
+            // 处理引用类型
+            if (type.IsByRef)
+            {
+                return GetSimplifiedFullName(type.GetElementType()) + "&";
+            }
+            // 处理非泛型类型
+            if (!type.IsGenericType)
+            {
+                return type.FullName ?? type.Name;
+            }
+            // 处理泛型类型
+            // Type.FullName 格式示例：
+            // "Fantasy.GenericTest.TestEntity3`1[[System.Int32, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+            // 目标格式：
+            // "Fantasy.GenericTest.TestEntity3`1[[System.Int32]]"
+            var fullName = type.FullName;
+            if (string.IsNullOrEmpty(fullName))
+            {
+                // 如果 FullName 为 null（某些泛型类型可能出现），使用 ToString() 作为后备
+                fullName = type.ToString();
+            }
+            // 使用编译的正则表达式移除版本信息
+            return AssemblyInfoRegex.Replace(fullName, "");
         }
     
         /// <summary>

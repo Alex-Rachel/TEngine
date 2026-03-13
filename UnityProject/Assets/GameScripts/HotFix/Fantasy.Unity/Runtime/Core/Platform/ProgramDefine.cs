@@ -16,7 +16,7 @@ namespace Fantasy
         /// <summary>
         /// Fantasy版本。
         /// </summary>
-        public const string VERSION = "Fantasy 2025.2.1422 Official version";
+        public const string VERSION = "Fantasy 2026.0.1002 Official version";
         /// <summary>
         /// 消息体最大长度(字节)。默认1024k。
         /// 注意:前后端设置的消息大小，一定要一样才可以，不然会不出现问题。

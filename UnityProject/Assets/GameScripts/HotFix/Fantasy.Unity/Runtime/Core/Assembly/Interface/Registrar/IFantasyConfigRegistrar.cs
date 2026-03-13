@@ -11,11 +11,6 @@ public interface IFantasyConfigRegistrar
     /// 
     /// </summary>
     /// <returns></returns>
-    Dictionary<string, int> GetDatabaseNameDictionary();
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <returns></returns>
     Dictionary<string, int> GetSceneTypeDictionary();
 }
 #endif

@@ -277,7 +277,11 @@ namespace Fantasy
             MessageDispatcherComponent = null;
             PoolGeneratorComponent = null;
 #if FANTASY_NET
-            World = null;
+            if (World != null)
+            {
+                World = null;
+                World.Dispose();
+            }
             Process = null;
             SceneType = 0;
             SceneConfigId = 0;
