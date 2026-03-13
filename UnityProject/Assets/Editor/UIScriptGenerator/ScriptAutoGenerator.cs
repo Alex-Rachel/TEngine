@@ -14,6 +14,7 @@ namespace TEngine.Editor.UI
     {
         private static TextEditor m_textEditor = new TextEditor();
         private static string[] VARIABLE_NAME_REGEX;
+
         private static void CheckVariableNames()
         {
             var cnt = (int)UIFieldCodeStyle.Max;
@@ -252,6 +253,7 @@ namespace TEngine.Editor.UI
         }
 
         private static int m_bindIndex = 0;
+
         public static void AutoErgodic(Transform root, Transform transform, ref StringBuilder strVar,
             ref StringBuilder strBind, ref StringBuilder strOnCreate, ref StringBuilder strCallback, bool isUniTask)
         {
@@ -260,7 +262,7 @@ namespace TEngine.Editor.UI
                 Transform child = transform.GetChild(i);
                 WriteAutoScript(root, child, ref strVar, ref strBind, ref strOnCreate, ref strCallback, isUniTask);
                 // 跳过 "m_item"
-                if (child.name.StartsWith(GetUIWidgetName()))
+                if (child.name.StartsWith(GetUIWidgetGameObjectName()))
                 {
                     continue;
                 }
@@ -297,7 +299,7 @@ namespace TEngine.Editor.UI
             }
 
             // strVar.AppendLine($"\t\tprivate {componentName} {varName};");
-            strVar.AppendLine($"\t\tprivate {componentName} {varName}{(ScriptGeneratorSetting.Instance.NullableEnable?" = null!;":";")}");
+            strVar.AppendLine($"\t\tprivate {componentName} {varName}{(ScriptGeneratorSetting.Instance.NullableEnable ? " = null!;" : ";")}");
             if (rule.componentName == UIComponentName.GameObject)
             {
                 strBind.AppendLine($"\t\t\t{varName} = m_bindComponent.GetComponent<RectTransform>({m_bindIndex}).gameObject;");
@@ -347,7 +349,7 @@ namespace TEngine.Editor.UI
                     break;
             }
         }
-        
+
         #region GenerateImpCSharp
 
         private static bool GenerateImpCSharpScript(bool isUniTask = false, string fileName = null, string impSavePath = null, string uiTypeName = null)
@@ -364,7 +366,7 @@ namespace TEngine.Editor.UI
             StringBuilder strFile = new StringBuilder();
 
 #if TextMeshPro
-                strFile.AppendLine("using TMPro;");
+            strFile.AppendLine("using TMPro;");
 #endif
             if (isUniTask)
             {
@@ -428,7 +430,7 @@ namespace TEngine.Editor.UI
                 Transform child = transform.GetChild(i);
                 WriteAutoImpScript(root, child, ref strCallback, isUniTask);
                 // 跳过 "m_item"
-                if (child.name.StartsWith(GetUIWidgetName()))
+                if (child.name.StartsWith(GetUIWidgetGameObjectName()))
                 {
                     continue;
                 }
@@ -508,7 +510,7 @@ namespace TEngine.Editor.UI
 
         #region GenerateUIComponent
 
-         public static bool GenerateUIComponentScript()
+        public static bool GenerateUIComponentScript()
         {
             var root = Selection.activeTransform;
 
@@ -546,7 +548,7 @@ namespace TEngine.Editor.UI
                 WriteScriptUIComponent(root, child, uiBindComponent);
 
                 // 跳过 "m_item"
-                if (child.name.StartsWith(GetUIWidgetName()))
+                if (child.name.StartsWith(GetUIWidgetGameObjectName()))
                 {
                     continue;
                 }
@@ -749,6 +751,16 @@ namespace TEngine.Editor.UI
             return ScriptGeneratorSetting.GetPrefixNameByCodeStyle(style);
         }
 
+        private static string GetUIWidgetGameObjectName()
+        {
+            foreach (var rule in ScriptGeneratorSetting.Instance.ScriptGenerateRule.Where(rule => rule.isUIWidget))
+            {
+                return rule.uiElementRegex;
+            }
+            // 生成规则里没有有勾选是否Widget时，保底
+            return GetUIWidgetName();
+        }
+
         private static string GetUIWidgetName()
         {
             return GetComponentName(ScriptGeneratorSetting.GetWidgetName());
@@ -771,12 +783,11 @@ namespace TEngine.Editor.UI
                 return varName;
             }
 
-            for (int i = 0; i < VARIABLE_NAME_REGEX.Length; i++)
+             foreach (var prefix in VARIABLE_NAME_REGEX)
             {
-                var prefix = VARIABLE_NAME_REGEX[i];
                 if (varName.StartsWith(prefix))
                 {
-                    varName = varName.Replace(prefix, string.Empty);
+                    varName = varName[prefix.Length..];
                     varName = GetComponentName(varName);
                     break;
                 }

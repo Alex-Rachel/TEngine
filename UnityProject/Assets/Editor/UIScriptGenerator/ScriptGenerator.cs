@@ -88,7 +88,8 @@ namespace TEngine.Editor.UI
                     var widgetPrefix = $"{(ScriptGeneratorSetting.GetCodeStyle() == UIFieldCodeStyle.MPrefix ? "m_" : "_")}{ScriptGeneratorSetting.GetWidgetName()}";
                     if (root.name.StartsWith(widgetPrefix))
                     {
-                        strFile.Append("\tclass " + root.name.Replace(widgetPrefix, "") + " : UIWidget\n");
+                        var className = root.name.StartsWith(widgetPrefix) ? root.name[widgetPrefix.Length..] : root.name;
+                        strFile.Append("\tclass " + className + " : UIWidget\n");
                     }
                     else
                     {
@@ -231,7 +232,7 @@ namespace TEngine.Editor.UI
                 }
                 else if (varName.StartsWith("m_"))
                 {
-                    varName = varName.Substring(1);
+                    varName = varName[1..];
                 }
                 else
                 {
@@ -313,7 +314,7 @@ namespace TEngine.Editor.UI
             }
         }
 
-        public class GeneratorHelper 
+        public class GeneratorHelper
         {
             [MenuItem("GameObject/ScriptGenerator/About", priority = 49)]
             public static void About()

@@ -10,7 +10,7 @@ using UnityEngine;
 namespace GameLogic
 {
     [CustomEditor(typeof(UIBindComponent))]
-    public class UIComponentInspectorEditor : Editor
+    public class UIComponentInspectorEditor : UnityEditor.Editor
     {
         private UIBindComponent m_uiBindComponent;
         private ReorderableList m_reorderableList;
@@ -40,7 +40,7 @@ namespace GameLogic
             // 仅在首次（为空）时初始化，避免覆盖用户在 UIComponentEditor.cs 中配置的持久化数据
             if (string.IsNullOrEmpty(m_className.stringValue))
             {
-                m_className.stringValue = target.name;
+                m_className.stringValue = GetClassName(target.name);
             }
             if (string.IsNullOrEmpty(m_genCodePath.stringValue))
             {
@@ -52,6 +52,43 @@ namespace GameLogic
             }
             serializedObject.ApplyModifiedProperties();
             CreateReorderableList();
+        }
+
+        string GetClassName(string targetName)
+        {
+            // UIWindow 直接用物体名
+            if (m_selectedIndex == 0)
+            {
+                return targetName;
+            }
+            // UIWidget用UIWindow名拼接物体名
+            var rules = ScriptGeneratorSetting.GetScriptGenerateRule()
+                .Where(r => r.isUIWidget);
+            foreach (var rule in rules)
+            {
+                if (rule.isUIWidget && targetName.StartsWith(rule.uiElementRegex))
+                {
+                    var parent = ((UIBindComponent)target).transform.parent;
+                    while (true)
+                    {
+                        var uiBindComponent = parent.GetComponent<UIBindComponent>();
+                        if (uiBindComponent)
+                        {
+                            if (uiBindComponent.uiType == ScriptGeneratorSetting.Instance.UIGenTypes[0].uiTypeName)
+                            {
+                                targetName = $"{parent.name.Replace("UI", string.Empty)}{targetName.Replace(rule.uiElementRegex, string.Empty)}Widget";
+                            }
+                            break;
+                        }
+                        parent = parent.parent;
+                        if (!parent)
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
+            return targetName;
         }
 
         private void CreateReorderableList()
@@ -228,9 +265,13 @@ namespace GameLogic
                 // EditorGUILayout.PropertyField(m_uiType, new GUIContent("UI类型"));
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.PropertyField(m_className, new GUIContent("类名"));
-                if(GUILayout.Button("物体名", GUILayout.Width(60), GUILayout.Height(18)))
+                if (GUILayout.Button("物体名", GUILayout.Width(60), GUILayout.Height(18)))
                 {
                     m_className.stringValue = target.name;
+                }
+                if (GUILayout.Button("默认", GUILayout.Width(60), GUILayout.Height(18)))
+                {
+                    m_className.stringValue = GetClassName(target.name);
                 }
                 EditorGUILayout.EndHorizontal();
 
@@ -308,7 +349,6 @@ namespace GameLogic
                         Debug.LogError("路径不能为空" + newPath);
                         string defaultPath = GetDefaultPathByPropertyType(pathProperty);
                         pathProperty.stringValue = defaultPath;
-
                     }
                     else
                     {
