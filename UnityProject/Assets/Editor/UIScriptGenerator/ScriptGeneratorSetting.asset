@@ -85,9 +85,12 @@ MonoBehaviour:
   - uiElementRegex: m_toggle
     componentName: 15
     isUIWidget: 0
+  - uiElementRegex: m_tmpInput
+    componentName: 22
+    isUIWidget: 0
+  - uiElementRegex: m_tmpDropdown
+    componentName: 23
+    isUIWidget: 0
   - uiElementRegex: m_tmp
     componentName: 19
-    isUIWidget: 0
-  - uiElementRegex: m_tInput
-    componentName: 22
     isUIWidget: 0

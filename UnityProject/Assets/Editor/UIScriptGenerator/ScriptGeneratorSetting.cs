@@ -54,7 +54,8 @@ namespace TEngine.Editor.UI
 
         public UIFieldCodeStyle CodeStyle = UIFieldCodeStyle.UnderscorePrefix;
 
-        [SerializeField] private List<UIGenType> uiGenTypes = new List<UIGenType>()
+        [SerializeField]
+        private List<UIGenType> uiGenTypes = new List<UIGenType>()
         {
             new UIGenType("UIWindow", false),
             new UIGenType("UIWidget", false),
@@ -87,8 +88,9 @@ namespace TEngine.Editor.UI
             new ScriptGenerateRuler("m_canvasGroup", UIComponentName.CanvasGroup),
             new ScriptGenerateRuler("m_toggle",UIComponentName.Toggle),
 #if TextMeshPro
+            new ScriptGenerateRuler("m_tmpInput", UIComponentName.TMP_InputField),
+            new ScriptGenerateRuler("m_tmpDropdown", UIComponentName.TMP_Dropdown),
             new ScriptGenerateRuler("m_tmp",UIComponentName.TextMeshProUGUI),
-            new ScriptGenerateRuler("m_tInput",UIComponentName.TMP_InputField), 
 #endif
         };
 

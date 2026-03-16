@@ -78,6 +78,10 @@ namespace GameLogic
                             {
                                 targetName = $"{parent.name.Replace("UI", string.Empty)}{targetName.Replace(rule.uiElementRegex, string.Empty)}Widget";
                             }
+                            else
+                            {
+                                targetName = $"{uiBindComponent.className.Replace("Widget", string.Empty)}{targetName.Replace(rule.uiElementRegex, string.Empty)}Widget";
+                            }
                             break;
                         }
                         parent = parent.parent;

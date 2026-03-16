@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using GameLogic;
 using TMPro;
@@ -321,12 +322,13 @@ namespace TEngine.Editor.UI
 
                     if (isUniTask)
                     {
-                        strOnCreate.AppendLine(
-                            $"\t\t\t{varName}.onClick.AddListener(UniTask.UnityAction({btnFuncName}));");
+                        strOnCreate.AppendLine($"\t\t\t{varName}.onClick.RemoveAllListeners();");
+                        strOnCreate.AppendLine($"\t\t\t{varName}.onClick.AddListener(UniTask.UnityAction({btnFuncName}));");
                         strCallback.AppendLine($"\t\tprivate partial UniTaskVoid {btnFuncName}();");
                     }
                     else
                     {
+                        strOnCreate.AppendLine($"\t\t\t{varName}.onClick.RemoveAllListeners();");
                         strOnCreate.AppendLine($"\t\t\t{varName}.onClick.AddListener({btnFuncName});");
                         strCallback.AppendLine($"\t\tprivate partial void {btnFuncName}();");
                     }
@@ -336,13 +338,23 @@ namespace TEngine.Editor.UI
 
                 case UIComponentName.Toggle:
                     var toggleFuncName = GetToggleFuncName(varName);
+                    strOnCreate.AppendLine($"\t\t\t{varName}.onValueChanged.RemoveAllListeners();");
                     strOnCreate.AppendLine($"\t\t\t{varName}.onValueChanged.AddListener({toggleFuncName});");
                     strCallback.AppendLine($"\t\tprivate partial void {toggleFuncName}(bool isOn);");
                     strCallback.AppendLine();
                     break;
 
+                case UIComponentName.TMP_Dropdown:
+                    var tmpDropdownFuncName = GetTMPDropdownFuncName(varName);
+                    strOnCreate.Append($"\t\t\t{varName}.onValueChanged.RemoveAllListeners();\n");
+                    strOnCreate.Append($"\t\t\t{varName}.onValueChanged.AddListener({tmpDropdownFuncName});\n");
+                    strCallback.Append($"\t\tprivate partial void {tmpDropdownFuncName}(int selectedIndex);\n");
+                    strCallback.AppendLine();
+                    break;
+
                 case UIComponentName.Slider:
                     var sliderFuncName = GetSliderFuncName(varName);
+                    strOnCreate.AppendLine($"\t\t\t{varName}.onValueChanged.RemoveAllListeners();");
                     strOnCreate.AppendLine($"\t\t\t{varName}.onValueChanged.AddListener({sliderFuncName});");
                     strCallback.AppendLine($"\t\tprivate partial void {sliderFuncName}(float value);");
                     strCallback.AppendLine();
@@ -495,6 +507,14 @@ namespace TEngine.Editor.UI
                     strCallback.AppendLine();
                     break;
 
+                case UIComponentName.TMP_Dropdown:
+                    var tmpDropdownFuncName = GetTMPDropdownFuncName(varName);
+                    strCallback.AppendLine($"\t\tprivate partial void {tmpDropdownFuncName}(int selectedIndex)");
+                    strCallback.AppendLine("\t\t{");
+                    strCallback.AppendLine("\t\t}");
+                    strCallback.AppendLine();
+                    break;
+
                 case UIComponentName.Slider:
                     var sliderFuncName = GetSliderFuncName(varName);
                     strCallback.AppendLine($"\t\tprivate partial void {sliderFuncName}(float value)");
@@ -618,6 +638,9 @@ namespace TEngine.Editor.UI
             type = Type.GetType($"GameLogic.{enumName}, GameLogic");
             if (type != null) return type;
 
+            type = Type.GetType($"TMPro.{enumName}, TMPro");
+            if (type != null) return type;
+
             type = Type.GetType(enumName);
             if (type != null) return type;
 
@@ -663,8 +686,11 @@ namespace TEngine.Editor.UI
                 UIComponentName.HorizontalLayoutGroup => typeof(HorizontalLayoutGroup),
                 UIComponentName.VerticalLayoutGroup => typeof(VerticalLayoutGroup),
                 UIComponentName.Dropdown => typeof(Dropdown),
-                UIComponentName.TextMeshProUGUI => typeof(TextMeshProUGUI),
+#if TextMeshPro
                 UIComponentName.TMP_InputField => typeof(TMP_InputField),
+                UIComponentName.TMP_Dropdown => typeof(TMP_Dropdown),
+                UIComponentName.TextMeshProUGUI => typeof(TextMeshProUGUI),
+#endif
                 _ => null,
             };
         }
@@ -783,7 +809,7 @@ namespace TEngine.Editor.UI
                 return varName;
             }
 
-             foreach (var prefix in VARIABLE_NAME_REGEX)
+            foreach (var prefix in VARIABLE_NAME_REGEX)
             {
                 if (varName.StartsWith(prefix))
                 {
