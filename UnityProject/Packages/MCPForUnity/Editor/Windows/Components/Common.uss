@@ -1,0 +1,630 @@
+/* Root Container */
+#root-container {
+    padding: 16px;
+    flex-shrink: 1;
+    overflow: hidden;
+}
+
+/* Title */
+.title {
+    font-size: 20px;
+    -unity-font-style: bold;
+    margin-bottom: 20px;
+    padding: 8px;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+}
+
+/* Section Styling */
+.section {
+    margin-bottom: 14px;
+    padding: 8px;
+    background-color: rgba(0, 0, 0, 0.04);
+    border-radius: 4px;
+    border-width: 1px;
+    border-color: rgba(0, 0, 0, 0.15);
+}
+
+/* Remove bottom margin from last section in a stack */
+/* Note: Unity UI Toolkit doesn't support :last-child pseudo-class.
+   The .section-last class is applied programmatically instead. */
+.section-stack > .section.section-last {
+    margin-bottom: 0px;
+}
+
+.section-title {
+    font-size: 13px;
+    -unity-font-style: bold;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    letter-spacing: 0.3px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.section-content {
+    padding: 4px;
+}
+
+/* Setting Rows */
+.setting-row {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+    min-height: 24px;
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.setting-column {
+    flex-direction: column;
+    margin-bottom: 4px;
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.setting-label {
+    min-width: 140px;
+    flex-shrink: 0;
+    -unity-text-align: middle-left;
+}
+
+.setting-value {
+    -unity-text-align: middle-right;
+    color: rgba(150, 150, 150, 1);
+}
+
+.setting-toggle {
+    margin-left: auto;
+}
+
+.setting-dropdown {
+    flex-grow: 1;
+    flex-shrink: 1;
+    margin-top: 4px;
+    max-width: 100%;
+}
+
+.setting-dropdown-inline {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 150px;
+    flex-basis: 200px;
+}
+
+/* Validation Description */
+.validation-description {
+    margin-top: 4px;
+    padding: 8px;
+    background-color: rgba(100, 150, 200, 0.15);
+    border-radius: 4px;
+    font-size: 11px;
+    white-space: normal;
+}
+
+/* Port Fields */
+.port-field {
+    width: 100px;
+    margin-left: auto;
+}
+
+/* URL Fields */
+.url-field {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 200px;
+    flex-basis: 250px;
+}
+
+.port-field > .unity-text-field__input {
+    background-color: rgba(0, 0, 0, 0.1);
+    -unity-text-align: middle-center;
+}
+
+/* Status Container */
+.status-container {
+    flex-direction: row;
+    align-items: center;
+    flex-grow: 1;
+}
+
+.status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 6px;
+    margin-right: 8px;
+    background-color: rgba(150, 150, 150, 1);
+}
+
+.status-dot.connected {
+    background-color: rgba(0, 200, 100, 1);
+}
+
+.status-dot.disconnected {
+    background-color: rgba(200, 50, 50, 1);
+}
+
+.status-dot.configured {
+    background-color: rgba(0, 200, 100, 1);
+}
+
+.status-dot.not-configured {
+    background-color: rgba(200, 50, 50, 1);
+}
+
+.status-dot.warning {
+    background-color: rgba(255, 200, 0, 1);
+}
+
+.status-dot.unknown {
+    background-color: rgba(150, 150, 150, 1);
+}
+
+.status-dot.healthy {
+    background-color: rgba(0, 200, 100, 1);
+}
+
+.status-text {
+    -unity-text-align: middle-left;
+}
+
+.status-indicator-small {
+    width: 8px;
+    height: 8px;
+    border-radius: 4px;
+    margin-left: 8px;
+    background-color: rgba(150, 150, 150, 1);
+}
+
+.status-indicator-small.valid {
+    background-color: rgba(0, 200, 100, 1);
+}
+
+.status-indicator-small.invalid {
+    background-color: rgba(200, 50, 50, 1);
+}
+
+.status-indicator-small.warning {
+    background-color: rgba(255, 200, 0, 1);
+}
+
+/* Buttons */
+.action-button {
+    min-width: 80px;
+    height: 28px;
+    margin-left: 8px;
+    background-color: rgba(50, 150, 250, 0.8);
+    border-radius: 4px;
+    -unity-font-style: bold;
+}
+
+.action-button:hover {
+    background-color: rgba(50, 150, 250, 1);
+}
+
+.action-button:active {
+    background-color: rgba(30, 120, 200, 1);
+}
+
+/* Start Server button in the manual config section should align flush left like other full-width controls */
+.start-server-button {
+    margin-left: 0px;
+}
+
+/* When the HTTP server/session is running, we show the Start/Stop button as "danger" (red) */
+.action-button.server-running {
+    background-color: rgba(200, 50, 50, 0.85);
+}
+
+.action-button.server-running:hover {
+    background-color: rgba(220, 60, 60, 1);
+}
+
+.action-button.server-running:active {
+    background-color: rgba(170, 40, 40, 1);
+}
+
+.secondary-button {
+    width: 100%;
+    height: 28px;
+    background-color: rgba(100, 100, 100, 0.3);
+    border-radius: 4px;
+}
+
+.secondary-button:hover {
+    background-color: rgba(100, 100, 100, 0.5);
+}
+
+.secondary-button:active {
+    background-color: rgba(80, 80, 80, 0.5);
+}
+
+/* Manual Configuration */
+.manual-config-content {
+    padding: 8px;
+    margin-top: 8px;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.config-label {
+    font-size: 11px;
+    -unity-font-style: bold;
+    margin-top: 8px;
+    margin-bottom: 4px;
+}
+
+.path-row {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 8px;
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.config-path-field {
+    flex-grow: 1;
+    flex-shrink: 1;
+    margin-right: 4px;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.config-path-field > .unity-text-field__input {
+    background-color: rgba(0, 0, 0, 0.1);
+    font-size: 11px;
+    overflow: hidden;
+    text-overflow: clip;
+}
+
+.icon-button {
+    min-width: 50px;
+    height: 24px;
+    margin-left: 4px;
+}
+
+.config-json-row {
+    flex-direction: row;
+    margin-bottom: 8px;
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.config-json-field {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-height: 64px;
+    margin-right: 4px;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.config-json-field > .unity-text-field__input {
+    background-color: rgba(0, 0, 0, 0.1);
+    font-size: 10px;
+    -unity-font-style: normal;
+    white-space: normal;
+    overflow: hidden;
+}
+
+.icon-button-vertical {
+    min-width: 50px;
+    height: 30px;
+    align-self: flex-start;
+}
+
+.installation-steps {
+    padding: 8px;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+    font-size: 11px;
+    white-space: normal;
+    margin-top: 4px;
+}
+
+/* Tools Section */
+.tool-actions {
+    flex-direction: column;
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+
+.tool-action-button {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-width: 0;
+    height: 26px;
+    margin-bottom: 4px;
+}
+
+.tool-category-container {
+    flex-direction: column;
+    margin-top: 8px;
+}
+
+.tool-item {
+    flex-direction: column;
+    padding: 8px;
+    margin-bottom: 8px;
+    background-color: rgba(0, 0, 0, 0.04);
+    border-radius: 4px;
+    border-width: 1px;
+    border-color: rgba(0, 0, 0, 0.12);
+}
+
+.tool-item-header {
+    flex-direction: row;
+    align-items: center;
+}
+
+.tool-item-toggle {
+    flex-shrink: 0;
+    min-width: 0;
+}
+
+.tool-tags {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-left: auto;
+    padding-left: 8px;
+}
+
+.tool-tag {
+    font-size: 10px;
+    padding: 2px 6px;
+    margin-left: 4px;
+    margin-top: 2px;
+    background-color: rgba(200, 200, 200, 1);
+    border-radius: 3px;
+    border-width: 1px;
+    border-color: rgba(160, 160, 160, 1);
+    color: rgba(40, 40, 40, 1);
+}
+
+.tool-item-description,
+.tool-parameters {
+    font-size: 11px;
+    color: rgba(120, 120, 120, 1);
+    white-space: normal;
+    margin-top: 4px;
+}
+
+.tool-parameters {
+    -unity-font-style: italic;
+}
+
+/* Group enable/disable checkbox in the foldout header */
+.group-header-checkbox {
+    margin-left: 6px;
+    margin-right: 0;
+    flex-shrink: 0;
+}
+
+.group-header-checkbox > .unity-toggle__input > .unity-toggle__checkmark {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+/* Advanced Settings */
+.advanced-settings-foldout {
+    margin-top: 16px;
+}
+
+.advanced-settings-foldout > .unity-foldout__toggle {
+    -unity-font-style: bold;
+    font-size: 12px;
+}
+
+/* Manual Command Foldout */
+.manual-command-foldout {
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+
+.manual-command-foldout > .unity-foldout__toggle {
+    font-size: 11px;
+    padding: 4px;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 3px;
+}
+
+.manual-command-foldout > .unity-foldout__content {
+    margin-top: 4px;
+}
+
+.advanced-settings-content {
+    padding: 8px;
+    margin-top: 8px;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.advanced-label {
+    font-size: 11px;
+    -unity-font-style: bold;
+    margin-bottom: 8px;
+    color: rgba(150, 150, 150, 1);
+    white-space: normal;
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.override-row {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 8px;
+    margin-bottom: 4px;
+}
+
+.override-label {
+    font-size: 11px;
+    -unity-font-style: bold;
+    min-width: 120px;
+    white-space: normal;
+    flex-shrink: 1;
+}
+
+.help-text {
+    font-size: 10px;
+    color: rgba(120, 120, 120, 1);
+    white-space: normal;
+    flex-shrink: 1;
+    min-width: 0;
+    margin-bottom: 4px;
+}
+
+.help-text.http-local-url-error {
+    color: rgba(255, 80, 80, 1);
+    -unity-font-style: bold;
+}
+
+.path-override-controls {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.override-field {
+    flex-grow: 1;
+    flex-shrink: 1;
+    margin-right: 4px;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.override-field > .unity-text-field__input {
+    background-color: rgba(0, 0, 0, 0.1);
+    font-size: 11px;
+    overflow: hidden;
+    text-overflow: clip;
+}
+
+.setting-label-small {
+    font-size: 11px;
+    min-width: 120px;
+    -unity-text-align: middle-left;
+}
+
+.path-display-field {
+    flex-grow: 1;
+    flex-shrink: 1;
+    margin-right: 4px;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.path-display-field > .unity-text-field__input {
+    background-color: rgba(0, 0, 0, 0.1);
+    font-size: 11px;
+    overflow: hidden;
+    text-overflow: clip;
+}
+
+/* Light Theme Overrides */
+.unity-theme-light .title {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.unity-theme-light .section {
+    background-color: rgba(0, 0, 0, 0.03);
+    border-color: rgba(0, 0, 0, 0.15);
+}
+
+.unity-theme-light .section-title {
+    border-bottom-color: rgba(0, 0, 0, 0.1);
+}
+
+.unity-theme-dark .tool-tag {
+    color: rgba(255, 255, 255, 0.9);
+    background-color: rgba(90, 95, 105, 1);
+    border-color: rgba(110, 115, 125, 1);
+}
+
+.unity-theme-dark .tool-item {
+    background-color: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.unity-theme-dark .tool-item-description,
+.unity-theme-dark .tool-parameters {
+    color: rgba(200, 200, 200, 0.8);
+}
+
+
+.unity-theme-light .validation-description {
+    background-color: rgba(100, 150, 200, 0.1);
+}
+
+.unity-theme-light .port-field > .unity-text-field__input {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.unity-theme-light .config-path-field > .unity-text-field__input {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.unity-theme-light .config-json-field > .unity-text-field__input {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.unity-theme-light .manual-config-content {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+.unity-theme-light .installation-steps {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+.unity-theme-light .advanced-settings-content {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+.unity-theme-light .override-field > .unity-text-field__input {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.unity-theme-light .path-display-field > .unity-text-field__input {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Warning Banner (for transport mismatch, etc.) */
+.warning-banner {
+    display: none;
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    background-color: rgba(255, 180, 0, 0.2);
+    border-radius: 4px;
+    border-width: 1px;
+    border-color: rgba(255, 180, 0, 0.5);
+}
+
+.warning-banner.visible {
+    display: flex;
+}
+
+.warning-banner-text {
+    font-size: 11px;
+    white-space: normal;
+    color: rgba(180, 120, 0, 1);
+}
+
+.unity-theme-dark .warning-banner {
+    background-color: rgba(255, 180, 0, 0.15);
+    border-color: rgba(255, 180, 0, 0.4);
+}
+
+.unity-theme-dark .warning-banner-text {
+    color: rgba(255, 200, 100, 1);
+}
+
+.unity-theme-light .manual-command-foldout > .unity-foldout__toggle {
+    background-color: rgba(0, 0, 0, 0.03);
+}

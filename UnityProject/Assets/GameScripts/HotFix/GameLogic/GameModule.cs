@@ -1,4 +1,5 @@
 ﻿using GameLogic;
+using GameLogic.Regicide;
 using TEngine;
 using Object = UnityEngine.Object;
 
@@ -25,7 +26,6 @@ public class GameModule
         get => _debugger ??= Get<IDebuggerModule>();
         private set => _debugger = value;
     }
-
 
     private static IDebuggerModule _debugger;
 
@@ -82,10 +82,20 @@ public class GameModule
     /// 获取本地化模块。
     /// </summary>
     public static ILocalizationModule Localization => _localization ??= Get<ILocalizationModule>();
-    
+
     private static ILocalizationModule _localization;
+
+    /// <summary>
+    /// 获取弑君者网络模块。
+    /// </summary>
+    public static RegicideNetworkModule RegicideNetwork => RegicideNetworkModule.Instance;
+
+    /// <summary>
+    /// 获取弑君者对局模块。
+    /// </summary>
+    public static RegicideBattleModule RegicideBattle => RegicideBattleModule.Instance;
     #endregion
-    
+
     /// <summary>
     /// 获取游戏框架模块类。
     /// </summary>
@@ -99,11 +109,11 @@ public class GameModule
 
         return module;
     }
-    
+
     public static void Shutdown()
     {
         Log.Info("GameModule Shutdown");
-            
+
         _base = null;
         _debugger = null;
         _fsm = null;
@@ -114,5 +124,22 @@ public class GameModule
         _scene = null;
         _timer = null;
         _localization = null;
+
+        if (RegicideNetworkModule.IsValid)
+        {
+            RegicideNetworkModule.Instance.Release();
+        }
+
+        if (RegicideBattleModule.IsValid)
+        {
+            RegicideBattleModule.Instance.Release();
+        }
+
+        if (RegicideAuthorityModule.IsValid)
+        {
+            RegicideAuthorityModule.Instance.Release();
+        }
+
+        RegicideBootstrap.Shutdown();
     }
 }

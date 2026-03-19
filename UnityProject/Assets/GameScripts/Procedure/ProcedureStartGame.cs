@@ -19,6 +19,7 @@ namespace Procedure
         {
             await UniTask.Yield();
             LauncherMgr.HideAllUI();
+            GameModule.Scene.LoadScene("GameScene");
         }
     }
 }

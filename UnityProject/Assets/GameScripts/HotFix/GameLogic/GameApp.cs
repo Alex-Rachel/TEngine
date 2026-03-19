@@ -1,12 +1,12 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Reflection;
 using GameLogic;
+using GameLogic.Regicide;
 #if ENABLE_OBFUZ
 using Obfuz;
 #endif
 using TEngine;
 #pragma warning disable CS0436
-
 
 /// <summary>
 /// 游戏App。
@@ -19,28 +19,26 @@ public partial class GameApp
     private static List<Assembly> _hotfixAssembly;
 
     /// <summary>
-    /// 热更域App主入口。
+    /// 热更游戏App主入口。
     /// </summary>
     /// <param name="objects"></param>
     public static void Entrance(object[] objects)
     {
         GameEventHelper.Init();
         _hotfixAssembly = (List<Assembly>)objects[0];
-        Log.Warning("======= 看到此条日志代表你成功运行了热更新代码 =======");
         Log.Warning("======= Entrance GameApp =======");
         Utility.Unity.AddDestroyListener(Release);
-        Log.Warning("======= StartGameLogic =======");
         StartGameLogic();
     }
-    
+
     private static void StartGameLogic()
     {
-        // GameEvent.Get<ILoginUI>().ShowLoginUI();
-        GameModule.UI.ShowUIAsync<BattleMainUI>();
+        RegicideBootstrap.Start();
     }
-    
+
     private static void Release()
     {
+        RegicideBootstrap.Shutdown();
         SingletonSystem.Release();
         Log.Warning("======= Release GameApp =======");
     }

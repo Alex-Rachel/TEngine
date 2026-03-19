@@ -1,0 +1,106 @@
+/* MCP Setup Window Styles */
+
+/* Root container */
+#root-container {
+    padding: 20px;
+    flex-grow: 1;
+}
+
+/* Dependency list */
+#dependency-list {
+    margin-top: 8px;
+}
+
+/* Dependency item container */
+.dependency-item {
+    margin-bottom: 12px;
+}
+
+/* Dependency row (name + version + indicator) */
+.dependency-row {
+    flex-direction: row;
+    align-items: center;
+}
+
+/* Dependency name label */
+.dependency-name {
+    -unity-font-style: bold;
+    min-width: 150px;
+}
+
+/* Status indicator positioning */
+.dependency-row .status-indicator-small {
+    margin-left: 8px;
+}
+
+/* Dependency details text */
+.dependency-details {
+    margin-left: 0px;
+    margin-top: 4px;
+}
+
+/* Status message container */
+#status-message-container {
+    margin-top: 16px;
+}
+
+/* Status message text */
+#status-message {
+    white-space: normal;
+}
+
+/* Installation section */
+#installation-section {
+    margin-top: 16px;
+    padding: 12px;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: rgba(0, 0, 0, 0.2);
+    display: none;
+}
+
+.installation-container {
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+/* Installation section title */
+.installation-title {
+    -unity-font-style: bold;
+    margin-bottom: 8px;
+}
+
+/* Installation instructions text */
+#installation-instructions {
+    white-space: normal;
+    margin-bottom: 4px;
+}
+
+.install-links-row {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.install-link-button {
+    flex-grow: 1;
+    min-width: 180px;
+    margin-top: 0;
+}
+
+/* Button container at bottom */
+.button-container {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+/* Button sizing */
+.setup-button {
+    width: 96px;
+}
+
+/* Description text spacing */
+.description-text {
+    margin-bottom: 12px;
+}
