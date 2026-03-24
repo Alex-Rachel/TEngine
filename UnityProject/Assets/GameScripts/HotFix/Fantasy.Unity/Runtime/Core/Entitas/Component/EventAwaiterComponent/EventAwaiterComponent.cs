@@ -12,6 +12,8 @@ namespace Fantasy.EventAwaiter
     /// </summary>
     public sealed class EventAwaiterComponent : Entity
     {
+        private bool _isDisposing;  // 标记当前是否已经Dispose了。
+        
         /// <summary>
         /// 存储不同类型事件的等待回调队列
         /// </summary>
@@ -61,7 +63,8 @@ namespace Fantasy.EventAwaiter
                 sceneEventAwaiterPool.Return(typeof(EventAwaiterCallback<T>), eventAwaiterCallback);
                 // 如果不是正常完成（取消），需要手动清理等待队列
                 // 正常完成时由 Notify 方法统一清理整个类型的等待队列
-                if (result.ResultType != EventAwaiterResultType.Success)
+                // Dispose 期间跳过，WaitCallbacks.Clear() 会统一清理
+                if (!_isDisposing && result.ResultType != EventAwaiterResultType.Success)
                 {
                     WaitCallbacks.RemoveValue(typeHandle, eventAwaiterCallback);
                 }
@@ -125,7 +128,8 @@ namespace Fantasy.EventAwaiter
                 sceneEventAwaiterPool.Return(typeof(EventAwaiterCallback<T>), eventAwaiterCallback);
                 // 如果不是正常完成（超时或取消），需要手动清理等待队列
                 // 正常完成时由 Notify 方法统一清理整个类型的等待队列
-                if (result.ResultType != EventAwaiterResultType.Success)
+                // Dispose 期间跳过，WaitCallbacks.Clear() 会统一清理
+                if (!_isDisposing && result.ResultType != EventAwaiterResultType.Success)
                 {
                     WaitCallbacks.RemoveValue(typeHandle, eventAwaiterCallback);
                 }
@@ -144,15 +148,15 @@ namespace Fantasy.EventAwaiter
             var typeHandle = typeof(T).TypeHandle;
 
             // 查找该类型的所有等待回调
-            if (!WaitCallbacks.TryGetValue(typeHandle, out var wailtCallbackList))
+            if (!WaitCallbacks.TryGetValue(typeHandle, out var waitCallbackList))
             {
                 return;
             }
 
             // 通知所有等待该类型事件的回调
-            foreach (var wailtCallback in wailtCallbackList)
+            foreach (var waitCallback in waitCallbackList)
             {
-                ((EventAwaiterCallback<T>)wailtCallback).SetResult(obj);
+                ((EventAwaiterCallback<T>)waitCallback).SetResult(obj);
             }
 
             // 清理整个类型的等待队列（正常完成时统一清理）
@@ -169,18 +173,21 @@ namespace Fantasy.EventAwaiter
                 return;
             }
 
+            _isDisposing = true;
+            
             // 通知所有等待中的回调，组件已被销毁
             // 避免等待者无限等待，返回 Destroy 状态
-            foreach (var (_, wailtCallbackList) in WaitCallbacks)
+            foreach (var (_, waitCallbackList) in WaitCallbacks)
             {
-                foreach (var wailtCallback in wailtCallbackList)
+                foreach (var waitCallback in waitCallbackList)
                 {
-                    wailtCallback.SetDestroyResult();
+                    waitCallback.SetDestroyResult();
                 }
             }
 
             // 清空所有等待队列
             WaitCallbacks.Clear();
+            _isDisposing = false;
             base.Dispose();
         }
     }

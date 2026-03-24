@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using GameLogic;
 using TMPro;
@@ -14,6 +15,7 @@ namespace TEngine.Editor.UI
     {
         private static TextEditor m_textEditor = new TextEditor();
         private static string[] VARIABLE_NAME_REGEX;
+
         private static void CheckVariableNames()
         {
             var cnt = (int)UIFieldCodeStyle.Max;
@@ -252,6 +254,7 @@ namespace TEngine.Editor.UI
         }
 
         private static int m_bindIndex = 0;
+
         public static void AutoErgodic(Transform root, Transform transform, ref StringBuilder strVar,
             ref StringBuilder strBind, ref StringBuilder strOnCreate, ref StringBuilder strCallback, bool isUniTask)
         {
@@ -260,7 +263,7 @@ namespace TEngine.Editor.UI
                 Transform child = transform.GetChild(i);
                 WriteAutoScript(root, child, ref strVar, ref strBind, ref strOnCreate, ref strCallback, isUniTask);
                 // 跳过 "m_item"
-                if (child.name.StartsWith(GetUIWidgetName()))
+                if (child.name.StartsWith(GetUIWidgetGameObjectName()))
                 {
                     continue;
                 }
@@ -297,7 +300,7 @@ namespace TEngine.Editor.UI
             }
 
             // strVar.AppendLine($"\t\tprivate {componentName} {varName};");
-            strVar.AppendLine($"\t\tprivate {componentName} {varName}{(ScriptGeneratorSetting.Instance.NullableEnable?" = null!;":";")}");
+            strVar.AppendLine($"\t\tprivate {componentName} {varName}{(ScriptGeneratorSetting.Instance.NullableEnable ? " = null!;" : ";")}");
             if (rule.componentName == UIComponentName.GameObject)
             {
                 strBind.AppendLine($"\t\t\t{varName} = m_bindComponent.GetComponent<RectTransform>({m_bindIndex}).gameObject;");
@@ -319,12 +322,13 @@ namespace TEngine.Editor.UI
 
                     if (isUniTask)
                     {
-                        strOnCreate.AppendLine(
-                            $"\t\t\t{varName}.onClick.AddListener(UniTask.UnityAction({btnFuncName}));");
+                        strOnCreate.AppendLine($"\t\t\t{varName}.onClick.RemoveAllListeners();");
+                        strOnCreate.AppendLine($"\t\t\t{varName}.onClick.AddListener(UniTask.UnityAction({btnFuncName}));");
                         strCallback.AppendLine($"\t\tprivate partial UniTaskVoid {btnFuncName}();");
                     }
                     else
                     {
+                        strOnCreate.AppendLine($"\t\t\t{varName}.onClick.RemoveAllListeners();");
                         strOnCreate.AppendLine($"\t\t\t{varName}.onClick.AddListener({btnFuncName});");
                         strCallback.AppendLine($"\t\tprivate partial void {btnFuncName}();");
                     }
@@ -334,20 +338,30 @@ namespace TEngine.Editor.UI
 
                 case UIComponentName.Toggle:
                     var toggleFuncName = GetToggleFuncName(varName);
+                    strOnCreate.AppendLine($"\t\t\t{varName}.onValueChanged.RemoveAllListeners();");
                     strOnCreate.AppendLine($"\t\t\t{varName}.onValueChanged.AddListener({toggleFuncName});");
                     strCallback.AppendLine($"\t\tprivate partial void {toggleFuncName}(bool isOn);");
                     strCallback.AppendLine();
                     break;
 
+                case UIComponentName.TMP_Dropdown:
+                    var tmpDropdownFuncName = GetTMPDropdownFuncName(varName);
+                    strOnCreate.Append($"\t\t\t{varName}.onValueChanged.RemoveAllListeners();\n");
+                    strOnCreate.Append($"\t\t\t{varName}.onValueChanged.AddListener({tmpDropdownFuncName});\n");
+                    strCallback.Append($"\t\tprivate partial void {tmpDropdownFuncName}(int selectedIndex);\n");
+                    strCallback.AppendLine();
+                    break;
+
                 case UIComponentName.Slider:
                     var sliderFuncName = GetSliderFuncName(varName);
+                    strOnCreate.AppendLine($"\t\t\t{varName}.onValueChanged.RemoveAllListeners();");
                     strOnCreate.AppendLine($"\t\t\t{varName}.onValueChanged.AddListener({sliderFuncName});");
                     strCallback.AppendLine($"\t\tprivate partial void {sliderFuncName}(float value);");
                     strCallback.AppendLine();
                     break;
             }
         }
-        
+
         #region GenerateImpCSharp
 
         private static bool GenerateImpCSharpScript(bool isUniTask = false, string fileName = null, string impSavePath = null, string uiTypeName = null)
@@ -364,7 +378,7 @@ namespace TEngine.Editor.UI
             StringBuilder strFile = new StringBuilder();
 
 #if TextMeshPro
-                strFile.AppendLine("using TMPro;");
+            strFile.AppendLine("using TMPro;");
 #endif
             if (isUniTask)
             {
@@ -428,7 +442,7 @@ namespace TEngine.Editor.UI
                 Transform child = transform.GetChild(i);
                 WriteAutoImpScript(root, child, ref strCallback, isUniTask);
                 // 跳过 "m_item"
-                if (child.name.StartsWith(GetUIWidgetName()))
+                if (child.name.StartsWith(GetUIWidgetGameObjectName()))
                 {
                     continue;
                 }
@@ -493,6 +507,14 @@ namespace TEngine.Editor.UI
                     strCallback.AppendLine();
                     break;
 
+                case UIComponentName.TMP_Dropdown:
+                    var tmpDropdownFuncName = GetTMPDropdownFuncName(varName);
+                    strCallback.AppendLine($"\t\tprivate partial void {tmpDropdownFuncName}(int selectedIndex)");
+                    strCallback.AppendLine("\t\t{");
+                    strCallback.AppendLine("\t\t}");
+                    strCallback.AppendLine();
+                    break;
+
                 case UIComponentName.Slider:
                     var sliderFuncName = GetSliderFuncName(varName);
                     strCallback.AppendLine($"\t\tprivate partial void {sliderFuncName}(float value)");
@@ -508,7 +530,7 @@ namespace TEngine.Editor.UI
 
         #region GenerateUIComponent
 
-         public static bool GenerateUIComponentScript()
+        public static bool GenerateUIComponentScript()
         {
             var root = Selection.activeTransform;
 
@@ -546,7 +568,7 @@ namespace TEngine.Editor.UI
                 WriteScriptUIComponent(root, child, uiBindComponent);
 
                 // 跳过 "m_item"
-                if (child.name.StartsWith(GetUIWidgetName()))
+                if (child.name.StartsWith(GetUIWidgetGameObjectName()))
                 {
                     continue;
                 }
@@ -602,6 +624,11 @@ namespace TEngine.Editor.UI
             }
 
             var com = child.GetComponent(componentType);
+            if (com == null)
+            {
+                Debug.LogError($"{child.name}上未找到组件: {componentType.FullName}", child);
+                return;
+            }
             uiBindComponent.AddComponent(com);
         }
 
@@ -614,6 +641,9 @@ namespace TEngine.Editor.UI
             if (type != null) return type;
 
             type = Type.GetType($"GameLogic.{enumName}, GameLogic");
+            if (type != null) return type;
+
+            type = Type.GetType($"TMPro.{enumName}, TMPro");
             if (type != null) return type;
 
             type = Type.GetType(enumName);
@@ -661,8 +691,11 @@ namespace TEngine.Editor.UI
                 UIComponentName.HorizontalLayoutGroup => typeof(HorizontalLayoutGroup),
                 UIComponentName.VerticalLayoutGroup => typeof(VerticalLayoutGroup),
                 UIComponentName.Dropdown => typeof(Dropdown),
-                UIComponentName.TextMeshProUGUI => typeof(TextMeshProUGUI),
+#if TextMeshPro
                 UIComponentName.TMP_InputField => typeof(TMP_InputField),
+                UIComponentName.TMP_Dropdown => typeof(TMP_Dropdown),
+                UIComponentName.TextMeshProUGUI => typeof(TextMeshProUGUI),
+#endif
                 _ => null,
             };
         }
@@ -749,6 +782,16 @@ namespace TEngine.Editor.UI
             return ScriptGeneratorSetting.GetPrefixNameByCodeStyle(style);
         }
 
+        private static string GetUIWidgetGameObjectName()
+        {
+            foreach (var rule in ScriptGeneratorSetting.Instance.ScriptGenerateRule.Where(rule => rule.isUIWidget))
+            {
+                return rule.uiElementRegex;
+            }
+            // 生成规则里没有有勾选是否Widget时，保底
+            return GetUIWidgetName();
+        }
+
         private static string GetUIWidgetName()
         {
             return GetComponentName(ScriptGeneratorSetting.GetWidgetName());
@@ -771,12 +814,11 @@ namespace TEngine.Editor.UI
                 return varName;
             }
 
-            for (int i = 0; i < VARIABLE_NAME_REGEX.Length; i++)
+            foreach (var prefix in VARIABLE_NAME_REGEX)
             {
-                var prefix = VARIABLE_NAME_REGEX[i];
                 if (varName.StartsWith(prefix))
                 {
-                    varName = varName.Replace(prefix, string.Empty);
+                    varName = varName[prefix.Length..];
                     varName = GetComponentName(varName);
                     break;
                 }

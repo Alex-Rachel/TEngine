@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace TEngine.Editor.UI
 {
-   public enum UIFieldCodeStyle
+    public enum UIFieldCodeStyle
     {
         /// <summary>
         /// Field names start with underscore (e.g., _variable)
@@ -95,5 +95,6 @@ namespace TEngine.Editor.UI
         Canvas,
         Dropdown,
         TMP_InputField,
+        TMP_Dropdown,
     }
 }

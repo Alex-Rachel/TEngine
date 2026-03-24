@@ -28,6 +28,17 @@ public class ServerConfigSystem
     }
 
     /// <summary>
+    /// 重新加载配置。
+    /// </summary>
+    public void Reload()
+    {
+        if (_init)
+        {
+            _tables.Reload();
+        }
+    }
+
+    /// <summary>
     /// 加载配置。
     /// </summary>
     public void Load()

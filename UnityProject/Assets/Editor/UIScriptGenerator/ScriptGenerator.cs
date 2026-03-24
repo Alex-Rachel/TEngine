@@ -88,7 +88,8 @@ namespace TEngine.Editor.UI
                     var widgetPrefix = $"{(ScriptGeneratorSetting.GetCodeStyle() == UIFieldCodeStyle.MPrefix ? "m_" : "_")}{ScriptGeneratorSetting.GetWidgetName()}";
                     if (root.name.StartsWith(widgetPrefix))
                     {
-                        strFile.Append("\tclass " + root.name.Replace(widgetPrefix, "") + " : UIWidget\n");
+                        var className = root.name.StartsWith(widgetPrefix) ? root.name[widgetPrefix.Length..] : root.name;
+                        strFile.Append("\tclass " + className + " : UIWidget\n");
                     }
                     else
                     {
@@ -189,6 +190,19 @@ namespace TEngine.Editor.UI
             }
         }
 
+        public static string GetTMPDropdownFuncName(string varName)
+        {
+            var codeStyle = ScriptGeneratorSetting.Instance.CodeStyle;
+            if (codeStyle == UIFieldCodeStyle.MPrefix)
+            {
+                return "OnTMPDropdown" + varName.Replace("m_tmpDropdown", string.Empty) + "Change";
+            }
+            else
+            {
+                return "OnTMPDropdown" + varName.Replace("_tmpDropdown", string.Empty) + "Change";
+            }
+        }
+
         public static string GetSliderFuncName(string varName)
         {
             var codeStyle = ScriptGeneratorSetting.Instance.CodeStyle;
@@ -231,7 +245,7 @@ namespace TEngine.Editor.UI
                 }
                 else if (varName.StartsWith("m_"))
                 {
-                    varName = varName.Substring(1);
+                    varName = varName[1..];
                 }
                 else
                 {
@@ -285,12 +299,14 @@ namespace TEngine.Editor.UI
                     string varFuncName = GetBtnFuncName(varName);
                     if (isUniTask)
                     {
+                        strOnCreate.Append($"\t\t\t{varName}.onClick.RemoveAllListeners();\n");
                         strOnCreate.Append($"\t\t\t{varName}.onClick.AddListener(UniTask.UnityAction({varFuncName}));\n");
                         strCallback.Append($"\t\tprivate async UniTaskVoid {varFuncName}()\n");
                         strCallback.Append("\t\t{\n await UniTask.Yield();\n\t\t}\n");
                     }
                     else
                     {
+                        strOnCreate.Append($"\t\t\t{varName}.onClick.RemoveAllListeners();\n");
                         strOnCreate.Append($"\t\t\t{varName}.onClick.AddListener({varFuncName});\n");
                         strCallback.Append($"\t\tprivate void {varFuncName}()\n");
                         strCallback.Append("\t\t{\n\t\t}\n");
@@ -299,6 +315,7 @@ namespace TEngine.Editor.UI
                 else if (componentName == "Toggle")
                 {
                     string varFuncName = GetToggleFuncName(varName);
+                    strOnCreate.Append($"\t\t\t{varName}.onValueChanged.RemoveAllListeners();\n");
                     strOnCreate.Append($"\t\t\t{varName}.onValueChanged.AddListener({varFuncName});\n");
                     strCallback.Append($"\t\tprivate void {varFuncName}(bool isOn)\n");
                     strCallback.Append("\t\t{\n\t\t}\n");
@@ -306,6 +323,7 @@ namespace TEngine.Editor.UI
                 else if (componentName == "Slider")
                 {
                     string varFuncName = GetSliderFuncName(varName);
+                    strOnCreate.Append($"\t\t\t{varName}.onValueChanged.RemoveAllListeners();\n");
                     strOnCreate.Append($"\t\t\t{varName}.onValueChanged.AddListener({varFuncName});\n");
                     strCallback.Append($"\t\tprivate void {varFuncName}(float value)\n");
                     strCallback.Append("\t\t{\n\t\t}\n");
@@ -313,7 +331,7 @@ namespace TEngine.Editor.UI
             }
         }
 
-        public class GeneratorHelper 
+        public class GeneratorHelper
         {
             [MenuItem("GameObject/ScriptGenerator/About", priority = 49)]
             public static void About()

@@ -72,6 +72,24 @@ public struct OnCreateTerminus
     }
 }
 
+public struct OnDisposeTerminus
+{
+    /// <summary>
+    /// 获取与事件关联的场景实体。
+    /// </summary>
+    public readonly Scene Scene;
+    /// <summary>
+    /// 获取与事件关联的漫游终端实例。
+    /// </summary>
+    public readonly Terminus Terminus;
+
+    public OnDisposeTerminus(Scene scene, Terminus terminus)
+    {
+        Scene = scene;
+        Terminus = terminus;
+    }
+}
+
 /// <summary>
 /// 漫游终端管理组件。
 /// <para>负责管理当前 Scene 下所有漫游终端（Terminus）的生命周期。</para>
@@ -180,7 +198,7 @@ public sealed class TerminusComponent : Entity
         }
         else
         {
-            terminus.TerminusId = 0;
+            // terminus.TerminusId = 0;
             terminus.StopForwarding = false;
         }
         

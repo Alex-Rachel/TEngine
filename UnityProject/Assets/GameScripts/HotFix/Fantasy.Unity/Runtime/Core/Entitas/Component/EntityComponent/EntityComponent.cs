@@ -41,11 +41,15 @@ namespace Fantasy.Entitas
         private RuntimeTypeHandleFrozenDictionary<Action<Entity>> _updateSystems;
         private RuntimeTypeHandleFrozenDictionary<Action<Entity>> _destroySystems;
         private RuntimeTypeHandleFrozenDictionary<Action<Entity>> _deserializeSystems;
+        private RuntimeTypeHandleFrozenDictionary<Func<Entity, FTask>> _transferOutSystems;
+        private RuntimeTypeHandleFrozenDictionary<Func<Entity, FTask>> _transferInSystems;
 
         private readonly TypeHandleMergerFrozenDictionary<Action<Entity>> _awakeSystemMerger = new();
         private readonly TypeHandleMergerFrozenDictionary<Action<Entity>> _updateSystemMerger = new();
         private readonly TypeHandleMergerFrozenDictionary<Action<Entity>> _destroySystemMerger = new();
         private readonly TypeHandleMergerFrozenDictionary<Action<Entity>> _deserializeSystemMerger = new();
+        private readonly TypeHandleMergerFrozenDictionary<Func<Entity, FTask>> _transferOutSystemMerger = new();
+        private readonly TypeHandleMergerFrozenDictionary<Func<Entity, FTask>> _transferInSystemMerger = new();
         
         /// <summary>
         /// 更新队列，使用链表实现循环遍历和O(1)删除
@@ -133,11 +137,23 @@ namespace Fantasy.Entitas
                     entitySystemRegistrar.DeserializeTypeHandles(),
                     entitySystemRegistrar.DeserializeHandles()
                 );
+                _transferOutSystemMerger.Add(
+                    assemblyManifestId,
+                    entitySystemRegistrar.TransferOutTypeHandles(),
+                    entitySystemRegistrar.TransferOutHandles()
+                    );
+                _transferInSystemMerger.Add(
+                    assemblyManifestId,
+                    entitySystemRegistrar.TransferInTypeHandles(),
+                    entitySystemRegistrar.TransferInHandles()
+                );
 
                 _awakeSystems = _awakeSystemMerger.GetFrozenDictionary();
                 _updateSystems = _updateSystemMerger.GetFrozenDictionary();
                 _destroySystems = _destroySystemMerger.GetFrozenDictionary();
                 _deserializeSystems = _deserializeSystemMerger.GetFrozenDictionary();
+                _transferOutSystems = _transferOutSystemMerger.GetFrozenDictionary();
+                _transferInSystems = _transferInSystemMerger.GetFrozenDictionary();
 #if FANTASY_UNITY
                 _lateUpdateSystemMerger.Add(
                     assemblyManifestId,
@@ -180,6 +196,16 @@ namespace Fantasy.Entitas
                 if (_deserializeSystemMerger.Remove(assemblyManifestId))
                 {
                     _deserializeSystems = _deserializeSystemMerger.GetFrozenDictionary();
+                }
+                
+                if (_transferOutSystemMerger.Remove(assemblyManifestId))
+                {
+                    _transferOutSystems = _transferOutSystemMerger.GetFrozenDictionary();
+                }
+                
+                if (_transferInSystemMerger.Remove(assemblyManifestId))
+                {
+                    _transferInSystems = _transferInSystemMerger.GetFrozenDictionary();
                 }
                 
 #if FANTASY_UNITY
@@ -282,6 +308,50 @@ namespace Fantasy.Entitas
             catch (Exception e)
             {
                 Log.Error($"{entity.Type.FullName} Deserialize Error {e}");
+            }
+        }
+
+        /// <summary>
+        /// 触发实体的传送前事件，调用对应的TransferOutSystem
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <returns></returns>
+        public async FTask TransferOut(Entity entity)
+        {
+            if (!_transferOutSystems.TryGetValue(entity.Type.TypeHandle, out var system))
+            {
+                return;
+            }
+
+            try
+            {
+                await system(entity);
+            }
+            catch (Exception e)
+            {
+                Log.Error($"{entity.Type.FullName} TransferOut Error {e}");
+            }
+        }
+        
+        /// <summary>
+        /// 触发实体的传送后事件，调用对应的TransferOutSystem
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <returns></returns>
+        public async FTask TransferIn(Entity entity)
+        {
+            if (!_transferInSystems.TryGetValue(entity.Type.TypeHandle, out var system))
+            {
+                return;
+            }
+
+            try
+            {
+                await system(entity);
+            }
+            catch (Exception e)
+            {
+                Log.Error($"{entity.Type.FullName} TransferIn Error {e}");
             }
         }
 

@@ -7,10 +7,10 @@ namespace GameLogic
     public partial class UIBindComponent
     {
         [SerializeField, HideInInspector] private string genCodePath;
-        [SerializeField, HideInInspector] private string className;
+        [SerializeField, HideInInspector] public string className;
         [SerializeField, HideInInspector] private string impCodePath;
         [SerializeField, HideInInspector] private bool isGenImpClass;
-        [SerializeField, HideInInspector] private string uiType;
+        [SerializeField, HideInInspector] public string uiType;
 
         public void AddComponent(Component component)
         {

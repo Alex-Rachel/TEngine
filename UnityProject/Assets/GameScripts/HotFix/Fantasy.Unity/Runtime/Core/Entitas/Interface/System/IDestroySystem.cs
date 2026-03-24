@@ -31,5 +31,10 @@ namespace Fantasy.Entitas.Interface
         {
             Destroy((T) self);
         }
+
+        public FTask InvokeAsync(Entity entity)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

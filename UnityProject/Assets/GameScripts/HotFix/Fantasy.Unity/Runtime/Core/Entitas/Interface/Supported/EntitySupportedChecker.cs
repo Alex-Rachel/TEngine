@@ -33,15 +33,6 @@ namespace Fantasy.Entitas.Interface
         /// 如果实体类型实现了 <see cref="ISupportedSerialize"/> 接口，则为 <c>true</c>；否则为 <c>false</c>。
         /// </value>
         public static bool IsSerialize { get; }
-
-        /// <summary>
-        /// 获取实体类型是否实现了 <see cref="ISupportedTransfer"/> 接口。
-        /// 实现该接口的实体支持跨进程传输（如服务器间传送）。
-        /// </summary>
-        /// <value>
-        /// 如果实体类型实现了 <see cref="ISupportedTransfer"/> 接口，则为 <c>true</c>；否则为 <c>false</c>。
-        /// </value>
-        public static bool IsTransfer { get; }
 #endif
         /// <summary>
         /// 静态构造函数，在首次访问该泛型类型时执行一次，缓存所有接口检查结果。
@@ -52,7 +43,6 @@ namespace Fantasy.Entitas.Interface
             IsMulti = typeof(ISupportedMultiEntity).IsAssignableFrom(type);
 #if FANTASY_NET
             IsSerialize = typeof(ISupportedSerialize).IsAssignableFrom(type);
-            IsTransfer = typeof(ISupportedTransfer).IsAssignableFrom(type);
 #endif
         }
     }
