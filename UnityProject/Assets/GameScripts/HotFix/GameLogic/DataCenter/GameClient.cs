@@ -62,6 +62,22 @@ namespace GameLogic
         private FTask<bool> m_connectTask;
 
         /// <summary>
+        /// 心跳间隔 3秒（小于服务器检测间隔5秒）
+        /// </summary>
+        private int m_heartBeatInterval = 3000;
+
+        /// <summary>
+        /// 心跳超时 3秒
+        /// 实际超时 = 3000 + 3000 = 6000ms (6秒) 小于 服务器8秒
+        /// </summary>
+        private int m_heartBeatTimeOut = 3000;
+
+        /// <summary>
+        /// 检测与服务器连接超时频率 4秒
+        /// </summary>
+        private int m_heartBeatIntervalTimeOut = 4000;
+
+        /// <summary>
         /// 网络连接状态
         /// </summary>
         public GameClientStatus Status { get; set; } = GameClientStatus.StatusInit;
@@ -175,6 +191,32 @@ namespace GameLogic
                 Scene.Connect($"{address}:{port}", ProtocolType, OnConnectComplete, OnConnectFail, OnConnectDisconnect, false);
             }
             return await m_connectTask;
+        }
+
+        /// <summary>
+        /// 开启心跳检测
+        /// </summary>
+        public void StartHeartbeat()
+        {
+            if (Scene == null || Scene.IsDisposed || Scene.Session == null || Scene.Session.IsDisposed)
+            {
+                return;
+            }
+
+            var session = Scene.Session;
+            var heartbeatComponent = session.GetComponent<SessionHeartbeatComponent>();
+            if (heartbeatComponent != null)
+            {
+                // 组件已存在，先停止再启动（重连场景）
+                heartbeatComponent.Stop();
+                heartbeatComponent.Start(m_heartBeatInterval, m_heartBeatTimeOut, m_heartBeatIntervalTimeOut);
+            }
+            else
+            {
+                // 组件不存在，添加新组件（首次登录场景）
+                session.AddComponent<SessionHeartbeatComponent>().Start(m_heartBeatInterval, m_heartBeatTimeOut,
+                    m_heartBeatIntervalTimeOut);
+            }
         }
 
         /// <summary>
