@@ -1,5 +1,6 @@
 #if FANTASY_UNITY
 using System;
+using Fantasy.Async;
 
 namespace Fantasy.Entitas.Interface
 {
@@ -30,6 +31,11 @@ namespace Fantasy.Entitas.Interface
         public void Invoke(Entity self)
         {
             LateUpdate((T)self);
+        }
+
+        public FTask InvokeAsync(Entity entity)
+        {
+            throw new NotImplementedException();
         }
     }
 }

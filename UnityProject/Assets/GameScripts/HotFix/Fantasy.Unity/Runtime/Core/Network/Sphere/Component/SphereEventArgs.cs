@@ -88,7 +88,7 @@ public abstract partial class SphereEventArgs : IPool, IDisposable
     /// 释放事件参数，将其返回对象池
     /// Dispose the event arguments and return it to the object pool
     /// </summary>
-    public void Dispose()
+    public virtual void Dispose()
     {
         GetArgPool().Return(SphereEventArgsType, this);
         TypeHashCode = 0;

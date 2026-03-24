@@ -4,14 +4,14 @@ using Fantasy.Async;
 namespace Fantasy.Entitas.Interface
 {
     /// <summary>
-    /// 实体的Awake事件的接口
+    /// 实体的TransferOut事件的接口
     /// </summary>
-    public interface IAwakeSystem : IEntitySystem { }
+    public interface ITransferOutSystem : IEntitySystem { }
     /// <summary>
-    /// 实体的Awake事件的抽象接口
+    /// 实体的TransferOut事件的抽象接口
     /// </summary>
     /// <typeparam name="T">实体的泛型类型</typeparam>
-    public abstract class AwakeSystem<T> : IAwakeSystem where T : Entity
+    public abstract class TransferOutSystem<T> : ITransferOutSystem where T : Entity
     {
         /// <summary>
         /// 实体的类型
@@ -22,19 +22,23 @@ namespace Fantasy.Entitas.Interface
         /// 事件的抽象方法，需要自己实现这个方法
         /// </summary>
         /// <param name="self">触发事件的实体实例</param>
-        protected abstract void Awake(T self);
+        protected abstract FTask Out(T self);
         /// <summary>
-        /// 框架内部调用的触发Awake的方法。
+        /// 框架内部调用的触发Out的方法。
         /// </summary>
         /// <param name="self">触发事件的实体实例</param>
         public void Invoke(Entity self)
         {
-            Awake((T) self);
-        }
-
-        public FTask InvokeAsync(Entity entity)
-        {
             throw new NotImplementedException();
+        }
+        /// <summary>
+        /// 框架内部调用的触发Out的异步方法。
+        /// </summary>
+        /// <param name="self">触发事件的实体实例</param>
+        /// <returns></returns>
+        public FTask InvokeAsync(Entity self)
+        {
+            return Out((T) self);
         }
     }
 }

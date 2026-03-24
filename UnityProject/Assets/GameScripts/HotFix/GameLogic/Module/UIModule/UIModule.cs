@@ -40,34 +40,11 @@ namespace GameLogic
         /// </summary>
         public Camera UICamera => _uiCamera;
 
-        #region UIController
-
-        private List<IUIController> m_uiControllers = new List<IUIController>();
-
-        private void RegisterAllController()
-        {
-            AddUIController<CommonUIController>();
-        }
-
-        private void AddUIController<T>() where T : IUIController, new()
-        {
-            for (int i = 0; i < m_uiControllers.Count; i++)
-            {
-                var type = m_uiControllers[i].GetType();
-                if (type == typeof(T))
-                {
-                    Log.Fatal("repeat controller type: {0}", typeof(T).Name);
-                    return;
-                }
-            }
-
-            var controller = new T();
-            m_uiControllers.Add(controller);
-
-            controller.RegUIMessage();
-        }
-
-        #endregion
+        /// <summary>
+        /// 注册所有的UIController
+        /// <remarks>已通过SourceGenerator自动生成 直接按照正常使用即可 无需关注注册</remarks>
+        /// </summary>
+        partial void RegisterAllController();
         
         /// <summary>
         /// 模块初始化（自动调用）。

@@ -18,6 +18,9 @@ dotnet %LUBAN_DLL% ^
     --customTemplateDir %CONF_ROOT%\CustomTemplate\CustomTemplate_Client_LazyLoad ^
     -x code.lineEnding=crlf ^
     -x outputCodeDir=%CODE_OUTPATH% ^
-    -x outputDataDir=%DATA_OUTPATH% 
+    -x outputDataDir=%DATA_OUTPATH% ^
+    -x outputSaver.bin.cleanUpOutputDir=1 ^
+    -x outputSaver.json.cleanUpOutputDir=1 ^
+    -x outputSaver.cs-bin.cleanUpOutputDir=1 
 pause
 

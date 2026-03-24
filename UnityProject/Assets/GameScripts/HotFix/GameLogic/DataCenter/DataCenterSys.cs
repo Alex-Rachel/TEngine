@@ -9,7 +9,7 @@ namespace GameLogic
     /// <summary>
     /// 数据中心模块
     /// </summary>
-    public class DataCenterSys : Singleton<DataCenterSys>, IUpdate
+    public partial class DataCenterSys : Singleton<DataCenterSys>, IUpdate
     {
         private readonly List<IDataCenterModule> m_dataCenterModuleList = new List<IDataCenterModule>();
 
@@ -86,25 +86,7 @@ namespace GameLogic
         {
         }
 
-        private void InitModule()
-        {
-            RegisterModule(LoginNetMgr.Instance);
-        }
-
-        /// <summary>
-        /// 注册数据中心模块。
-        /// </summary>
-        /// <param name="module">要注册的模块</param>
-        public void RegisterModule(IDataCenterModule module)
-        {
-            if (m_dataCenterModuleList.Contains(module))
-            {
-                return;
-            }
-
-            module.OnInit();
-            m_dataCenterModuleList.Add(module);
-        }
+        partial void InitModule();
 
         #endregion
 

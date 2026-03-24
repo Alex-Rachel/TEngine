@@ -104,7 +104,7 @@ namespace Fantasy.Database
         /// <param name="sumExpression">要对其进行求和的字段表达式。</param>
         /// <param name="collection">集合名称，可选。如果未指定，将使用实体类型的名称。</param>
         /// <returns>满足条件的文档中指定字段的求和结果。</returns>
-        public async FTask<long> Sum<T>(Expression<Func<T, bool>> filter, Expression<Func<T, object>> sumExpression, string collection = null) where T : Entity
+        public async FTask<long> Sum<T>(Expression<Func<T, bool>> filter, Expression<Func<T, object>> sumExpression, string? collection = null) where T : Entity
         {
             var member = (MemberExpression)((UnaryExpression)sumExpression.Body).Operand;
             var projection = new BsonDocument("_id", "null").Add("Result", new BsonDocument("$sum", $"${member.Member.Name}"));
@@ -122,7 +122,7 @@ namespace Fantasy.Database
         /// <typeparam name="T">实体类型。</typeparam>
         /// <param name="collection">集合名称，可选。如果未指定，将使用实体类型的名称。</param>
         /// <returns>IMongoCollection 对象。</returns>
-        private IMongoCollection<T> GetCollection<T>(string collection = null)
+        private IMongoCollection<T> GetCollection<T>(string? collection = null)
         {
             return _mongoDatabase.GetCollection<T>(collection ?? typeof(T).Name);
         }
@@ -147,7 +147,7 @@ namespace Fantasy.Database
         /// <typeparam name="T">实体类型。</typeparam>
         /// <param name="collection">集合名称，可选。如果未指定，将使用实体类型的名称。</param>
         /// <returns>满足条件的文档数量。</returns>
-        public async FTask<long> Count<T>(string collection = null) where T : Entity
+        public async FTask<long> Count<T>(string? collection = null) where T : Entity
         {
             return await GetCollection<T>(collection).CountDocumentsAsync(d => true);
         }
@@ -159,7 +159,7 @@ namespace Fantasy.Database
         /// <param name="filter">用于筛选文档的表达式。</param>
         /// <param name="collection">集合名称，可选。如果未指定，将使用实体类型的名称。</param>
         /// <returns>满足条件的文档数量。</returns>
-        public async FTask<long> Count<T>(Expression<Func<T, bool>> filter, string collection = null) where T : Entity
+        public async FTask<long> Count<T>(Expression<Func<T, bool>> filter, string? collection = null) where T : Entity
         {
             return await GetCollection<T>(collection).CountDocumentsAsync(filter);
         }
@@ -174,7 +174,7 @@ namespace Fantasy.Database
         /// <typeparam name="T">实体类型。</typeparam>
         /// <param name="collection">集合名称，可选。如果未指定，将使用实体类型的名称。</param>
         /// <returns>如果存在文档则返回 true，否则返回 false。</returns>
-        public async FTask<bool> Exist<T>(string collection = null) where T : Entity
+        public async FTask<bool> Exist<T>(string? collection = null) where T : Entity
         {
             return await Count<T>(collection) > 0;
         }
@@ -186,7 +186,7 @@ namespace Fantasy.Database
         /// <param name="filter">用于筛选文档的表达式。</param>
         /// <param name="collection">集合名称，可选。如果未指定，将使用实体类型的名称。</param>
         /// <returns>如果存在满足条件的文档则返回 true，否则返回 false。</returns>
-        public async FTask<bool> Exist<T>(Expression<Func<T, bool>> filter, string collection = null) where T : Entity
+        public async FTask<bool> Exist<T>(Expression<Func<T, bool>> filter, string? collection = null) where T : Entity
         {
             return await Count(filter, collection) > 0;
         }
@@ -202,15 +202,16 @@ namespace Fantasy.Database
         /// <param name="id">要查询的文档 ID。</param>
         /// <param name="isDeserialize">是否在查询后反序列化,执行反序列化后会自动将实体注册到框架系统中，并且能正常使用组件相关功能。</param>
         /// <param name="collection">集合名称。</param>
+        /// <param name="scene">Scene</param>
         /// <returns>查询到的文档。</returns>
-        public async FTask<T> QueryNotLock<T>(long id, bool isDeserialize = false, string collection = null) where T : Entity
+        public async FTask<T> QueryNotLock<T>(long id, bool isDeserialize = false, string? collection = null, Scene? scene = null) where T : Entity
         {
             var cursor = await GetCollection<T>(collection).FindAsync(d => d.Id == id);
             var v = await cursor.FirstOrDefaultAsync();
 
             if (isDeserialize && v != null)
             {
-                v.Deserialize(_scene);
+                v.Deserialize(scene ?? _scene);
             }
 
             return v;
@@ -223,8 +224,9 @@ namespace Fantasy.Database
         /// <param name="id">要查询的文档 ID。</param>
         /// <param name="isDeserialize">是否在查询后反序列化,执行反序列化后会自动将实体注册到框架系统中，并且能正常使用组件相关功能。</param>
         /// <param name="collection">集合名称。</param>
+        /// <param name="scene">Scene</param>
         /// <returns>查询到的文档。</returns>
-        public async FTask<T> Query<T>(long id, bool isDeserialize = false, string collection = null) where T : Entity
+        public async FTask<T> Query<T>(long id, bool isDeserialize = false, string? collection = null, Scene? scene = null) where T : Entity
         {
             using (await _dataBaseLock.Wait(id))
             {
@@ -233,7 +235,7 @@ namespace Fantasy.Database
 
                 if (isDeserialize && v != null)
                 {
-                    v.Deserialize(_scene);
+                    v.Deserialize(scene ?? _scene);
                 }
 
                 return v;
@@ -249,13 +251,14 @@ namespace Fantasy.Database
         /// <param name="pageSize">每页大小。</param>
         /// <param name="isDeserialize">是否在查询后反序列化,执行反序列化后会自动将实体注册到框架系统中，并且能正常使用组件相关功能。</param>
         /// <param name="collection">集合名称。</param>
+        /// <param name="scene">Scene</param>
         /// <returns>满足条件的文档数量和日期列表。</returns>
-        public async FTask<(int count, List<T> dates)> QueryCountAndDatesByPage<T>(Expression<Func<T, bool>> filter, int pageIndex, int pageSize, bool isDeserialize = false, string collection = null) where T : Entity
+        public async FTask<(int count, List<T> dates)> QueryCountAndDatesByPage<T>(Expression<Func<T, bool>> filter, int pageIndex, int pageSize, bool isDeserialize = false, string? collection = null, Scene? scene = null) where T : Entity
         {
             using (await _dataBaseLock.Wait(RandomHelper.RandInt64() % DefaultTaskSize))
             {
                 var count = await Count(filter);
-                var dates = await QueryByPage(filter, pageIndex, pageSize, isDeserialize, collection);
+                var dates = await QueryByPage(filter, pageIndex, pageSize, isDeserialize, collection, scene);
                 return ((int)count, dates);
             }
         }
@@ -270,13 +273,14 @@ namespace Fantasy.Database
         /// <param name="cols">要查询的列名称数组。</param>
         /// <param name="isDeserialize">是否在查询后反序列化,执行反序列化后会自动将实体注册到框架系统中，并且能正常使用组件相关功能。</param>
         /// <param name="collection">集合名称。</param>
+        /// <param name="scene">Scene</param>
         /// <returns>满足条件的文档数量和日期列表。</returns>
-        public async FTask<(int count, List<T> dates)> QueryCountAndDatesByPage<T>(Expression<Func<T, bool>> filter, int pageIndex, int pageSize, string[] cols, bool isDeserialize = false, string collection = null) where T : Entity
+        public async FTask<(int count, List<T> dates)> QueryCountAndDatesByPage<T>(Expression<Func<T, bool>> filter, int pageIndex, int pageSize, string[] cols, bool isDeserialize = false, string? collection = null, Scene? scene = null) where T : Entity
         {
             using (await _dataBaseLock.Wait(RandomHelper.RandInt64() % DefaultTaskSize))
             {
                 var count = await Count(filter);
-                var dates = await QueryByPage(filter, pageIndex, pageSize, cols, isDeserialize, collection);
+                var dates = await QueryByPage(filter, pageIndex, pageSize, cols, isDeserialize, collection, scene);
                 return ((int)count, dates);
             }
         }
@@ -290,9 +294,11 @@ namespace Fantasy.Database
         /// <param name="pageSize">每页大小。</param>
         /// <param name="isDeserialize">是否在查询后反序列化,执行反序列化后会自动将实体注册到框架系统中，并且能正常使用组件相关功能。</param>
         /// <param name="collection">集合名称。</param>
+        /// <param name="scene">Scene</param>
         /// <returns>满足条件的文档列表。</returns>
-        public async FTask<List<T>> QueryByPage<T>(Expression<Func<T, bool>> filter, int pageIndex, int pageSize, bool isDeserialize = false, string collection = null) where T : Entity
+        public async FTask<List<T>> QueryByPage<T>(Expression<Func<T, bool>> filter, int pageIndex, int pageSize, bool isDeserialize = false, string? collection = null, Scene? scene = null) where T : Entity
         {
+            var currentScene = scene ?? _scene;
             using (await _dataBaseLock.Wait(RandomHelper.RandInt64() % DefaultTaskSize))
             {
                 var list = await GetCollection<T>(collection).Find(filter).Skip((pageIndex - 1) * pageSize)
@@ -306,7 +312,7 @@ namespace Fantasy.Database
 
                 foreach (var entity in list)
                 {
-                    entity.Deserialize(_scene);
+                    entity.Deserialize(currentScene);
                 }
 
                 return list;
@@ -323,9 +329,11 @@ namespace Fantasy.Database
         /// <param name="cols">要查询的列名称数组。</param>
         /// <param name="isDeserialize">是否在查询后反序列化,执行反序列化后会自动将实体注册到框架系统中，并且能正常使用组件相关功能。</param>
         /// <param name="collection">集合名称。</param>
+        /// <param name="scene">Scene</param>
         /// <returns>满足条件的文档列表。</returns>
-        public async FTask<List<T>> QueryByPage<T>(Expression<Func<T, bool>> filter, int pageIndex, int pageSize, string[] cols, bool isDeserialize = false, string collection = null) where T : Entity
+        public async FTask<List<T>> QueryByPage<T>(Expression<Func<T, bool>> filter, int pageIndex, int pageSize, string[] cols, bool isDeserialize = false, string? collection = null, Scene? scene = null) where T : Entity
         {
+            var currentScene = scene ?? _scene;
             using (await _dataBaseLock.Wait(RandomHelper.RandInt64() % DefaultTaskSize))
             {
                 var projection = Builders<T>.Projection.Include("");
@@ -345,7 +353,7 @@ namespace Fantasy.Database
 
                 foreach (var entity in list)
                 {
-                    entity.Deserialize(_scene);
+                    entity.Deserialize(currentScene);
                 }
 
                 return list;
@@ -363,9 +371,11 @@ namespace Fantasy.Database
         /// <param name="isAsc">是否升序排序。</param>
         /// <param name="isDeserialize">是否在查询后反序列化,执行反序列化后会自动将实体注册到框架系统中，并且能正常使用组件相关功能。</param>
         /// <param name="collection">集合名称。</param>
+        /// <param name="scene">Scene</param>
         /// <returns>满足条件的文档列表。</returns>
-        public async FTask<List<T>> QueryByPageOrderBy<T>(Expression<Func<T, bool>> filter, int pageIndex, int pageSize, Expression<Func<T, object>> orderByExpression, bool isAsc = true, bool isDeserialize = false, string collection = null) where T : Entity
+        public async FTask<List<T>> QueryByPageOrderBy<T>(Expression<Func<T, bool>> filter, int pageIndex, int pageSize, Expression<Func<T, object>> orderByExpression, bool isAsc = true, bool isDeserialize = false, string? collection = null, Scene? scene = null) where T : Entity
         {
+            var currentScene = scene ?? _scene;
             using (await _dataBaseLock.Wait(RandomHelper.RandInt64() % DefaultTaskSize))
             {
                 List<T> list;
@@ -386,7 +396,7 @@ namespace Fantasy.Database
                 
                 foreach (var entity in list)
                 {
-                    entity.Deserialize(_scene);
+                    entity.Deserialize(currentScene);
                 }
 
                 return list;
@@ -400,8 +410,9 @@ namespace Fantasy.Database
         /// <param name="filter">查询过滤条件。</param>
         /// <param name="isDeserialize">是否在查询后反序列化,执行反序列化后会自动将实体注册到框架系统中，并且能正常使用组件相关功能。</param>
         /// <param name="collection">集合名称。</param>
+        /// <param name="scene">Scene</param>
         /// <returns>满足条件的第一个文档，如果未找到则为 null。</returns>
-        public async FTask<T?> First<T>(Expression<Func<T, bool>> filter, bool isDeserialize = false, string collection = null) where T : Entity
+        public async FTask<T?> First<T>(Expression<Func<T, bool>> filter, bool isDeserialize = false, string? collection = null, Scene? scene = null) where T : Entity
         {
             using (await _dataBaseLock.Wait(RandomHelper.RandInt64() % DefaultTaskSize))
             {
@@ -410,7 +421,7 @@ namespace Fantasy.Database
 
                 if (isDeserialize && t != null)
                 {
-                    t.Deserialize(_scene);
+                    t.Deserialize(scene ?? _scene);
                 }
 
                 return t;
@@ -425,8 +436,9 @@ namespace Fantasy.Database
         /// <param name="cols">要查询的列名称数组。</param>
         /// <param name="isDeserialize">是否在查询后反序列化,执行反序列化后会自动将实体注册到框架系统中，并且能正常使用组件相关功能。</param>
         /// <param name="collection">集合名称。</param>
+        /// <param name="scene">Scene</param>
         /// <returns>满足条件的第一个文档。</returns>
-        public async FTask<T> First<T>(string json, string[] cols, bool isDeserialize = false, string collection = null) where T : Entity
+        public async FTask<T> First<T>(string json, string[] cols, bool isDeserialize = false, string? collection = null, Scene? scene = null) where T : Entity
         {
             using (await _dataBaseLock.Wait(RandomHelper.RandInt64() % DefaultTaskSize))
             {
@@ -446,7 +458,7 @@ namespace Fantasy.Database
 
                 if (isDeserialize && t != null)
                 {
-                    t.Deserialize(_scene);
+                    t.Deserialize(scene ?? _scene);
                 }
 
                 return t;
@@ -462,9 +474,11 @@ namespace Fantasy.Database
         /// <param name="isAsc">是否升序排序。</param>
         /// <param name="isDeserialize">是否在查询后反序列化,执行反序列化后会自动将实体注册到框架系统中，并且能正常使用组件相关功能。</param>
         /// <param name="collection">集合名称。</param>
+        /// <param name="scene">Scene</param>
         /// <returns>满足条件的文档列表。</returns>
-        public async FTask<List<T>> QueryOrderBy<T>(Expression<Func<T, bool>> filter, Expression<Func<T, object>> orderByExpression, bool isAsc = true, bool isDeserialize = false, string collection = null) where T : Entity
+        public async FTask<List<T>> QueryOrderBy<T>(Expression<Func<T, bool>> filter, Expression<Func<T, object>> orderByExpression, bool isAsc = true, bool isDeserialize = false, string? collection = null, Scene? scene = null) where T : Entity
         {
+            var currentScene = scene ?? _scene;
             using (await _dataBaseLock.Wait(RandomHelper.RandInt64() % DefaultTaskSize))
             {
                 List<T> list;
@@ -485,7 +499,7 @@ namespace Fantasy.Database
                 
                 foreach (var entity in list)
                 {
-                    entity.Deserialize(_scene);
+                    entity.Deserialize(currentScene);
                 }
 
                 return list;
@@ -499,9 +513,11 @@ namespace Fantasy.Database
         /// <param name="filter">查询过滤条件。</param>
         /// <param name="isDeserialize">是否在查询后反序列化,执行反序列化后会自动将实体注册到框架系统中，并且能正常使用组件相关功能。</param>
         /// <param name="collection">集合名称。</param>
+        /// <param name="scene">Scene</param>
         /// <returns>满足条件的文档列表。</returns>
-        public async FTask<List<T>> Query<T>(Expression<Func<T, bool>> filter, bool isDeserialize = false, string collection = null) where T : Entity
+        public async FTask<List<T>> Query<T>(Expression<Func<T, bool>> filter, bool isDeserialize = false, string? collection = null, Scene? scene = null) where T : Entity
         {
+            var currentScene = scene ?? _scene;
             using (await _dataBaseLock.Wait(RandomHelper.RandInt64() % DefaultTaskSize))
             {
                 var cursor = await GetCollection<T>(collection).FindAsync(filter);
@@ -514,7 +530,7 @@ namespace Fantasy.Database
                 
                 foreach (var entity in list)
                 {
-                    entity.Deserialize(_scene);
+                    entity.Deserialize(currentScene);
                 }
                 
                 return list;
@@ -528,7 +544,8 @@ namespace Fantasy.Database
         /// <param name="collectionNames">要查询的集合名称列表。</param>
         /// <param name="result">查询结果存储列表。</param>
         /// <param name="isDeserialize">是否在查询后反序列化,执行反序列化后会自动将实体注册到框架系统中，并且能正常使用组件相关功能。</param>
-        public async FTask Query(long id, List<string>? collectionNames, List<Entity> result, bool isDeserialize = false)
+        /// <param name="scene">Scene</param>
+        public async FTask Query(long id, List<string>? collectionNames, List<Entity> result, bool isDeserialize = false, Scene? scene = null)
         {
             using (await _dataBaseLock.Wait(id))
             {
@@ -550,7 +567,7 @@ namespace Fantasy.Database
 
                     if (isDeserialize)
                     {
-                        e.Deserialize(_scene);
+                        e.Deserialize(scene ?? _scene);
                     }
 
                     result.Add(e);
@@ -565,9 +582,11 @@ namespace Fantasy.Database
         /// <param name="json">JSON 查询条件。</param>
         /// <param name="isDeserialize">是否在查询后反序列化,执行反序列化后会自动将实体注册到框架系统中，并且能正常使用组件相关功能。</param>
         /// <param name="collection">集合名称。</param>
+        /// <param name="scene">Scene</param>
         /// <returns>满足条件的文档列表。</returns>
-        public async FTask<List<T>> QueryJson<T>(string json, bool isDeserialize = false, string collection = null) where T : Entity
+        public async FTask<List<T>> QueryJson<T>(string json, bool isDeserialize = false, string? collection = null, Scene? scene = null) where T : Entity
         {
+            var currentScene = scene ?? _scene;
             using (await _dataBaseLock.Wait(RandomHelper.RandInt64() % DefaultTaskSize))
             {
                 FilterDefinition<T> filterDefinition = new JsonFilterDefinition<T>(json);
@@ -581,7 +600,7 @@ namespace Fantasy.Database
                 
                 foreach (var entity in list)
                 {
-                    entity.Deserialize(_scene);
+                    entity.Deserialize(currentScene);
                 }
                 
                 return list;
@@ -596,9 +615,11 @@ namespace Fantasy.Database
         /// <param name="cols">要查询的列名称数组。</param>
         /// <param name="isDeserialize">是否在查询后反序列化,执行反序列化后会自动将实体注册到框架系统中，并且能正常使用组件相关功能。</param>
         /// <param name="collection">集合名称。</param>
+        /// <param name="scene">Scene</param>
         /// <returns>满足条件的文档列表。</returns>
-        public async FTask<List<T>> QueryJson<T>(string json, string[] cols, bool isDeserialize = false, string collection = null) where T : Entity
+        public async FTask<List<T>> QueryJson<T>(string json, string[] cols, bool isDeserialize = false, string? collection = null, Scene? scene = null) where T : Entity
         {
+            var currentScene = scene ?? _scene;
             using (await _dataBaseLock.Wait(RandomHelper.RandInt64() % DefaultTaskSize))
             {
                 var projection = Builders<T>.Projection.Include("");
@@ -622,7 +643,7 @@ namespace Fantasy.Database
                 
                 foreach (var entity in list)
                 {
-                    entity.Deserialize(_scene);
+                    entity.Deserialize(currentScene);
                 }
                 
                 return list;
@@ -637,9 +658,11 @@ namespace Fantasy.Database
         /// <param name="json">JSON 查询条件。</param>
         /// <param name="isDeserialize">是否在查询后反序列化,执行反序列化后会自动将实体注册到框架系统中，并且能正常使用组件相关功能。</param>
         /// <param name="collection">集合名称。</param>
+        /// <param name="scene">Scene</param>
         /// <returns>满足条件的文档列表。</returns>
-        public async FTask<List<T>> QueryJson<T>(long taskId, string json, bool isDeserialize = false, string collection = null) where T : Entity
+        public async FTask<List<T>> QueryJson<T>(long taskId, string json, bool isDeserialize = false, string? collection = null, Scene? scene = null) where T : Entity
         {
+            var currentScene = scene ?? _scene;
             using (await _dataBaseLock.Wait(taskId))
             {
                 FilterDefinition<T> filterDefinition = new JsonFilterDefinition<T>(json);
@@ -653,7 +676,7 @@ namespace Fantasy.Database
                 
                 foreach (var entity in list)
                 {
-                    entity.Deserialize(_scene);
+                    entity.Deserialize(currentScene);
                 }
                 
                 return list;
@@ -668,9 +691,11 @@ namespace Fantasy.Database
         /// <param name="cols">要查询的列名称数组。</param>
         /// <param name="isDeserialize">是否在查询后反序列化,执行反序列化后会自动将实体注册到框架系统中，并且能正常使用组件相关功能。</param>
         /// <param name="collection">集合名称。</param>
+        /// <param name="scene">Scene</param>
         /// <returns>满足条件的文档列表。</returns>
-        public async FTask<List<T>> Query<T>(Expression<Func<T, bool>> filter, string[] cols, bool isDeserialize = false, string collection = null) where T : Entity
+        public async FTask<List<T>> Query<T>(Expression<Func<T, bool>> filter, string[] cols, bool isDeserialize = false, string? collection = null, Scene? scene = null) where T : Entity
         {
+            var currentScene = scene ?? _scene;
             using (await _dataBaseLock.Wait(RandomHelper.RandInt64() % DefaultTaskSize))
             {
                 var projection = Builders<T>.Projection.Include("_id");
@@ -689,7 +714,7 @@ namespace Fantasy.Database
                 
                 foreach (var entity in list)
                 {
-                    entity.Deserialize(_scene);
+                    entity.Deserialize(currentScene);
                 }
                 
                 return list;
@@ -703,10 +728,12 @@ namespace Fantasy.Database
         /// <param name="cols">查询过滤条件。</param>
         /// <param name="isDeserialize">要查询的列名称数组。</param>
         /// <param name="collection">是否在查询后反序列化,执行反序列化后会自动将实体注册到框架系统中，并且能正常使用组件相关功能。</param>
+        /// <param name="scene">Scene</param>
         /// <typeparam name="T">集合名称。</typeparam>
         /// <returns></returns>
-        public async FTask<List<T>> Query<T>(Expression<Func<T, bool>> filter, Expression<Func<T, object>>[] cols, bool isDeserialize = false, string collection = null) where T : Entity
+        public async FTask<List<T>> Query<T>(Expression<Func<T, bool>> filter, Expression<Func<T, object>>[] cols, bool isDeserialize = false, string? collection = null, Scene? scene = null) where T : Entity
         {
+            var currentScene = scene ?? _scene;
             using (await _dataBaseLock.Wait(RandomHelper.RandInt64() % DefaultTaskSize))
             {
                 var projection = Builders<T>.Projection.Include("_id");
@@ -730,7 +757,7 @@ namespace Fantasy.Database
 
                 foreach (var entity in list)
                 {
-                    entity.Deserialize(_scene);
+                    entity.Deserialize(currentScene);
                 }
 
                 return list;
@@ -748,7 +775,7 @@ namespace Fantasy.Database
         /// <param name="transactionSession">事务会话对象。</param>
         /// <param name="entity">要保存的实体对象。</param>
         /// <param name="collection">集合名称。</param>
-        public async FTask Save<T>(object transactionSession, T? entity, string collection = null) where T : Entity
+        public async FTask Save<T>(object transactionSession, T? entity, string? collection = null) where T : Entity
         {
             if (entity == null)
             {
@@ -772,7 +799,7 @@ namespace Fantasy.Database
         /// <typeparam name="T">实体类型。</typeparam>
         /// <param name="entity">要保存的实体对象。</param>
         /// <param name="collection">集合名称。</param>
-        public async FTask Save<T>(T? entity, string collection = null) where T : Entity
+        public async FTask Save<T>(T? entity, string? collection = null) where T : Entity
         {
             if (entity == null)
             {
@@ -796,7 +823,7 @@ namespace Fantasy.Database
         /// <param name="entity">实体类型。</param>
         /// <param name="collection">集合名称。</param>
         /// <typeparam name="T"></typeparam>
-        public async FTask Save<T>(Expression<Func<T, bool>> filter, T? entity, string collection = null) where T : Entity, new()
+        public async FTask Save<T>(Expression<Func<T, bool>> filter, T? entity, string? collection = null) where T : Entity, new()
         {
             if (entity == null)
             {
@@ -858,7 +885,7 @@ namespace Fantasy.Database
         /// <typeparam name="T">实体类型。</typeparam>
         /// <param name="entity">要插入的实体对象。</param>
         /// <param name="collection">集合名称。</param>
-        public async FTask Insert<T>(T? entity, string collection = null) where T : Entity, new()
+        public async FTask Insert<T>(T? entity, string? collection = null) where T : Entity, new()
         {
             if (entity == null)
             {
@@ -880,7 +907,7 @@ namespace Fantasy.Database
         /// <typeparam name="T">实体类型。</typeparam>
         /// <param name="list">要插入的实体对象列表。</param>
         /// <param name="collection">集合名称。</param>
-        public async FTask InsertBatch<T>(IEnumerable<T> list, string collection = null) where T : Entity, new()
+        public async FTask InsertBatch<T>(IEnumerable<T> list, string? collection = null) where T : Entity, new()
         {
             using (await _dataBaseLock.Wait(RandomHelper.RandInt64() % DefaultTaskSize))
             {
@@ -895,7 +922,7 @@ namespace Fantasy.Database
         /// <param name="transactionSession">事务会话对象。</param>
         /// <param name="list">要插入的实体对象列表。</param>
         /// <param name="collection">集合名称。</param>
-        public async FTask InsertBatch<T>(object transactionSession, IEnumerable<T> list, string collection = null)
+        public async FTask InsertBatch<T>(object transactionSession, IEnumerable<T> list, string? collection = null)
             where T : Entity, new()
         {
             using (await _dataBaseLock.Wait(RandomHelper.RandInt64() % DefaultTaskSize))
@@ -930,7 +957,7 @@ namespace Fantasy.Database
         /// <param name="id">要删除的实体的ID。</param>
         /// <param name="collection">集合名称。</param>
         /// <returns>删除的实体数量。</returns>
-        public async FTask<long> Remove<T>(object transactionSession, long id, string collection = null)
+        public async FTask<long> Remove<T>(object transactionSession, long id, string? collection = null)
             where T : Entity, new()
         {
             using (await _dataBaseLock.Wait(id))
@@ -948,7 +975,7 @@ namespace Fantasy.Database
         /// <param name="id">要删除的实体的ID。</param>
         /// <param name="collection">集合名称。</param>
         /// <returns>删除的实体数量。</returns>
-        public async FTask<long> Remove<T>(long id, string collection = null) where T : Entity, new()
+        public async FTask<long> Remove<T>(long id, string? collection = null) where T : Entity, new()
         {
             using (await _dataBaseLock.Wait(id))
             {
@@ -967,7 +994,7 @@ namespace Fantasy.Database
         /// <param name="collection">集合名称。</param>
         /// <returns>删除的实体数量。</returns>
         public async FTask<long> Remove<T>(long coroutineLockQueueKey, object transactionSession,
-            Expression<Func<T, bool>> filter, string collection = null) where T : Entity, new()
+            Expression<Func<T, bool>> filter, string? collection = null) where T : Entity, new()
         {
             using (await _dataBaseLock.Wait(coroutineLockQueueKey))
             {
@@ -986,7 +1013,7 @@ namespace Fantasy.Database
         /// <param name="collection">集合名称。</param>
         /// <returns>删除的实体数量。</returns>
         public async FTask<long> Remove<T>(long coroutineLockQueueKey, Expression<Func<T, bool>> filter,
-            string collection = null) where T : Entity, new()
+            string? collection = null) where T : Entity, new()
         {
             using (await _dataBaseLock.Wait(coroutineLockQueueKey))
             {

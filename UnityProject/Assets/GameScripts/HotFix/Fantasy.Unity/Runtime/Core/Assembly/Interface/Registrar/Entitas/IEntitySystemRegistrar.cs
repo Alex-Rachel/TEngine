@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Fantasy.Async;
 using Fantasy.Entitas;
 using Fantasy.Entitas.Interface;
 
@@ -64,6 +65,20 @@ namespace Fantasy.Assembly
         /// </summary>
         /// <returns>RuntimeTypeHandle 数组，每个元素对应一个拥有 DeserializeSystem 的实体类型</returns>
         RuntimeTypeHandle[] DeserializeTypeHandles();
+        
+        /// <summary>
+        /// 获取所有注册了 TransferOut 系统的实体类型句柄数组
+        /// 与 TransferOutHandles() 一一对应，用于建立实体类型到 TransferOut 处理器的映射关系
+        /// </summary>
+        /// <returns>RuntimeTypeHandle 数组，每个元素对应一个拥有 TransferOutSystem 的实体类型</returns>
+        RuntimeTypeHandle[] TransferOutTypeHandles();
+        
+        /// <summary>
+        /// 获取所有注册了 TransferIn 系统的实体类型句柄数组
+        /// 与 TransferInHandles() 一一对应，用于建立实体类型到 TransferIn 处理器的映射关系
+        /// </summary>
+        /// <returns>RuntimeTypeHandle 数组，每个元素对应一个拥有 TransferInSystem 的实体类型</returns>
+        RuntimeTypeHandle[] TransferInTypeHandles();
 
         /// <summary>
         /// 获取所有 Deserialize 系统的委托数组
@@ -72,6 +87,18 @@ namespace Fantasy.Assembly
         /// </summary>
         /// <returns>Action 委托数组，每个委托接收 Entity 参数，执行反序列化后的初始化逻辑</returns>
         Action<Entity>[] DeserializeHandles();
+        /// <summary>
+        /// 获取所有 TransferOut 系统的委托数组
+        /// TransferOut 系统在实体从开始传送前调用。
+        /// </summary>
+        /// <returns>Func 委托数组，每个委托接收 Entity 参数，开始传送前的逻辑</returns>
+        Func<Entity, FTask>[] TransferOutHandles();
+        /// <summary>
+        /// 获取所有 TransferIn 系统的委托数组
+        /// TransferIn 系统在实体从传送到达结束后调用。
+        /// </summary>
+        /// <returns>Func 委托数组，每个委托接收 Entity 参数，执行传送结束后逻辑</returns>
+        Func<Entity, FTask>[] TransferInHandles();
 #if FANTASY_UNITY
         /// <summary>
         /// 获取所有注册了 LateUpdate 系统的实体类型句柄数组（仅 Unity 平台）

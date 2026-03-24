@@ -31,5 +31,10 @@ namespace Fantasy.Entitas.Interface
         {
             Deserialize((T) self);
         }
+
+        public FTask InvokeAsync(Entity entity)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

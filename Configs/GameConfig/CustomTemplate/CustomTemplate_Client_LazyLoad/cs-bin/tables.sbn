@@ -47,6 +47,13 @@ public partial class {{__name}}
         defaultLoader = loader;
     }
 
+    public void Reload()
+    {
+        {{~for table in __tables ~}}
+        m_{{table.name}} = null;
+        {{~end~}}
+    }
+
     //public partial void Init();
 
     public void Init(){}

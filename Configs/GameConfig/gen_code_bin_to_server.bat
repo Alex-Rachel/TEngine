@@ -14,6 +14,7 @@ dotnet %LUBAN_DLL% ^
     -c cs-bin ^
     -d bin^
     --conf %CONF_ROOT%\luban.conf ^
+    --customTemplateDir %CONF_ROOT%\CustomTemplate\CustomTemplate_Client_LazyLoad ^
     -x code.lineEnding=crlf ^
     -x outputCodeDir=%CODE_OUTPATH% ^
     -x outputDataDir=%DATA_OUTPATH% ^

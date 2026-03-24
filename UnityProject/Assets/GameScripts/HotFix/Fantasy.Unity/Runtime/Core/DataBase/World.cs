@@ -105,7 +105,7 @@ namespace Fantasy
             {
                 var dataBaseConfig = dataBaseConfigList[i];
                 
-                if (dataBaseConfig.DbConnection != null && !string.IsNullOrWhiteSpace(dataBaseConfig.DbConnection))
+                if (!string.IsNullOrWhiteSpace(dataBaseConfig.DbConnection))
                 {
                     var dbType = dataBaseConfig.DbType.ToLower();
                     
@@ -114,28 +114,30 @@ namespace Fantasy
                         case "mongodb":
                         case "mongo":
                         {
-                            if (dataBaseConfig.DbConnection != null)
+                            try
                             {
-                                try
-                                {
-                                    var mongoDataBase = new MongoDatabase();
-                                    mongoDataBase.Initialize(scene, dataBaseConfig.DbConnection, dataBaseConfig.DbName);
-                                    AllDatabase.TryAdd(dataBaseConfig.DbName, mongoDataBase);
-
-                                    if (dataBaseConfig.IsDefault)
-                                    {
-                                        Database = mongoDataBase;
-                                    }
-                                }
-                                catch (Exception e)
-                                {
-                                    Log.Error($"WorldId:{Id} DbName:{dataBaseConfig.DbName} DbConnection:{dataBaseConfig.DbConnection} Initialization failed. Please check if the target database server can be connected normally.\n{e.Message}");
-                                }
+                                var mongoDataBase = new MongoDatabase();
+                                mongoDataBase.Initialize(scene, dataBaseConfig.DbConnection, dataBaseConfig.DbName);
+                                AllDatabase.TryAdd(dataBaseConfig.DbName, mongoDataBase);
+                            }
+                            catch (Exception e)
+                            {
+                                Log.Error($"WorldId:{Id} DbName:{dataBaseConfig.DbName} DbConnection:{dataBaseConfig.DbConnection} Initialization failed. Please check if the target database server can be connected normally.\n{e.Message}");
                             }
                             break;
                         }
                     }
                 }
+            }
+
+            if (worldConfig.Default == null)
+            {
+                return;
+            }
+            
+            if (!string.IsNullOrWhiteSpace(worldConfig.Default.DbConnection))
+            {
+                Database = AllDatabase[worldConfig.Default.DbName];
             }
         }
 
