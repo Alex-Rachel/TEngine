@@ -78,7 +78,7 @@ namespace TEngine
                 return module as T;
             }
 
-            string moduleName = Utility.Text.Format("{0}.{1}", interfaceType.Namespace, interfaceType.Name.Substring(1));
+            string moduleName = Utility.Text.Format("{0}.{1}, {2}", interfaceType.Namespace, interfaceType.Name.Substring(1), interfaceType.Assembly.GetName().Name);
             Type moduleType = Type.GetType(moduleName);
             if (moduleType == null)
             {
