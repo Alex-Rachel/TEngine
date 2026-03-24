@@ -374,7 +374,11 @@ namespace SuperScrollView
             GridItemPool pool = null;
             if (mItemPoolDict.TryGetValue(itemPrefabName, out pool) == false)
             {
-                return null;
+                pool = TryCreateItemPool(itemPrefabName);
+                if (pool == null)
+                {
+                    return null;
+                }
             }
             LoopGridViewItem item = pool.GetItem(mCurCreatingItemIndex);
             RectTransform rf = item.GetComponent<RectTransform>();
@@ -385,6 +389,63 @@ namespace SuperScrollView
             item.ParentGridView = this;
             return item;
         }
+
+        public LoopGridViewItem NewListViewItem(GameObject prefabGo)
+        {
+            GridItemPool pool = null;
+            if (mItemPoolDict.TryGetValue(prefabGo.name, out pool) == false)
+            {
+                pool = TryCreateItemPool(prefabGo.name);
+                if (pool == null)
+                {
+                    return null;
+                }
+            }
+            LoopGridViewItem item = pool.GetItem(mCurCreatingItemIndex);
+            RectTransform rf = item.GetComponent<RectTransform>();
+            rf.SetParent(mContainerTrans);
+            rf.localScale = Vector3.one;
+            rf.anchoredPosition3D = Vector3.zero;
+            rf.localEulerAngles = Vector3.zero;
+            item.ParentGridView = this;
+            return item;
+        }
+
+        #region TryCreateItemPool
+
+        private GridItemPool TryCreateItemPool(string itemPrefabName)
+        {
+            string resPath = itemPrefabName;
+            GameObject go = GameModule.Resource.LoadGameObject(resPath, parent: mContainerTrans);
+            if (go != null)
+            {
+                go.SetActive(false);
+                go.name = itemPrefabName;
+                GridItemPool pool = new GridItemPool();
+                pool.Init(go, 0, mContainerTrans);
+                mItemPoolDict.Add(itemPrefabName, pool);
+                mItemPoolList.Add(pool);
+                return pool;
+            }
+
+            return null;
+        }
+
+        private GridItemPool TryCreateItemPool(GameObject itemPrefab)
+        {
+            if (itemPrefab != null)
+            {
+                itemPrefab.SetActive(false);
+                GridItemPool pool = new GridItemPool();
+                pool.Init(itemPrefab, 0, mContainerTrans);
+                mItemPoolDict.Add(itemPrefab.name, pool);
+                mItemPoolList.Add(pool);
+                return pool;
+            }
+            return null;
+        }
+
+        #endregion
 
         public void ClearAllShownItems()
         {
