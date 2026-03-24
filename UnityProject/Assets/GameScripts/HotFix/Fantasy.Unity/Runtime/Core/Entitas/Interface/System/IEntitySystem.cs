@@ -18,5 +18,11 @@ namespace Fantasy.Entitas.Interface
         /// </summary>
         /// <param name="entity"></param>
         void Invoke(Entity entity);
+        /// <summary>
+        /// 框架内部调用的触发事件异步方法
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <returns></returns>
+        FTask InvokeAsync(Entity entity);
     }
 }

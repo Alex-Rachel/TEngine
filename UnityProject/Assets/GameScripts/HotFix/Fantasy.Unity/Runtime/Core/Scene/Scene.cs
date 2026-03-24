@@ -49,6 +49,29 @@ namespace Fantasy
             Scene = scene;
         }
     }
+
+    public struct OnSubSceneSetup
+    {
+        /// <summary>
+        /// 获取与事件关联的场景实体。
+        /// </summary>
+        public readonly Scene Scene;
+        /// <summary>
+        /// 获取与事件关联的场景子实体。
+        /// </summary>
+        public readonly SubScene SubScene;
+
+        /// <summary>
+        /// 初始化一个新的 OnSubSceneSetup 实例。
+        /// </summary>
+        /// <param name="scene"></param>
+        /// <param name="subScene"></param>
+        public OnSubSceneSetup(Scene scene, SubScene subScene)
+        {
+            Scene = scene;
+            SubScene = subScene;
+        }
+    }
     
     /// <summary>
     /// 表示一个场景实体，用于创建与管理特定的游戏场景信息。
@@ -279,8 +302,8 @@ namespace Fantasy
 #if FANTASY_NET
             if (World != null)
             {
-                World = null;
                 World.Dispose();
+                World = null;
             }
             Process = null;
             SceneType = 0;
@@ -453,14 +476,17 @@ namespace Fantasy
             
             return scene;
         }
+
         /// <summary>
         /// 在Scene下面创建一个子Scene，一般用于副本，或者一些特殊的场景。
         /// </summary>
         /// <param name="parentScene">主Scene的实例</param>
         /// <param name="sceneType">SceneType，可以在SceneType里找到，例如:SceneType.Addressable</param>
-        /// <param name="onSubSceneComplete">子Scene创建成功后执行的委托，可以传递null</param>
+        /// <param name="onSubSceneSetup">子Scene初始化完成后、OnCreateScene事件发布前执行的异步委托，用于挂载组件或做前置设置，可以传递null</param>
+        /// <param name="onSubSceneCreated">OnCreateScene事件发布完成后执行的异步委托，可以传递null</param>
         /// <returns></returns>
-        public static async FTask<SubScene> CreateSubScene(Scene parentScene, int sceneType, Action<SubScene, Scene> onSubSceneComplete = null)
+        public static async FTask<SubScene> CreateSubScene(Scene parentScene, int sceneType,
+            Func<SubScene, Scene, FTask> onSubSceneSetup = null, Func<SubScene, Scene, FTask> onSubSceneCreated = null)
         {
             var tcs = FTask<SubScene>.Create(false);
             var scene = new SubScene();
@@ -480,13 +506,58 @@ namespace Fantasy
             scene.Initialize(parentScene);
             scene.ThreadSynchronizationContext.Post(() => OnEvent().Coroutine());
             return await tcs;
+
             async FTask OnEvent()
             {
+                if (onSubSceneSetup != null)
+                {
+                    await onSubSceneSetup(scene, parentScene);
+                }
+
                 await scene.EventComponent.PublishAsync(new OnCreateScene(scene));
-                onSubSceneComplete?.Invoke(scene, parentScene);
+
+                if (onSubSceneCreated != null)
+                {
+                    await onSubSceneCreated(scene, parentScene);
+                }
+
                 tcs.SetResult(scene);
             }
         }
+        // /// <summary>
+        // /// 在Scene下面创建一个子Scene，一般用于副本，或者一些特殊的场景。
+        // /// </summary>
+        // /// <param name="parentScene">主Scene的实例</param>
+        // /// <param name="sceneType">SceneType，可以在SceneType里找到，例如:SceneType.Addressable</param>
+        // /// <param name="onSubSceneComplete">子Scene创建成功后执行的委托，可以传递null</param>
+        // /// <returns></returns>
+        // public static async FTask<SubScene> CreateSubScene(Scene parentScene, int sceneType, Action<SubScene, Scene> onSubSceneComplete = null)
+        // {
+        //     var tcs = FTask<SubScene>.Create(false);
+        //     var scene = new SubScene();
+        //     scene.Scene = scene;
+        //     scene.Parent = scene;
+        //     scene.RootScene = parentScene;
+        //     scene.Type = typeof(SubScene);
+        //     scene.SceneType = sceneType;
+        //     scene.World = parentScene.World;
+        //     scene.Process = parentScene.Process;
+        //     scene.SceneRuntimeType = SceneRuntimeType.SubScene;
+        //     scene.EntityIdFactory = parentScene.EntityIdFactory;
+        //     scene.RuntimeIdFactory = parentScene.RuntimeIdFactory;
+        //     scene.Id = scene.EntityIdFactory.Create;
+        //     scene.RuntimeId = scene.RuntimeIdFactory.Create(false);
+        //     scene.AddEntity(scene);
+        //     scene.Initialize(parentScene);
+        //     scene.ThreadSynchronizationContext.Post(() => OnEvent().Coroutine());
+        //     return await tcs;
+        //     async FTask OnEvent()
+        //     {
+        //         await scene.EventComponent.PublishAsync(new OnCreateScene(scene));
+        //         onSubSceneComplete?.Invoke(scene, parentScene);
+        //         tcs.SetResult(scene);
+        //     }
+        // }
 #endif
         private static async FTask SetScheduler(Scene scene, string sceneRuntimeMode)
         {

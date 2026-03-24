@@ -5,7 +5,6 @@ using Fantasy.InnerMessage;
 using Fantasy.Network.Interface;
 using LightProto;
 using MemoryPack;
-using MongoDB.Bson.Serialization.Attributes;
 // ReSharper disable UnassignedField.Global
 // ReSharper disable ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
 // ReSharper disable CheckNamespace
@@ -13,41 +12,6 @@ using MongoDB.Bson.Serialization.Attributes;
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 #pragma warning disable CS8603 // Possible null reference return.
 namespace Fantasy.Network.Roaming;
-
-/// <summary>
-/// Terminus 传送完成事件参数。
-/// 在 Terminus 完成传送并在目标场景中恢复后触发此事件。
-/// </summary>
-public struct OnTerminusTransferComplete
-{
-    /// <summary>
-    /// 获取传送目标场景。
-    /// </summary>
-    public readonly Scene Scene;
-
-    /// <summary>
-    /// 获取完成传送的 Terminus 实例。
-    /// </summary>
-    public readonly Terminus Terminus;
-
-    /// <summary>
-    /// 获取 Terminus 关联的实体（如果存在）。
-    /// </summary>
-    public readonly Entity LinkEntity;
-
-    /// <summary>
-    /// 初始化一个新的 OnTerminusTransferComplete 实例。
-    /// </summary>
-    /// <param name="scene">传送目标场景</param>
-    /// <param name="terminus">完成传送的 Terminus</param>
-    /// <param name="linkEntity">Terminus 关联的实体</param>
-    public OnTerminusTransferComplete(Scene scene, Terminus terminus, Entity linkEntity)
-    {
-        Scene = scene;
-        Terminus = terminus;
-        LinkEntity = linkEntity;
-    }
-}
 
 /// <summary>
 /// 漫游终端实体
@@ -113,8 +77,14 @@ public sealed partial class Terminus : Entity
         }
         
         IsDisposeTerminus = true;
-        Scene.TerminusComponent.RemoveTerminus(Id, false);
+        DisposeAsync().Coroutine();
+    }
 
+    private async FTask DisposeAsync()
+    {
+        Scene.TerminusComponent.RemoveTerminus(Id, false);
+        await Scene.EventComponent.PublishAsync(new OnDisposeTerminus(Scene, this));
+        
         TerminusId = 0;
         RoamingType = 0;
         ForwardSceneAddress = 0;
@@ -139,9 +109,10 @@ public sealed partial class Terminus : Entity
     /// 注意：销毁关联实体不会自动销毁 Terminus，需通过 autoDispose 参数控制生命周期。
     /// </summary>
     /// <param name="autoDispose">Terminus 销毁时是否自动销毁该关联实体</param>
+    /// <param name="startForwarding">是否开启消息转发到客户端</param>
     /// <typeparam name="T">要创建的实体类型</typeparam>
     /// <returns>创建的实体实例，如果已存在关联实体则返回 null</returns>
-    public async FTask<T> LinkTerminusEntity<T>(bool autoDispose) where T : Entity, new()
+    public async FTask<T> LinkTerminusEntity<T>(bool autoDispose, bool startForwarding = true) where T : Entity, new()
     {
         if (!IsCanLink())
         {
@@ -150,6 +121,7 @@ public sealed partial class Terminus : Entity
 
         var linkEntity = Entity.Create<T>(Scene, true, true);
         await LinkEntity(linkEntity, autoDispose);
+        StopForwarding = !startForwarding;
         return linkEntity;
     }
 
@@ -160,7 +132,8 @@ public sealed partial class Terminus : Entity
     /// </summary>
     /// <param name="entity">要关联的实体</param>
     /// <param name="autoDispose">Terminus 销毁时是否自动销毁该关联实体</param>
-    public async FTask LinkTerminusEntity(Entity entity, bool autoDispose)
+    /// <param name="startForwarding"></param>
+    public async FTask LinkTerminusEntity(Entity entity, bool autoDispose, bool startForwarding = true)
     {
         if (entity == null)
         {
@@ -196,6 +169,7 @@ public sealed partial class Terminus : Entity
         }
 
         await LinkEntity(entity, autoDispose);
+        StopForwarding = !startForwarding;
     }
 
     private async FTask LinkEntity(Entity entity, bool autoDispose)
@@ -287,6 +261,15 @@ public sealed partial class Terminus : Entity
         return true;
     }
 
+    /// <summary>
+    /// 设置转发，true 为开启转发，false 为停止转发
+    /// </summary>
+    /// <param name="isStartForwarding"></param>
+    public void SetForwarding(bool isStartForwarding)
+    {
+        StopForwarding = !isStartForwarding;
+    }
+
     #endregion
 
     #region Transfer
@@ -319,6 +302,17 @@ public sealed partial class Terminus : Entity
                 return lockErrorCode;
             }
             isLocked = true;
+            
+            // 执行传送前的事件
+            if (this.TerminusEntity == null)
+            {
+                await Scene.EntityComponent.TransferOut(this);
+            }
+            else
+            {
+                await Scene.EntityComponent.TransferOut(TerminusEntity);
+            }
+            
             // 开始执行传送请求。
             var response = (I_TransferTerminusResponse)await Scene.NetworkMessagingComponent.Call(
                 targetSceneAddress,
@@ -357,9 +351,10 @@ public sealed partial class Terminus : Entity
     /// 当传送完成后，需要清理漫游终端。
     /// </summary>
     /// <returns></returns>
-    public async FTask<uint> TransferComplete(Scene scene)
+    internal async FTask<uint> TransferComplete(Scene scene)
     {
         // 首先恢复漫游终端的序列化数据。并且注册到框架中。
+        // 并执行传送后的组件事件
         
         Deserialize(scene);
         TerminusId = RuntimeId;
@@ -368,20 +363,16 @@ public sealed partial class Terminus : Entity
         {
             TerminusEntity.Deserialize(scene);
             TerminusId = TerminusEntity.RuntimeId;
+            
+            await Scene.EntityComponent.TransferIn(TerminusEntity);
+        }
+        else
+        {
+            await Scene.EntityComponent.TransferIn(this);
         }
         
         // 然后要解锁下漫游
-        
-        var result = await UnLock();
-        
-        if (result != InnerErrorCode.Success)
-        {
-            return result;
-        }
-        
-        // 发送传送成功的事件
-        await scene.EventComponent.PublishAsync(new OnTerminusTransferComplete(scene, this, TerminusEntity!));
-        return result;
+        return await UnLock();
     }
 
     /// <summary>

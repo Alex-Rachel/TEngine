@@ -31,12 +31,6 @@ namespace Fantasy.Network.Interface
         private readonly UInt32MergerFrozenDictionary<Type> _opCodeMerger = new();
         private readonly UInt32MergerFrozenDictionary<Type> _responseTypeMerger = new();
         private readonly UInt32MergerFrozenDictionary<Func<Session, uint, object, FTask>> _messageHandlerMerger = new();
-#if FANTASY_NET
-        private UInt32FrozenDictionary<int> _customRouteDictionary;
-        private UInt32FrozenDictionary<Func<Session, Entity, uint, object, FTask>> _routeMessageHandlerDictionary;
-        private readonly UInt32MergerFrozenDictionary<int> _customRouteMerger = new();
-        private readonly UInt32MergerFrozenDictionary<Func<Session, Entity, uint, object, FTask>> _routeMessageHandlerMerger = new();
-#endif
 #if FANTASY_UNITY
         /*
          * 方便客户端通过 GameClient RegisterMsgHandler 注册的回调
@@ -62,6 +56,12 @@ namespace Fantasy.Network.Interface
                 handle.Remove(ctx);
             }
         }
+#endif
+#if FANTASY_NET
+        private UInt32FrozenDictionary<int> _customRouteDictionary;
+        private UInt32FrozenDictionary<Func<Session, Entity, uint, object, FTask>> _routeMessageHandlerDictionary;
+        private readonly UInt32MergerFrozenDictionary<int> _customRouteMerger = new();
+        private readonly UInt32MergerFrozenDictionary<Func<Session, Entity, uint, object, FTask>> _routeMessageHandlerMerger = new();
 #endif
         public override void Dispose()
         {

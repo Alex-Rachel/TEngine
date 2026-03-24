@@ -222,24 +222,20 @@ public static class ConfigLoader
 
             if (databaseNodes.Count > 0)
             {
-                var databaseNode = databaseNodes[0];
-                var databaseConfig = GetDatabaseConfig(databaseNode);
-                
-                worldConfig.Default = databaseConfig;
-                worldConfig.DatabaseConfig[0] = databaseConfig;
-
-                for (var index = 1; index < databaseNodes.Count; index++)
+                for (var index = 0; index < databaseNodes.Count; index++)
                 {
-                    databaseNode = databaseNodes[index];
-                    databaseConfig = GetDatabaseConfig(databaseNode);
+                    var databaseNode = databaseNodes[index];
+                    var databaseConfig = GetDatabaseConfig(databaseNode);
 
-                    if (databaseConfig.IsDefault && worldConfig.Default == null)
+                    if (worldConfig.Default == null && databaseConfig.IsDefault)
                     {
                         worldConfig.Default = databaseConfig;
                     }
-                    
+
                     worldConfig.DatabaseConfig[index] = databaseConfig;
                 }
+
+                worldConfig.Default ??= worldConfig.DatabaseConfig[0];
             }
             
             worldList.Add(worldConfig);
@@ -296,7 +292,8 @@ public static class ConfigLoader
     /// </summary>
     private static string? GetOptionalAttribute(XmlNode? node, string attributeName)
     {
-        return node?.Attributes?[attributeName]?.Value;
+        var value = node?.Attributes?[attributeName]?.Value;
+        return string.IsNullOrWhiteSpace(value) ? null : value;
     }
 
     /// <summary>
