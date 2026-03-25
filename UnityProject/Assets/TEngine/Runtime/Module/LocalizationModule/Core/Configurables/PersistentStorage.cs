@@ -3,6 +3,7 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 
 namespace TEngine.Localization
 {
@@ -75,6 +76,34 @@ namespace TEngine.Localization
         {
             if (mStorage == null) mStorage = new I2CustomPersistentStorage();
             return mStorage.HasFile(fileType, fileName, logExceptions);
+        }
+
+        #endregion
+
+        #region Async File Operations
+
+        public static async UniTask<bool> SaveFileAsync(eFileType fileType, string fileName, string data, bool logExceptions = true)
+        {
+            if (mStorage == null) mStorage = new I2CustomPersistentStorage();
+            return await UniTask.Run(() => mStorage.SaveFile(fileType, fileName, data, logExceptions));
+        }
+
+        public static async UniTask<string> LoadFileAsync(eFileType fileType, string fileName, bool logExceptions = true)
+        {
+            if (mStorage == null) mStorage = new I2CustomPersistentStorage();
+            return await UniTask.Run(() => mStorage.LoadFile(fileType, fileName, logExceptions));
+        }
+
+        public static async UniTask<bool> DeleteFileAsync(eFileType fileType, string fileName, bool logExceptions = true)
+        {
+            if (mStorage == null) mStorage = new I2CustomPersistentStorage();
+            return await UniTask.Run(() => mStorage.DeleteFile(fileType, fileName, logExceptions));
+        }
+
+        public static async UniTask<bool> HasFileAsync(eFileType fileType, string fileName, bool logExceptions = true)
+        {
+            if (mStorage == null) mStorage = new I2CustomPersistentStorage();
+            return await UniTask.Run(() => mStorage.HasFile(fileType, fileName, logExceptions));
         }
 
         #endregion
