@@ -210,7 +210,8 @@ public static class TEngineUISettingsProvider
                     // 规则说明
                     EditorGUILayout.HelpBox(
                         "• 非泛型: public class TestWindow : UIWindow\n" +
-                        "• 泛型: public class TestEventItem : UIEventItem<TestEventItem>",
+                        "• 泛型: public class TestEventItem : UIEventItem<TestEventItem>\n"+
+                        "• 双泛型: public class TestLoopListWidget : UILoopListWidget<TestEventItem, TestConfig>",
                         MessageType.Info);
 
                     EditorGUILayout.Space(5);
@@ -477,7 +478,8 @@ public static class TEngineUISettingsProvider
 
                     GUI.Label(new Rect(rect.x, rect.y, columnWidth, rect.height), "UI类型名称", EditorStyles.boldLabel);
                     GUI.Label(new Rect(rect.x + columnWidth + padding + 20, rect.y, columnWidth, rect.height), "自动生成的UI类继承的类名", EditorStyles.boldLabel);
-                    GUI.Label(new Rect(rect.x + (columnWidth + padding) * 3, rect.y, columnWidth, rect.height), "是否是泛型", EditorStyles.boldLabel);
+                    GUI.Label(new Rect(rect.x + (columnWidth + padding) * 2 + 80, rect.y, columnWidth, rect.height), "是否是泛型", EditorStyles.boldLabel);
+                    GUI.Label(new Rect(rect.x + (columnWidth + padding) * 3, rect.y, columnWidth, rect.height), "是否是双泛型", EditorStyles.boldLabel);
                 },
 
                 drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) =>
@@ -500,10 +502,15 @@ public static class TEngineUISettingsProvider
                     EditorGUI.PropertyField(regexRect, regexProperty, GUIContent.none);
 
                     // 是否Widget
-                    Rect widgetRect = new Rect(rect.x + (columnWidth + padding) * 3 + 10, rect.y, columnWidth, fieldHeight);
+                    Rect widgetRect = new Rect(rect.x + (columnWidth + padding) * 2 + 100, rect.y, columnWidth, fieldHeight);
                     SerializedProperty widgetProperty = element.FindPropertyRelative("isGeneric");
                     EditorGUI.PropertyField(widgetRect, widgetProperty, GUIContent.none);
 
+                    // 是否双泛型
+                    Rect bothGenericRect = new Rect(rect.x + (columnWidth + padding) * 3 + 25, rect.y, columnWidth, fieldHeight);
+                    SerializedProperty bothGenericProperty = element.FindPropertyRelative("bothGeneric");
+                    EditorGUI.PropertyField(bothGenericRect, bothGenericProperty, GUIContent.none);
+                    
                     if (EditorGUI.EndChangeCheck())
                     {
                         serializedObject.ApplyModifiedProperties();
@@ -530,6 +537,7 @@ public static class TEngineUISettingsProvider
                     SerializedProperty newElement = list.serializedProperty.GetArrayElementAtIndex(newIndex);
                     newElement.FindPropertyRelative("uiTypeName").stringValue = "UIWindow";
                     newElement.FindPropertyRelative("isGeneric").boolValue = false;
+                    newElement.FindPropertyRelative("bothGeneric").boolValue = false;
 
                     serializedObject.ApplyModifiedProperties();
                 },

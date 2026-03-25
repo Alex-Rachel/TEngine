@@ -21,8 +21,28 @@ MonoBehaviour:
   uiGenTypes:
   - uiTypeName: UIWindow
     isGeneric: 0
+    bothGeneric: 0
   - uiTypeName: UIWidget
     isGeneric: 0
+    bothGeneric: 0
+  - uiTypeName: BaseChildPage
+    isGeneric: 0
+    bothGeneric: 0
+  - uiTypeName: UIEventItem
+    isGeneric: 1
+    bothGeneric: 0
+  - uiTypeName: UILoopGridItemWidget
+    isGeneric: 0
+    bothGeneric: 0
+  - uiTypeName: UILoopItemWidget
+    isGeneric: 0
+    bothGeneric: 0
+  - uiTypeName: UILoopListWidget
+    isGeneric: 0
+    bothGeneric: 1
+  - uiTypeName: UILoopGridWidget
+    isGeneric: 0
+    bothGeneric: 1
   NullableEnable: 1
   scriptGenerateRule:
   - uiElementRegex: m_go

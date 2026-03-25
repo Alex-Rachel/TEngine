@@ -40,14 +40,19 @@ namespace TEngine.Editor.UI
     [Serializable]
     public class UIGenType
     {
-        public UIGenType(string uiTypeName, bool isGeneric)
+        public UIGenType(string uiTypeName, bool isGeneric, bool bothGeneric = false)
         {
             this.uiTypeName = uiTypeName;
             this.isGeneric = isGeneric;
+            this.bothGeneric = bothGeneric;
         }
 
         public string uiTypeName;
         public bool isGeneric;
+        /// <summary>
+        /// 双泛型 表示循环列表中的Widget的泛型和数据泛型
+        /// </summary>
+        public bool bothGeneric;
     }
 
     [CustomPropertyDrawer(typeof(ScriptGenerateRuler))]
