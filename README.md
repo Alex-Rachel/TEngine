@@ -12,6 +12,7 @@
 [![Issues](https://img.shields.io/github/issues/ALEXTANGXIAO/TEngine?style=flat-square)](https://github.com/ALEXTANGXIAO/TEngine/issues)
 [![Top Language](https://img.shields.io/github/languages/top/ALEXTANGXIAO/TEngine?style=flat-square)](https://github.com/ALEXTANGXIAO/TEngine)
 [![DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Alex-Rachel/TEngine)
+[![gitcgr](https://gitcgr.com/badge/Alex-Rachel/TEngine.svg)](https://gitcgr.com/Alex-Rachel/TEngine)
 
 </div>
 
