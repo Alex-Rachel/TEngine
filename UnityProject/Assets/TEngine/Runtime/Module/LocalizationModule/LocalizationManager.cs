@@ -282,13 +282,21 @@ namespace TEngine
 
         private void UseLocalizationCSV(string text, bool isLocalizeAll = false)
         {
-            _sourceData.Import_CSV(string.Empty, text, eSpreadsheetUpdateMode.Merge, ',');
+            var lfText = NormalizeToLf(text);
+            _sourceData.Import_CSV(string.Empty, lfText, eSpreadsheetUpdateMode.Merge, ',');
             if (isLocalizeAll)
             {
                 Localization.LocalizationManager.LocalizeAll();
             }
 
             UpdateAllLanguages();
+        }
+        
+        private static string NormalizeToLf(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return s;
+            return s.Replace("\r\n", "\n") // Windows CRLF -> LF
+                .Replace("\r", "\n");  // 兼容旧 Mac CR -> LF
         }
 
         /// <summary>
