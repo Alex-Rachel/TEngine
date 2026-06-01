@@ -126,8 +126,7 @@ namespace GameLogic
             bool needUpdate = false;
             if (listNextUpdateChild is not { Count: > 0 })
             {
-                _hasOverrideUpdate = true;
-                OnUpdate();
+                if (_hasOverrideUpdate) OnUpdate();
                 needUpdate = _hasOverrideUpdate;
             }
             else
