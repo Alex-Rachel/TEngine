@@ -123,19 +123,13 @@ namespace GameLogic
                 }
             }
 
-            bool needUpdate = false;
-            if (listNextUpdateChild is not { Count: > 0 })
+            if(_hasOverrideUpdate) OnUpdate();
+            bool needUpdate = true;
+            if (listNextUpdateChild == null || listNextUpdateChild.Count <= 0)
             {
-                _hasOverrideUpdate = true;
-                OnUpdate();
                 needUpdate = _hasOverrideUpdate;
             }
-            else
-            {
-                OnUpdate();
-                needUpdate = true;
-            }
-
+            
             return needUpdate;
         }
 
