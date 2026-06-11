@@ -49,7 +49,8 @@ TEngine 基于 HybridCLR + YooAsset + UniTask + Luban 构建。
 
 | 场景 | 必须查询主题 |
 |------|------------|
-| UI 开发 | ui-lifecycle.md — UIWindow 生命周期、UIWidget 规范 |
+| UI 开发 (UGUI) | ui-lifecycle.md — UIWindow 生命周期、UIWidget 规范 |
+| UI 开发 (UIToolkit) | uitk-module-design.md — UITKWindow/Widget、自动绑定、MVVM、动画 |
 | 资源加载 | resource-api.md — LoadAssetAsync API、释放时机 |
 | 热更代码 | hotfix-workflow.md — 程序集划分、GameApp 入口、热更边界 |
 | 事件系统 | event-system.md — GameEvent 用法、AddUIEvent 规范 |
@@ -77,6 +78,9 @@ TEngine 基于 HybridCLR + YooAsset + UniTask + Luban 构建。
 3. **资源必须释放**：`LoadAssetAsync` 对应 `UnloadAsset`，GameObject 用 `LoadGameObjectAsync`
 4. **热更边界**：`GameScripts/Main` 不热更，`GameScripts/HotFix/` 全部热更
 5. **事件解耦**：模块间用 `GameEvent`，UI 内部用 `AddUIEvent`
+6. **UIToolkit 开发**：新 UI 使用 `GameModule.UITK` (UITKModule)，旧 UI 保持 `GameModule.UI` (UIModule)
+7. **UIToolkit 绑定**：使用 `[Q]` + `[OnClick]` + `partial class`，通过菜单 `TEngine/UITK/Generate All Bindings` 生成绑定代码
+8. **UIToolkit 音效**：通过 `IUITKClickSoundHandler` 全局处理，不在单个按钮上手动注册音效
 
 ---
 
@@ -100,6 +104,11 @@ TEngine 基于 HybridCLR + YooAsset + UniTask + Luban 构建。
 | mcp-tools.md | MCP 场景/GameObject/UI Prefab/脚本/Editor/测试 | MCP |
 | mcp-visual.md | MCP 材质/Shader/VFX/动画 | MCP |
 | troubleshooting.md | 问题排查 | 排障 |
+| **UITKModule 相关** | | |
+| uitk-module-design.md | UITKModule 完整设计文档 | 核心 |
+| uitk-lifecycle.md | UITKWindow/Widget 生命周期、自动绑定流程 | 核心 |
+| uitk-binding.md | [Q]/[OnClick]/[OnChange] 用法、Editor 生成工具 | 核心 |
+| uitk-mvvm.md | BindableProperty/Command/List、ViewModel 模式 | 核心 |
 
 ---
 
