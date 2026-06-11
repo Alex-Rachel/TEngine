@@ -1,0 +1,11 @@
+/Users/wiesenwang/UnityProject/TEngine/Packages/UITKSourceGenerator/bin/Release/netstandard2.0/UITKSourceGenerator.deps.json
+/Users/wiesenwang/UnityProject/TEngine/Packages/UITKSourceGenerator/bin/Release/netstandard2.0/UITKSourceGenerator.dll
+/Users/wiesenwang/UnityProject/TEngine/Packages/UITKSourceGenerator/bin/Release/netstandard2.0/UITKSourceGenerator.pdb
+/Users/wiesenwang/UnityProject/TEngine/Packages/UITKSourceGenerator/obj/Release/netstandard2.0/UITKSourceGenerator.csproj.AssemblyReference.cache
+/Users/wiesenwang/UnityProject/TEngine/Packages/UITKSourceGenerator/obj/Release/netstandard2.0/UITKSourceGenerator.GeneratedMSBuildEditorConfig.editorconfig
+/Users/wiesenwang/UnityProject/TEngine/Packages/UITKSourceGenerator/obj/Release/netstandard2.0/UITKSourceGenerator.AssemblyInfoInputs.cache
+/Users/wiesenwang/UnityProject/TEngine/Packages/UITKSourceGenerator/obj/Release/netstandard2.0/UITKSourceGenerator.AssemblyInfo.cs
+/Users/wiesenwang/UnityProject/TEngine/Packages/UITKSourceGenerator/obj/Release/netstandard2.0/UITKSourceGenerator.csproj.CoreCompileInputs.cache
+/Users/wiesenwang/UnityProject/TEngine/Packages/UITKSourceGenerator/obj/Release/netstandard2.0/UITKSourceGenerator.sourcelink.json
+/Users/wiesenwang/UnityProject/TEngine/Packages/UITKSourceGenerator/obj/Release/netstandard2.0/UITKSourceGenerator.dll
+/Users/wiesenwang/UnityProject/TEngine/Packages/UITKSourceGenerator/obj/Release/netstandard2.0/UITKSourceGenerator.pdb

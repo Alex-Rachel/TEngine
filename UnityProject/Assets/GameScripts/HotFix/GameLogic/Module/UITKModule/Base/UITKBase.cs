@@ -193,7 +193,9 @@ namespace GameLogic
         protected void BindContext(ViewModelBase vm)
         {
             _unbindActions ??= new List<System.Action>();
-            __UITKAutoBindViewModel(vm);
+            // 运行时自动绑定 [Q] + [OnClick] + [OnChange]（首次 OnCreate 时已调用 AutoBind）
+            // 绑定 ViewModel [Bind] + [BindCommand]
+            UITKAutoBindHelper.AutoBindViewModel(this, RootElement, vm, _unbindActions);
         }
 
         /// <summary>
