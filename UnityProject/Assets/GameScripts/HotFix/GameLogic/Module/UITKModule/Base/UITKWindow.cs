@@ -34,12 +34,12 @@ namespace GameLogic
         protected virtual UITKAnimationType HideAnimation => UITKAnimationType.FadeOut;
         protected virtual int AnimationDuration => 200;
 
-        protected virtual UniTask OnShowAnimation()
+        internal virtual UniTask OnShowAnimation()
         {
             return UITKModule.Instance.AnimationDriver.Play(RootElement, ShowAnimation, true, AnimationDuration);
         }
 
-        protected virtual UniTask OnHideAnimation()
+        internal virtual UniTask OnHideAnimation()
         {
             return UITKModule.Instance.AnimationDriver.Play(RootElement, HideAnimation, false, AnimationDuration);
         }

@@ -64,7 +64,7 @@ namespace GameLogic
         /// <summary>
         /// 是否需要 Update。
         /// </summary>
-        protected bool _hasOverrideUpdate = true;
+        internal bool _hasOverrideUpdate = true;
 
         // ━━━ 生命周期钩子 ━━━
 
