@@ -1,0 +1,12 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="project://database/Assets/AssetRaw/UITK/Shared/Styles/variables.uss" />
+    <Style src="project://database/Assets/AssetRaw/UITK/Shared/Styles/common.uss" />
+    <ui:VisualElement class="uitk-window-root" style="justify-content: center; align-items: center;">
+        <ui:VisualElement class="panel" style="width: 350px; padding: 30px; align-items: center;">
+            <ui:Label text="Tips 层弹窗" name="lbl-title" class="text-title" style="font-size: 22px;" />
+            <ui:Label text="我在 Tips 层 (sortingOrder=6000)" name="lbl-desc" class="text-secondary" style="margin-top: 10px; white-space: normal;" />
+            <ui:Label text="下层 UI 仍然可见（非全屏）" class="text-secondary" style="margin-top: 5px;" />
+            <ui:Button text="关闭" name="btn-close" class="btn" style="margin-top: 20px;" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

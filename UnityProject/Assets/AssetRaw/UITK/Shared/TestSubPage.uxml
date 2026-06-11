@@ -1,0 +1,10 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="project://database/Assets/AssetRaw/UITK/Shared/Styles/variables.uss" />
+    <Style src="project://database/Assets/AssetRaw/UITK/Shared/Styles/common.uss" />
+    <ui:VisualElement class="uitk-window-root" style="padding: 40px; background-color: rgba(20,20,50,0.95); justify-content: center; align-items: center;">
+        <ui:Label text="子页面 (同层 UI)" name="lbl-title" class="text-title" />
+        <ui:Label text="我是全屏页面，会遮挡主界面" name="lbl-desc" class="text-secondary" style="margin-top: 10px;" />
+        <ui:Label text="主界面的 OnSetVisible(false) 应该被触发" class="text-secondary" style="margin-top: 5px; white-space: normal;" />
+        <ui:Button text="返回主界面" name="btn-back" class="btn" style="margin-top: 30px;" />
+    </ui:VisualElement>
+</ui:UXML>

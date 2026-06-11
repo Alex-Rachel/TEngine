@@ -37,7 +37,7 @@ public partial class GameApp
     {
         // GameEvent.Get<ILoginUI>().ShowLoginUI();
         // GameModule.UI.ShowUIAsync<BattleMainUI>();
-        GameModule.UITK.ShowUIAsync<TestAutoBindWindow>();
+        GameModule.UITK.ShowUIAsync<TestFullFeatureWindow>();
     }
     
     private static void Release()

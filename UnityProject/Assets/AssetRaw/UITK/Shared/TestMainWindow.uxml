@@ -1,0 +1,20 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="project://database/Assets/AssetRaw/UITK/Shared/Styles/variables.uss" />
+    <Style src="project://database/Assets/AssetRaw/UITK/Shared/Styles/common.uss" />
+    <ui:VisualElement class="uitk-window-root" style="padding: 40px; background-color: rgba(0,0,0,0.9); justify-content: center; align-items: center;">
+        <ui:Label text="UITK 主界面" name="lbl-title" class="text-title" />
+        <ui:Label text="层级: UI | 全屏" name="lbl-info" class="text-secondary" style="margin-top: 10px;" />
+
+        <ui:VisualElement style="margin-top: 40px; width: 400px;">
+            <ui:Button text="打开 Tips 弹窗 (上层)" name="btn-open-tips" class="btn" style="margin-top: 10px;" />
+            <ui:Button text="打开 System 确认框 (最上层)" name="btn-open-system" class="btn" style="margin-top: 10px;" />
+            <ui:Button text="打开 子页面 (同层 UI)" name="btn-open-sub" class="btn" style="margin-top: 10px;" />
+            <ui:Button text="打开 AutoBind 测试" name="btn-open-autobind" class="btn" style="margin-top: 10px;" />
+            <ui:Button text="打开 MVVM 全功能测试" name="btn-open-full" class="btn" style="margin-top: 10px;" />
+            <ui:Button text="关闭自己" name="btn-close" class="btn" style="margin-top: 30px; background-color: #F44336;" />
+        </ui:VisualElement>
+
+        <ui:Label text="窗口栈:" class="text-secondary" style="margin-top: 30px;" />
+        <ui:Label text="" name="lbl-stack" class="text-secondary" style="margin-top: 5px; white-space: normal;" />
+    </ui:VisualElement>
+</ui:UXML>
