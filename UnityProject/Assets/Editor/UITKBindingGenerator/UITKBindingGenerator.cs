@@ -194,32 +194,37 @@ namespace TEngine.Editor.UITK
             sb.AppendLine();
 
             // __UITKAutoBindEvents
+            // 生成 click 委托缓存字段
+            foreach (var click in clickMethods)
+            {
+                var field = qFields.FirstOrDefault(q => q.UxmlName == click.UxmlTarget);
+                if (field != null && click.Sound != "")
+                {
+                    sb.AppendLine($"{indent}private Action __click_{field.FieldName};");
+                }
+            }
+            sb.AppendLine();
+
             sb.AppendLine($"{indent}protected override void __UITKAutoBindEvents()");
             sb.AppendLine($"{indent}{{");
             foreach (var click in clickMethods)
             {
                 var field = qFields.FirstOrDefault(q => q.UxmlName == click.UxmlTarget);
-                if (field != null)
+                if (field == null) continue;
+
+                if (click.Sound == "")
                 {
-                    // 音效处理
-                    if (click.Sound == null)
-                    {
-                        // 默认音效：标记按钮 + 包装 clicked
-                        sb.AppendLine($"{indent}    {field.FieldName}.AddToClassList(\"__uitk-has-sound\");");
-                        sb.AppendLine($"{indent}    {field.FieldName}.clicked += () => {{ UITKModule.Instance.ClickSoundHandler?.OnButtonClick({field.FieldName}, null); {click.MethodName}(); }};");
-                    }
-                    else if (click.Sound == "")
-                    {
-                        // 静音：标记按钮 + 直接绑定
-                        sb.AppendLine($"{indent}    {field.FieldName}.AddToClassList(\"__uitk-has-sound\");");
-                        sb.AppendLine($"{indent}    {field.FieldName}.clicked += {click.MethodName};");
-                    }
-                    else
-                    {
-                        // 指定音效
-                        sb.AppendLine($"{indent}    {field.FieldName}.AddToClassList(\"__uitk-has-sound\");");
-                        sb.AppendLine($"{indent}    {field.FieldName}.clicked += () => {{ UITKModule.Instance.ClickSoundHandler?.OnButtonClick({field.FieldName}, \"{click.Sound}\"); {click.MethodName}(); }};");
-                    }
+                    // 静音：直接绑定方法
+                    sb.AppendLine($"{indent}    {field.FieldName}.AddToClassList(\"__uitk-has-sound\");");
+                    sb.AppendLine($"{indent}    {field.FieldName}.clicked += {click.MethodName};");
+                }
+                else
+                {
+                    // 有音效（默认或指定）：生成包装委托
+                    string soundArg = click.Sound == null ? "null" : $"\\\"{click.Sound}\\\"";
+                    sb.AppendLine($"{indent}    {field.FieldName}.AddToClassList(\"__uitk-has-sound\");");
+                    sb.AppendLine($"{indent}    __click_{field.FieldName} = () => {{ UITKModule.Instance.ClickSoundHandler?.OnButtonClick({field.FieldName}, {soundArg}); {click.MethodName}(); }};");
+                    sb.AppendLine($"{indent}    {field.FieldName}.clicked += __click_{field.FieldName};");
                 }
             }
             foreach (var change in changeMethods)
@@ -237,8 +242,16 @@ namespace TEngine.Editor.UITK
             foreach (var click in clickMethods)
             {
                 var field = qFields.FirstOrDefault(q => q.UxmlName == click.UxmlTarget);
-                if (field != null)
+                if (field == null) continue;
+
+                if (click.Sound == "")
+                {
                     sb.AppendLine($"{indent}    {field.FieldName}.clicked -= {click.MethodName};");
+                }
+                else
+                {
+                    sb.AppendLine($"{indent}    if (__click_{field.FieldName} != null) {field.FieldName}.clicked -= __click_{field.FieldName};");
+                }
             }
             foreach (var change in changeMethods)
             {

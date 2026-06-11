@@ -22,9 +22,12 @@ namespace GameLogic
 
         protected override void __UITKAutoBindEvents()
         {
-            btnIncrement.clicked += OnBtnIncrement;
-            btnDecrement.clicked += OnBtnDecrement;
-            btnClose.clicked += OnBtnClose;
+            btnIncrement.AddToClassList("__uitk-has-sound");
+            btnIncrement.clicked += () => { UITKModule.Instance.ClickSoundHandler?.OnButtonClick(btnIncrement, null); OnBtnIncrement(); };
+            btnDecrement.AddToClassList("__uitk-has-sound");
+            btnDecrement.clicked += () => { UITKModule.Instance.ClickSoundHandler?.OnButtonClick(btnDecrement, null); OnBtnDecrement(); };
+            btnClose.AddToClassList("__uitk-has-sound");
+            btnClose.clicked += () => { UITKModule.Instance.ClickSoundHandler?.OnButtonClick(btnClose, null); OnBtnClose(); };
             inputName.RegisterValueChangedCallback(OnNameChanged);
         }
 

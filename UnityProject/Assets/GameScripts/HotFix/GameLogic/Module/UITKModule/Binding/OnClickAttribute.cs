@@ -16,7 +16,16 @@ namespace GameLogic
         /// </summary>
         public string Sound { get; }
 
-        public OnClickAttribute() { }
+        public OnClickAttribute()
+        {
+        }
+
         public OnClickAttribute(string target) => Target = target;
-        public OnClickAttribute(string target, string sound) { Target = target; Sound = sound; }
+
+        public OnClickAttribute(string target, string sound)
+        {
+            Target = target;
+            Sound = sound;
+        }
+    }
 }
