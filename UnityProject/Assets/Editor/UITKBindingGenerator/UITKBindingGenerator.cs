@@ -148,7 +148,7 @@ namespace TEngine.Editor.UITK
 
             // 找到源文件路径
             string sourcePath = FindSourceFile(type);
-            if (string.IsNullOrEmpty(sourcePath)) return false;
+            if (string.IsNullOrEmpty(sourcePath) || sourcePath.Contains(".bindgen.")) return false;
 
             // 生成代码
             string code = GenerateCode(type, qFields, onClickMethods, onChangeMethods, bindFields, bindCommands);
@@ -304,6 +304,7 @@ namespace TEngine.Editor.UITK
             foreach (var guid in guids)
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
+                if (path.Contains(".bindgen.")) continue;  // 跳过已生成文件
                 var script = AssetDatabase.LoadAssetAtPath<MonoScript>(path);
                 if (script != null && script.GetClass() == type)
                 {
@@ -316,6 +317,7 @@ namespace TEngine.Editor.UITK
             foreach (var guid in paths)
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
+                if (path.Contains(".bindgen.")) continue;  // 跳过已生成文件
                 if (Path.GetFileNameWithoutExtension(path) == type.Name)
                     return path;
             }
