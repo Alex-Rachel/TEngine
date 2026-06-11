@@ -33,6 +33,9 @@
       <Collector CollectPath="Assets/AssetRaw/UIRaw/Atlas" CollectGUID="6d11fa91acc253840a648b58f23db139" CollectType="MainAssetCollector" AddressRule="AddressByFileName" PackRule="PackDirectory" FilterRule="CollectAll" UserData="" AssetTags="" />
       <Collector CollectPath="Assets/AssetRaw/UIRaw/Raw" CollectGUID="6bc134b912ac6bb4399ea1bec4c11636" CollectType="MainAssetCollector" AddressRule="AddressByFileName" PackRule="PackDirectory" FilterRule="CollectAll" UserData="" AssetTags="" />
     </Group>
+    <Group GroupActiveRule="EnableGroup" GroupName="UITK" GroupDesc="UIToolkit Assets" AssetTags="">
+      <Collector CollectPath="Assets/AssetRaw/UITK" CollectGUID="" CollectType="MainAssetCollector" AddressRule="AddressByFileName" PackRule="PackDirectory" FilterRule="CollectAll" UserData="" AssetTags="" />
+    </Group>
   </Package>
   <Package PackageName="OtherPackage" PackageDesc="" AutoAddressable="True" LocationToLower="False" IncludeAssetGUID="False" IgnoreDefaultType="True">
     <Group GroupActiveRule="EnableGroup" GroupName="ModelGroup" GroupDesc="" AssetTags="models" />
