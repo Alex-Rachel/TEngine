@@ -15,10 +15,20 @@ namespace GameLogic
 
         private static readonly string[] LayerNames = { "Panel_Bottom", "Panel_UI", "Panel_Top", "Panel_Tips", "Panel_System" };
 
+        private const string DEFAULT_PANEL_SETTINGS = "DefaultPanelSettings";
+
         private void InitPanels()
         {
             _uiTKRoot = new GameObject("UITKRoot");
             Object.DontDestroyOnLoad(_uiTKRoot);
+
+            // 加载 PanelSettings 资产
+            PanelSettings panelSettings = Resource.LoadPanelSettings(DEFAULT_PANEL_SETTINGS);
+            if (panelSettings == null)
+            {
+                Log.Error("UITKModule: Failed to load PanelSettings, trying Resources fallback.");
+                panelSettings = Resources.Load<PanelSettings>(DEFAULT_PANEL_SETTINGS);
+            }
 
             for (int i = 0; i < LAYER_COUNT; i++)
             {
@@ -26,6 +36,7 @@ namespace GameLogic
                 panelGo.transform.SetParent(_uiTKRoot.transform);
 
                 var doc = panelGo.AddComponent<UIDocument>();
+                doc.panelSettings = panelSettings;
                 doc.sortingOrder = i * LAYER_SORT_INTERVAL;
 
                 _layerDocuments[i] = doc;
