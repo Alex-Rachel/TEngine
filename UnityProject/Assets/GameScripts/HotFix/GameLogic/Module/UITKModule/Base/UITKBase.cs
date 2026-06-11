@@ -188,14 +188,12 @@ namespace GameLogic
         private List<System.Action> _unbindActions;
 
         /// <summary>
-        /// 绑定 ViewModel。由 Source Generator 生成的代码调用内部方法。
+        /// 绑定 ViewModel。调用由 Editor 工具生成的 __UITKAutoBindMVVM 方法。
         /// </summary>
         protected void BindContext(ViewModelBase vm)
         {
             _unbindActions ??= new List<System.Action>();
-            // 运行时自动绑定 [Q] + [OnClick] + [OnChange]（首次 OnCreate 时已调用 AutoBind）
-            // 绑定 ViewModel [Bind] + [BindCommand]
-            UITKAutoBindHelper.AutoBindViewModel(this, RootElement, vm, _unbindActions);
+            __UITKAutoBindMVVM(vm);
         }
 
         /// <summary>
@@ -203,33 +201,24 @@ namespace GameLogic
         /// </summary>
         protected void UnbindContext()
         {
-            __UITKAutoUnbindViewModel();
+            __UITKAutoUnbindMVVM();
         }
 
         /// <summary>
-        /// Source Generator 重写此方法绑定 ViewModel。默认空实现。
+        /// 由 Editor 生成工具重写。绑定 ViewModel。默认空实现。
         /// </summary>
-        protected virtual void __UITKAutoBindViewModel(ViewModelBase vm) { }
+        protected virtual void __UITKAutoBindMVVM(ViewModelBase vm) { }
 
         /// <summary>
-        /// Source Generator 重写此方法解绑 ViewModel。
+        /// 由 Editor 生成工具重写。解绑 ViewModel。
         /// </summary>
-        protected virtual void __UITKAutoUnbindViewModel()
+        protected virtual void __UITKAutoUnbindMVVM()
         {
             if (_unbindActions != null)
             {
                 foreach (var action in _unbindActions) action();
                 _unbindActions.Clear();
             }
-        }
-
-        /// <summary>
-        /// 注册解绑回调（由 generated code 调用）。
-        /// </summary>
-        protected void RegisterUnbindAction(System.Action action)
-        {
-            _unbindActions ??= new List<System.Action>();
-            _unbindActions.Add(action);
         }
     }
 }

@@ -1,11 +1,14 @@
 using System.Text;
 
-namespace UITKSourceGenerator
+namespace TEngine.Editor.UITK
 {
-    public static class NamingConventions
+    /// <summary>
+    /// 命名转换工具。
+    /// </summary>
+    public static class UITKNamingHelper
     {
         /// <summary>
-        /// Convert C# camelCase field name to UXML kebab-case name.
+        /// C# camelCase → UXML kebab-case。
         /// btnLogin → btn-login, lblPlayerHP → lbl-player-hp
         /// </summary>
         public static string ToKebabCase(string camelCase)
@@ -22,13 +25,10 @@ namespace UITKSourceGenerator
                     bool isAcronymEnd = i + 1 < camelCase.Length && char.IsLower(camelCase[i + 1]);
 
                     if (i > 0 && !isAcronymPart)
-                    {
                         sb.Append('-');
-                    }
                     else if (isAcronymPart && isAcronymEnd && i > 1)
-                    {
                         sb.Append('-');
-                    }
+
                     sb.Append(char.ToLower(c));
                 }
                 else
@@ -40,7 +40,7 @@ namespace UITKSourceGenerator
         }
 
         /// <summary>
-        /// Extract target element name from OnClick method name.
+        /// 从 OnClick 方法名推导目标元素名。
         /// OnBtnLogin → btn-login
         /// </summary>
         public static string MethodNameToTarget(string methodName)
