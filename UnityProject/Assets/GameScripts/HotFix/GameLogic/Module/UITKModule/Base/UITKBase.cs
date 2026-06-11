@@ -182,5 +182,52 @@ namespace GameLogic
         {
             return await CreateWidgetAsync<T>(parentElement, typeof(T).Name, visible);
         }
+
+        // ━━━ MVVM 绑定支持 ━━━
+
+        private List<System.Action> _unbindActions;
+
+        /// <summary>
+        /// 绑定 ViewModel。由 Source Generator 生成的代码调用内部方法。
+        /// </summary>
+        protected void BindContext(ViewModelBase vm)
+        {
+            _unbindActions ??= new List<System.Action>();
+            __UITKAutoBindViewModel(vm);
+        }
+
+        /// <summary>
+        /// 解绑 ViewModel。
+        /// </summary>
+        protected void UnbindContext()
+        {
+            __UITKAutoUnbindViewModel();
+        }
+
+        /// <summary>
+        /// Source Generator 重写此方法绑定 ViewModel。默认空实现。
+        /// </summary>
+        protected virtual void __UITKAutoBindViewModel(ViewModelBase vm) { }
+
+        /// <summary>
+        /// Source Generator 重写此方法解绑 ViewModel。
+        /// </summary>
+        protected virtual void __UITKAutoUnbindViewModel()
+        {
+            if (_unbindActions != null)
+            {
+                foreach (var action in _unbindActions) action();
+                _unbindActions.Clear();
+            }
+        }
+
+        /// <summary>
+        /// 注册解绑回调（由 generated code 调用）。
+        /// </summary>
+        protected void RegisterUnbindAction(System.Action action)
+        {
+            _unbindActions ??= new List<System.Action>();
+            _unbindActions.Add(action);
+        }
     }
 }
