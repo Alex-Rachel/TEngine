@@ -4,15 +4,14 @@ namespace GameLogic
 {
     /// <summary>
     /// 按钮点击音效处理器接口。
-    /// 业务层实现此接口，决定每个按钮播放什么音效。
+    /// 业务层实现此接口，根据 button.name 或 class 决定播放什么音效。
     /// </summary>
     public interface IUITKClickSoundHandler
     {
         /// <summary>
-        /// 当按钮被点击时调用。
+        /// 当按钮被点击时调用。业务层自行决定音效策略。
         /// </summary>
         /// <param name="button">被点击的按钮。</param>
-        /// <param name="sound">音效名。null=使用默认音效，""=静音，其他=播放指定音效。</param>
-        void OnButtonClick(Button button, string sound);
+        void OnButtonClick(Button button);
     }
 }
