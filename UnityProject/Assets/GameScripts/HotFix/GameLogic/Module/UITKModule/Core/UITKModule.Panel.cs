@@ -41,7 +41,24 @@ namespace GameLogic
 
                 _layerDocuments[i] = doc;
                 _layerRoots[i] = doc.rootVisualElement;
+
+                // 统一按钮点击音效拦截（冒泡阶段）
+                _layerRoots[i].RegisterCallback<ClickEvent>(OnGlobalClick);
             }
+        }
+
+        /// <summary>
+        /// 全局点击事件拦截。判断目标是 Button 则触发音效处理器。
+        /// </summary>
+        private void OnGlobalClick(ClickEvent evt)
+        {
+            if (ClickSoundHandler == null) return;
+            if (evt.target is not Button button) return;
+
+            // 支持静音标记：带 "no-sound" class 的按钮跳过音效
+            if (button.ClassListContains("no-sound")) return;
+
+            ClickSoundHandler.OnButtonClick(button);
         }
 
         private void DestroyPanels()

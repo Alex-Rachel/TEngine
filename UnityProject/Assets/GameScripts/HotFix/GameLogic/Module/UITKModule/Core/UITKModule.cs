@@ -15,6 +15,11 @@ namespace GameLogic
         public static IUITKResourceLoader Resource { get; private set; }
         public IUITKAnimationDriver AnimationDriver { get; set; }
 
+        /// <summary>
+        /// 按钮点击音效处理器。业务层设置，为 null 时不播放音效。
+        /// </summary>
+        public IUITKClickSoundHandler ClickSoundHandler { get; set; }
+
         private readonly List<UITKWindow> _windowStack = new List<UITKWindow>(64);
 
         protected override void OnInit()
