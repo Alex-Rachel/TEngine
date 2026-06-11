@@ -1,6 +1,6 @@
 # UITKModule Plan 1: Core Framework Implementation
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **状态**: ✅ 已完成
 
 **Goal:** Build the UITKModule core framework skeleton — module singleton, 5-layer panel management, window/widget lifecycle, resource loading, and animation system — enabling manual-binding style UI development on top of UIToolkit.
 

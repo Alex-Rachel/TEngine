@@ -1,127 +1,84 @@
 # UITKModule Plan 2: Binding + MVVM + ListView + Editor Code Generator
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task.
+> **状态**: ✅ 已完成
 
-**Goal:** Add Editor pre-generation auto-binding, MVVM data binding, and UITKListView to the UITKModule core (Plan 1).
+**Goal:** Add Editor pre-generation auto-binding, MVVM data binding, UITKListView, and click sound system.
 
-**Architecture:** Editor 脚本扫描带 [Q]/[OnClick]/[OnChange]/[Bind]/[BindCommand] 标记的 partial class，生成 `.bindgen.cs` 到同目录。生成的代码是普通 C#，正常参与 HybridCLR 热更新。零运行时反射。
-
-**Tech Stack:** Unity 2022.3 Editor Scripts, UI Toolkit, UniTask, HybridCLR
-
-**Spec Reference:** `docs/superpowers/specs/2026-06-11-uitk-module-design.md` sections 5-8, 12
-
-**Depends On:** Plan 1 (Core Framework) fully implemented
+**Architecture:** Editor 脚本扫描 [Q]/[OnClick]/[OnChange] 标记的 partial class，生成 `.bindgen.cs`。MVVM 使用 BindableProperty/Command/List。音效通过 Panel 级全局 ClickEvent 拦截统一处理。
 
 ---
 
-## File Map
+## 完成状态
 
-| Action | Path | Responsibility |
-|--------|------|---------------|
-| ✅ Done | `UITKModule/Binding/QAttribute.cs` | [Q] attribute |
-| ✅ Done | `UITKModule/Binding/OnClickAttribute.cs` | [OnClick] attribute |
-| ✅ Done | `UITKModule/Binding/OnChangeAttribute.cs` | [OnChange] attribute |
-| ✅ Done | `UITKModule/Binding/BindAttribute.cs` | [Bind] MVVM attribute |
-| ✅ Done | `UITKModule/Binding/BindCommandAttribute.cs` | [BindCommand] attribute |
-| ✅ Done | `UITKModule/Binding/BindingMode.cs` | Enum |
-| ✅ Done | `UITKModule/MVVM/BindableProperty.cs` | Reactive property |
-| ✅ Done | `UITKModule/MVVM/BindableCommand.cs` | Command |
-| ✅ Done | `UITKModule/MVVM/BindableList.cs` | Observable collection |
-| ✅ Done | `UITKModule/MVVM/ViewModelBase.cs` | Base class |
-| ✅ Done | `UITKModule/MVVM/IValueConverter.cs` | Converters |
-| ✅ Done | `UITKModule/ListView/UITKListView.cs` | Virtualized list |
-| ✅ Done | `UITKModule/Base/UITKBase.cs` | BindContext/UnbindContext |
-| Create | `Assets/Editor/UITKBindingGenerator/UITKBindingGenerator.cs` | 主生成器 |
-| Create | `Assets/Editor/UITKBindingGenerator/UITKNamingHelper.cs` | 命名转换 |
-| Create | `Assets/Editor/UITKBindingGenerator/UITKUXMLValidator.cs` | UXML 校验 |
-| Create | Test: `TestAutoBindWindow.cs` + `.bindgen.cs` | 自动绑定测试 |
-| Delete | `Packages/UITKSourceGenerator/` | 移除旧 Source Generator 项目 |
-| Delete | `Assets/Plugins/UITKSourceGenerator/` | 移除旧 DLL |
+| Task | 状态 | 内容 |
+|------|------|------|
+| Binding Attributes | ✅ | QAttribute, OnClickAttribute, OnChangeAttribute, BindAttribute, BindCommandAttribute, BindingMode |
+| MVVM Core | ✅ | BindableProperty, BindableCommand, BindableList, ViewModelBase, IValueConverter + 内置转换器 |
+| UITKListView | ✅ | 虚拟化列表 + Widget 生命周期 + 对象池 |
+| BindContext/UnbindContext | ✅ | UITKBase 中的 MVVM 绑定入口 |
+| Editor Generator | ✅ | UITKBindingGenerator + NamingHelper + UXMLValidator |
+| Auto-bind 生命周期集成 | ✅ | InternalCreate 自动调用 __UITKAutoBind + __UITKAutoBindEvents |
+| Click Sound | ✅ | IUITKClickSoundHandler + Panel 全局拦截 + no-sound class |
+| 测试窗口 | ✅ | TestAutoBindWindow, TestFullFeatureWindow, TestMainWindow, TestTipsPopup, TestSystemDialog, TestSubPage |
 
 ---
 
-## Task 1: Editor 代码生成工具 — UITKNamingHelper
+## 关键设计决策记录
 
-**Files:**
-- Create: `Assets/Editor/UITKBindingGenerator/UITKNamingHelper.cs`
+### 自动绑定方案
+- **最终方案**: Editor 脚本预生成 `.bindgen.cs`
+- **弃用方案**: Roslyn Source Generator DLL（需要外部构建，与 HybridCLR 兼容性不确定）
+- **弃用方案**: 运行时反射（性能问题）
 
-功能：camelCase → kebab-case 转换 + 方法名推导目标元素
+### 自动绑定调用时机
+- 框架在 `InternalCreate()` / `InitWidget()` 中自动调用 `__UITKAutoBind` + `__UITKAutoBindEvents`
+- 框架在 `InternalDestroy()` 中自动调用 `__UITKAutoUnbindEvents`
+- 开发者完全无感，不需要手动调用任何绑定方法
 
----
+### 按钮音效
+- **最终方案**: Panel 级 ClickEvent 冒泡全局拦截 + IUITKClickSoundHandler 接口
+- 生成代码不碰音效（职责单一）
+- 业务层 Handler 根据 button.name/class 决定策略
+- `no-sound` CSS class 标记静音
+- 弃用：[OnClick] sound 参数（过度设计）、class 携带音效名（滥用 class 语义）
 
-## Task 2: Editor 代码生成工具 — UITKUXMLValidator
-
-**Files:**
-- Create: `Assets/Editor/UITKBindingGenerator/UITKUXMLValidator.cs`
-
-功能：解析 UXML 文件，提取所有带 name 的元素及类型，校验 [Q] 字段是否匹配
-
----
-
-## Task 3: Editor 代码生成工具 — UITKBindingGenerator (核心)
-
-**Files:**
-- Create: `Assets/Editor/UITKBindingGenerator/UITKBindingGenerator.cs`
-
-功能：
-1. 菜单项 `TEngine/UITK/Generate All Bindings` — 扫描所有 partial class
-2. 菜单项 `TEngine/UITK/Generate Binding (Selected)` — 仅当前选中文件
-3. 扫描继承 UITKWindow/UITKWidget 的 partial class
-4. 解析 [Q]、[OnClick]、[OnChange]、[Bind]、[BindCommand]
-5. 生成 `XXX.bindgen.cs` 到源文件同目录
-6. 包含 __UITKAutoBind、__UITKAutoBindEvents、__UITKAutoUnbindEvents
-7. 包含 __UITKAutoBindViewModel、__UITKAutoUnbindViewModel (MVVM)
-8. 可选：校验对应 UXML 文件中元素是否存在
+### 资源定位
+- YooAsset `AddressByFileName` 规则：文件名即 Address
+- 不需要传路径/Group，只要文件名唯一即可
+- [UIWindow(Location = "xxx")] 可覆盖默认类名定位
+- [UIWindow(Package = "xxx")] 指定 YooAsset 包名
 
 ---
 
-## Task 4: 更新 UITKBase — 调用生成的方法
+## 使用指南
 
-**Files:**
-- Modify: `UITKModule/Base/UITKBase.cs`
+### 1. 创建新窗口
 
-在 BindContext 中调用 __UITKAutoBindViewModel（已由生成代码提供），移除运行时反射调用。
+```csharp
+[UIWindow(UILayer.UI, FullScreen = true)]
+public partial class BagWindow : UITKWindow
+{
+    [Q] Button btnClose;
+    [Q] Label lblTitle;
 
----
+    [OnClick] void OnBtnClose() { UITKModule.Instance.CloseUI<BagWindow>(); }
 
-## Task 5: 自动绑定测试 — 生成 bindgen 文件并验证
+    protected override void OnCreate() { lblTitle.text = "背包"; }
+}
+```
 
-**Files:**
-- Modify: `TestAutoBindWindow.cs` — 使用 [Q]/[OnClick]/[OnChange]
-- Create: `TestAutoBindWindow.bindgen.cs` — 由 Editor 工具生成
+### 2. 生成绑定代码
 
-验证：打开 Unity → 菜单 Generate Bindings → 确认生成文件 → 运行测试窗口
+Unity 菜单: `TEngine → UITK → Generate All Bindings`
 
----
+### 3. 打开窗口
 
-## Task 6: MVVM 自动绑定测试
+```csharp
+GameModule.UITK.ShowUIAsync<BagWindow>();
+```
 
-**Files:**
-- Create: `TestMVVMAutoBindWindow.cs` — 使用 [Q] + [Bind] + [BindCommand]
-- Create: `TestMVVMAutoBindWindow.bindgen.cs` — 由 Editor 工具生成
+### 4. 配置音效
 
-验证：ViewModel 数据变化 → UI 自动更新，按钮 CanExecute 状态正确
-
----
-
-## Task 7: 清理旧 Source Generator 文件
-
-**Files:**
-- Delete: `Packages/UITKSourceGenerator/` 整个目录
-- Delete: `Assets/Plugins/UITKSourceGenerator/` 整个目录
-- Delete: `UITKModule/Binding/UITKAutoBindHelper.cs` (运行时反射，已不需要)
-
----
-
-## Summary
-
-Plan 2 (修订版) 交付:
-- ✅ 所有 Binding Attributes (已完成)
-- ✅ MVVM Core (已完成)
-- ✅ UITKListView (已完成)
-- ✅ BindContext/UnbindContext (已完成)
-- 🔲 Editor 代码生成工具 (UITKBindingGenerator)
-- 🔲 自动绑定测试 + MVVM 自动绑定测试
-- 🔲 清理旧文件
-
-剩余工作主要是 Task 1-3 (Editor 生成器) + Task 5-6 (测试) + Task 7 (清理)。
+```csharp
+GameModule.UITK.ClickSoundHandler = new GameClickSoundHandler();
+```
