@@ -1,0 +1,6 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement class="uitk-window-root" style="align-items: center; justify-content: center;">
+        <ui:Label text="UITKModule Works!" name="lbl-title" class="text-title" />
+        <ui:Button text="Close" name="btn-close" class="btn" style="margin-top: 20px;" />
+    </ui:VisualElement>
+</ui:UXML>
