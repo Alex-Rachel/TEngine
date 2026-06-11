@@ -184,7 +184,7 @@ namespace TEngine.Editor.UITK
             sb.AppendLine($"{classIndent}{{");
 
             // __UITKAutoBind
-            sb.AppendLine($"{indent}private void __UITKAutoBind(VisualElement root)");
+            sb.AppendLine($"{indent}protected override void __UITKAutoBind(UnityEngine.UIElements.VisualElement root)");
             sb.AppendLine($"{indent}{{");
             foreach (var q in qFields)
             {
@@ -194,7 +194,7 @@ namespace TEngine.Editor.UITK
             sb.AppendLine();
 
             // __UITKAutoBindEvents
-            sb.AppendLine($"{indent}private void __UITKAutoBindEvents()");
+            sb.AppendLine($"{indent}protected override void __UITKAutoBindEvents()");
             sb.AppendLine($"{indent}{{");
             foreach (var click in clickMethods)
             {
@@ -212,7 +212,7 @@ namespace TEngine.Editor.UITK
             sb.AppendLine();
 
             // __UITKAutoUnbindEvents
-            sb.AppendLine($"{indent}private void __UITKAutoUnbindEvents()");
+            sb.AppendLine($"{indent}protected override void __UITKAutoUnbindEvents()");
             sb.AppendLine($"{indent}{{");
             foreach (var click in clickMethods)
             {
@@ -234,7 +234,7 @@ namespace TEngine.Editor.UITK
                 sb.AppendLine();
                 sb.AppendLine($"{indent}private List<Action> __mvvmUnbindActions = new List<Action>();");
                 sb.AppendLine();
-                sb.AppendLine($"{indent}private void __UITKAutoBindMVVM(GameLogic.ViewModelBase vm)");
+                sb.AppendLine($"{indent}protected override void __UITKAutoBindMVVM(GameLogic.ViewModelBase vm)");
                 sb.AppendLine($"{indent}{{");
                 sb.AppendLine($"{indent}    var typedVm = vm;");
 
@@ -280,7 +280,7 @@ namespace TEngine.Editor.UITK
 
                 sb.AppendLine($"{indent}}}");
                 sb.AppendLine();
-                sb.AppendLine($"{indent}private void __UITKAutoUnbindMVVM()");
+                sb.AppendLine($"{indent}protected override void __UITKAutoUnbindMVVM()");
                 sb.AppendLine($"{indent}{{");
                 sb.AppendLine($"{indent}    foreach (var action in __mvvmUnbindActions) action();");
                 sb.AppendLine($"{indent}    __mvvmUnbindActions.Clear();");

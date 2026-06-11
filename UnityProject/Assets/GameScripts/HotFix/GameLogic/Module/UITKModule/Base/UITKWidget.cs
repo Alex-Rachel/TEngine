@@ -105,6 +105,8 @@ namespace GameLogic
             _parent.ListChild.Add(this);
             _parent.SetUpdateDirty();
 
+            __UITKAutoBind(RootElement);  // 自动绑定 UI 元素
+            __UITKAutoBindEvents();       // 自动绑定事件
             Inject();
             OnCreate();
             RegisterEvent();
@@ -133,6 +135,7 @@ namespace GameLogic
         internal void InternalDestroy()
         {
             OnDestroy();
+            __UITKAutoUnbindEvents();     // 自动解绑事件
             RemoveAllUIEvent();
 
             for (int i = ListChild.Count - 1; i >= 0; i--)

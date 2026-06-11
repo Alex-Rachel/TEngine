@@ -75,6 +75,23 @@ namespace GameLogic
         protected virtual void OnSetVisible(bool visible) { }
         protected virtual void OnSortDepth() { }
 
+        // ━━━ 自动绑定钩子（由 Editor 生成工具 override）━━━
+
+        /// <summary>
+        /// 自动绑定 UI 元素。由 .bindgen.cs 重写。
+        /// </summary>
+        protected virtual void __UITKAutoBind(UnityEngine.UIElements.VisualElement root) { }
+
+        /// <summary>
+        /// 自动绑定事件。由 .bindgen.cs 重写。
+        /// </summary>
+        protected virtual void __UITKAutoBindEvents() { }
+
+        /// <summary>
+        /// 自动解绑事件。由 .bindgen.cs 重写。
+        /// </summary>
+        protected virtual void __UITKAutoUnbindEvents() { }
+
         /// <summary>
         /// 依赖注入。
         /// </summary>
