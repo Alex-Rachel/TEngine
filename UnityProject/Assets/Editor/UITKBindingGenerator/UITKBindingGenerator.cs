@@ -339,7 +339,7 @@ namespace TEngine.Editor.UITK
 
         // ━━━ 数据结构 ━━━
 
-        private struct QFieldInfo
+        private class QFieldInfo
         {
             public string FieldName;
             public string TypeName;
@@ -347,13 +347,13 @@ namespace TEngine.Editor.UITK
             public string UxmlName;
         }
 
-        private struct EventMethodInfo
+        private class EventMethodInfo
         {
             public string MethodName;
             public string UxmlTarget;
         }
 
-        private struct BindFieldInfo
+        private class BindFieldInfo
         {
             public string FieldName;
             public string TypeName;
@@ -362,7 +362,7 @@ namespace TEngine.Editor.UITK
             public string Format;
         }
 
-        private struct BindCommandInfo
+        private class BindCommandInfo
         {
             public string FieldName;
             public string CommandName;

@@ -25,8 +25,8 @@ namespace GameLogic
         {
             // Source Generator 生成 __UITKAutoBind(RootElement) 填充上面的字段
             // Source Generator 生成 __UITKAutoBindEvents() 注册下面的事件
-            __UITKAutoBind(RootElement);
-            __UITKAutoBindEvents();
+            // __UITKAutoBind(RootElement);
+            // __UITKAutoBindEvents();
         }
 
         protected override void OnRefresh()
@@ -67,7 +67,7 @@ namespace GameLogic
 
         protected override void OnDestroy()
         {
-            __UITKAutoUnbindEvents();
+            // __UITKAutoUnbindEvents();
         }
     }
 }
