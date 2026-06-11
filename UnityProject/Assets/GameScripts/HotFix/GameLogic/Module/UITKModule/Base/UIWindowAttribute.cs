@@ -49,16 +49,4 @@ namespace GameLogic
             FullScreen = fullScreen;
         }
     }
-
-    /// <summary>
-    /// UI 层级枚举。
-    /// </summary>
-    public enum UILayer
-    {
-        Bottom = 0,
-        UI = 1,
-        Top = 2,
-        Tips = 3,
-        System = 4,
-    }
 }
