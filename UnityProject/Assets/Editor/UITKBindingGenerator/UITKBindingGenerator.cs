@@ -131,7 +131,7 @@ namespace TEngine.Editor.UITK
                 if (clickAttr != null)
                 {
                     string target = clickAttr.Target ?? UITKNamingHelper.MethodNameToTarget(method.Name);
-                    onClickMethods.Add(new EventMethodInfo { MethodName = method.Name, UxmlTarget = target });
+                    onClickMethods.Add(new EventMethodInfo { MethodName = method.Name, UxmlTarget = target, Sound = clickAttr.Sound });
                 }
 
                 var changeAttr = method.GetCustomAttribute<GameLogic.OnChangeAttribute>();
@@ -200,7 +200,27 @@ namespace TEngine.Editor.UITK
             {
                 var field = qFields.FirstOrDefault(q => q.UxmlName == click.UxmlTarget);
                 if (field != null)
-                    sb.AppendLine($"{indent}    {field.FieldName}.clicked += {click.MethodName};");
+                {
+                    // 音效处理
+                    if (click.Sound == null)
+                    {
+                        // 默认音效：标记按钮 + 包装 clicked
+                        sb.AppendLine($"{indent}    {field.FieldName}.AddToClassList(\"__uitk-has-sound\");");
+                        sb.AppendLine($"{indent}    {field.FieldName}.clicked += () => {{ UITKModule.Instance.ClickSoundHandler?.OnButtonClick({field.FieldName}, null); {click.MethodName}(); }};");
+                    }
+                    else if (click.Sound == "")
+                    {
+                        // 静音：标记按钮 + 直接绑定
+                        sb.AppendLine($"{indent}    {field.FieldName}.AddToClassList(\"__uitk-has-sound\");");
+                        sb.AppendLine($"{indent}    {field.FieldName}.clicked += {click.MethodName};");
+                    }
+                    else
+                    {
+                        // 指定音效
+                        sb.AppendLine($"{indent}    {field.FieldName}.AddToClassList(\"__uitk-has-sound\");");
+                        sb.AppendLine($"{indent}    {field.FieldName}.clicked += () => {{ UITKModule.Instance.ClickSoundHandler?.OnButtonClick({field.FieldName}, \"{click.Sound}\"); {click.MethodName}(); }};");
+                    }
+                }
             }
             foreach (var change in changeMethods)
             {
@@ -353,6 +373,7 @@ namespace TEngine.Editor.UITK
         {
             public string MethodName;
             public string UxmlTarget;
+            public string Sound; // null=默认, ""=静音, other=指定音效
         }
 
         private class BindFieldInfo

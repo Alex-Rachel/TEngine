@@ -48,17 +48,22 @@ namespace GameLogic
         }
 
         /// <summary>
-        /// 全局点击事件拦截。判断目标是 Button 则触发音效处理器。
+        /// 全局点击事件拦截。对未通过 [OnClick] 标注的按钮提供默认音效。
+        /// 通过 [OnClick] 标注的按钮由生成代码处理音效，全局拦截作为兆底。
         /// </summary>
         private void OnGlobalClick(ClickEvent evt)
         {
             if (ClickSoundHandler == null) return;
             if (evt.target is not Button button) return;
 
-            // 支持静音标记：带 "no-sound" class 的按钮跳过音效
+            // 带 no-sound class 的按钮跳过
             if (button.ClassListContains("no-sound")) return;
 
-            ClickSoundHandler.OnButtonClick(button);
+            // 带 has-custom-sound class 的按钮跳过（由生成代码处理）
+            if (button.ClassListContains("__uitk-has-sound")) return;
+
+            // 默认音效（sound=null 表示使用默认）
+            ClickSoundHandler.OnButtonClick(button, null);
         }
 
         private void DestroyPanels()

@@ -12,7 +12,7 @@ namespace GameLogic
         /// 当按钮被点击时调用。
         /// </summary>
         /// <param name="button">被点击的按钮。</param>
-        /// <returns>true=已处理音效，false=跳过（静音按钮）。</returns>
-        bool OnButtonClick(Button button);
+        /// <param name="sound">音效名。null=使用默认音效，""=静音，其他=播放指定音效。</param>
+        void OnButtonClick(Button button, string sound);
     }
 }
