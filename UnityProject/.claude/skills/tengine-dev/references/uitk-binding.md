@@ -48,6 +48,23 @@ void OnNameChanged(ChangeEvent<string> evt) { }
 void OnSliderChanged(ChangeEvent<float> evt) { }
 ```
 
+### [Bind] / [BindCommand] — MVVM 自动绑定
+
+将 UI 控件直接绑定到 ViewModel 的 `BindableProperty<T>` / `BindableCommand`，**无需手动 += / -=**：
+
+```csharp
+[Bind("Gold", format: "{0:N0}")]          Label lblGold;     // OneWay + 格式化
+[Bind("PlayerName", BindingMode.TwoWay)]  TextField inputName; // 双向
+[Bind("Hp", BindingMode.TwoWay, converter: typeof(IntToStringConverter))] TextField inputHp; // 异类型经转换器
+[BindCommand("BuyCommand")]               Button btnBuy;     // 命令 + CanExecute
+
+private ShopViewModel _vm;   // 类内恰一个 ViewModelBase 字段，生成器据此解析
+```
+
+- `[Bind]/[BindCommand]` 字段会被自动查询赋值（隐含 `[Q]`，字段名 → kebab-case），无需再加 `[Q]`。
+- 框架在 `OnCreate` 之后自动绑定、`OnDestroy` 之前自动解绑（同一委托实例，无泄漏）。
+- 详见 [uitk-mvvm.md](uitk-mvvm.md)「自动绑定」。
+
 ## 完整示例
 
 ```csharp

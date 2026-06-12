@@ -101,6 +101,11 @@ namespace GameLogic
             {
                 widget = new T();
                 var asset = UITKModule.Resource.LoadVisualTreeAsset(typeof(T).Name);
+                if (asset == null)
+                {
+                    TEngine.Log.Error($"UITKListView<{typeof(T).Name}>: 列表项 UXML 加载失败 ({typeof(T).Name})");
+                    return new VisualElement();  // 占位，避免 ListView 内部因 null 崩溃
+                }
                 var root = asset.CloneTree();
                 widget.Create(this, root, true);
             }

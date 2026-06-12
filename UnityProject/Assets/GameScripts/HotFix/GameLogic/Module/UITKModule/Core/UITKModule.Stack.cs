@@ -49,11 +49,21 @@ namespace GameLogic
             _windowStack.Remove(window);
         }
 
+        /// <summary>
+        /// 窗口资源加载失败时回滚：弹栈并刷新可见性，避免卡死在栈中。
+        /// </summary>
+        internal void OnWindowLoadFailed(UITKWindow window)
+        {
+            Pop(window);
+            OnSetWindowVisible();
+        }
+
         private void OnWindowPrepare(UITKWindow window)
         {
             window.InternalCreate();
             window.InternalRefresh();
             OnSetWindowVisible();
+            ReorderLayers();
             window.OnShowAnimation().Forget();
         }
 

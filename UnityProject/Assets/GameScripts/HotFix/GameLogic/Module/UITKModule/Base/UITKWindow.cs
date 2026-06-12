@@ -23,6 +23,11 @@ namespace GameLogic
         public bool IsLoadDone { get; private set; }
         public bool IsHide { get; set; }
 
+        /// <summary>
+        /// 是否正在执行关闭动画。用于防止动画期间重复关闭。
+        /// </summary>
+        public bool IsClosing { get; internal set; }
+
         private bool _isCreate;
         private bool _isDestroyed;
         private VisualTreeAsset _visualTreeAsset;
@@ -86,17 +91,25 @@ namespace GameLogic
             _prepareCallback = prepareCallback;
             _userDatas = userDatas;
 
-            if (FromResources)
+            try
             {
-                _visualTreeAsset = Resources.Load<VisualTreeAsset>(assetName);
+                if (FromResources)
+                {
+                    _visualTreeAsset = Resources.Load<VisualTreeAsset>(assetName);
+                }
+                else if (isAsync)
+                {
+                    _visualTreeAsset = await UITKModule.Resource.LoadVisualTreeAssetAsync(assetName, default, Package);
+                }
+                else
+                {
+                    _visualTreeAsset = UITKModule.Resource.LoadVisualTreeAsset(assetName, Package);
+                }
             }
-            else if (isAsync)
+            catch (Exception e)
             {
-                _visualTreeAsset = await UITKModule.Resource.LoadVisualTreeAssetAsync(assetName, default, Package);
-            }
-            else
-            {
-                _visualTreeAsset = UITKModule.Resource.LoadVisualTreeAsset(assetName, Package);
+                Log.Error($"UITKWindow 资源加载异常: {WindowName} ({assetName})\n{e}");
+                _visualTreeAsset = null;
             }
 
             HandleLoadCompleted();
@@ -105,6 +118,17 @@ namespace GameLogic
         private void HandleLoadCompleted()
         {
             IsLoadDone = true;
+
+            // 加载失败：弹栈回滚，避免窗口卡死在栈中
+            if (_visualTreeAsset == null)
+            {
+                Log.Error($"UITKWindow 资源加载失败: {WindowName} ({AssetName})");
+                if (!_isDestroyed)
+                {
+                    UITKModule.Instance.OnWindowLoadFailed(this);
+                }
+                return;
+            }
 
             if (_isDestroyed)
             {
@@ -136,8 +160,9 @@ namespace GameLogic
             __UITKAutoBind(RootElement);  // 自动绑定 UI 元素
             __UITKAutoBindEvents();       // 自动绑定事件
             Inject();
-            OnCreate();
+            OnCreate();                   // 用户在此构造 ViewModel
             RegisterEvent();
+            __UITKAutoBindMVVM();         // MVVM 自动绑定（OnCreate 后，VM 已就绪）
         }
 
         internal void InternalRefresh()
@@ -179,6 +204,7 @@ namespace GameLogic
 
         internal void InternalDestroy(bool isShutDown = false)
         {
+            if (_isDestroyed) return;  // 幂等：防止动画期间/重复关闭导致二次销毁
             _isDestroyed = true;
 
             if (!isShutDown)
@@ -186,15 +212,21 @@ namespace GameLogic
                 CancelHideToCloseTimer();
             }
 
-            OnDestroy();
-            __UITKAutoUnbindEvents();     // 自动解绑事件
-            RemoveAllUIEvent();
-
-            for (int i = ListChild.Count - 1; i >= 0; i--)
+            // 仅对「已创建」的窗口执行用户回调与解绑；
+            // 加载未完成即关闭时 _isCreate 为 false，跳过避免对未初始化窗口跑用户代码导致 NPE。
+            if (_isCreate)
             {
-                ListChild[i].Destroy();
+                __UITKAutoUnbindMVVM();   // 先解绑 MVVM（VM 仍存活），再交给用户 OnDestroy 处理 Dispose
+                OnDestroy();
+                __UITKAutoUnbindEvents(); // 自动解绑事件
+                RemoveAllUIEvent();
+
+                for (int i = ListChild.Count - 1; i >= 0; i--)
+                {
+                    ListChild[i].Destroy();
+                }
+                ListChild.Clear();
             }
-            ListChild.Clear();
 
             RootElement?.RemoveFromHierarchy();
             ReleaseAsset();
@@ -224,6 +256,8 @@ namespace GameLogic
         {
             CancelHideToCloseTimer();
             IsHide = false;
+            IsClosing = false;
+            RootElement?.SetEnabled(true); // 复位隐藏动画期间的输入屏蔽
             _userDatas = userDatas;
 
             if (IsPrepare)

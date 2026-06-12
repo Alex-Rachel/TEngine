@@ -6,12 +6,14 @@ using System.Reflection;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace TEngine.Editor.UITK
 {
     /// <summary>
     /// UIToolkit 绑定代码生成器。
     /// 扫描 [Q]/[OnClick]/[OnChange]/[Bind]/[BindCommand]，生成 .bindgen.cs。
+    /// MVVM 段生成对 UITKBase.Bind* helper 的调用（订阅/解绑用同一委托实例，无泄漏）。
     /// </summary>
     public static class UITKBindingGenerator
     {
@@ -106,10 +108,11 @@ namespace TEngine.Editor.UITK
                     bindFields.Add(new BindFieldInfo
                     {
                         FieldName = field.Name,
-                        TypeName = field.FieldType.Name,
+                        FieldType = field.FieldType,
                         Path = bindAttr.Path,
                         Mode = bindAttr.Mode,
                         Format = bindAttr.Format,
+                        ConverterType = bindAttr.Converter,
                     });
                 }
 
@@ -119,6 +122,7 @@ namespace TEngine.Editor.UITK
                     bindCommands.Add(new BindCommandInfo
                     {
                         FieldName = field.Name,
+                        FieldType = field.FieldType,
                         CommandName = cmdAttr.CommandName,
                     });
                 }
@@ -146,12 +150,23 @@ namespace TEngine.Editor.UITK
                 bindFields.Count == 0 && bindCommands.Count == 0)
                 return false;
 
+            // MVVM：解析 ViewModel 字段（类型 + 字段名）
+            FieldInfo vmField = null;
+            if (bindFields.Count > 0 || bindCommands.Count > 0)
+            {
+                vmField = FindViewModelField(type);
+                if (vmField == null)
+                {
+                    Debug.LogWarning($"[UITKBindingGenerator] {type.Name} 含 [Bind]/[BindCommand] 但未找到唯一的 ViewModelBase 字段，已跳过 MVVM 自动绑定（请确保类内恰有一个 ViewModel 字段）。");
+                }
+            }
+
             // 找到源文件路径
             string sourcePath = FindSourceFile(type);
             if (string.IsNullOrEmpty(sourcePath) || sourcePath.Contains(".bindgen.")) return false;
 
             // 生成代码
-            string code = GenerateCode(type, qFields, onClickMethods, onChangeMethods, bindFields, bindCommands);
+            string code = GenerateCode(type, qFields, onClickMethods, onChangeMethods, bindFields, bindCommands, vmField);
 
             // 写入 .bindgen.cs
             string outputPath = sourcePath.Replace(".cs", GENERATED_SUFFIX);
@@ -161,7 +176,8 @@ namespace TEngine.Editor.UITK
         }
 
         private static string GenerateCode(Type type, List<QFieldInfo> qFields, List<EventMethodInfo> clickMethods,
-            List<EventMethodInfo> changeMethods, List<BindFieldInfo> bindFields, List<BindCommandInfo> bindCommands)
+            List<EventMethodInfo> changeMethods, List<BindFieldInfo> bindFields, List<BindCommandInfo> bindCommands,
+            FieldInfo vmField)
         {
             var sb = new StringBuilder();
             sb.AppendLine(HEADER);
@@ -183,17 +199,28 @@ namespace TEngine.Editor.UITK
             sb.AppendLine($"{classIndent}partial class {type.Name}");
             sb.AppendLine($"{classIndent}{{");
 
-            // __UITKAutoBind
+            // __UITKAutoBind（[Q] 以及 [Bind]/[BindCommand] 字段都需查询并赋值，按字段名去重）
             sb.AppendLine($"{indent}protected override void __UITKAutoBind(UnityEngine.UIElements.VisualElement root)");
             sb.AppendLine($"{indent}{{");
+            var queried = new HashSet<string>();
             foreach (var q in qFields)
             {
-                sb.AppendLine($"{indent}    {q.FieldName} = root.Q<{q.TypeName}>(\"{q.UxmlName}\");");
+                if (queried.Add(q.FieldName))
+                    sb.AppendLine($"{indent}    {q.FieldName} = root.Q<{q.TypeName}>(\"{q.UxmlName}\");");
+            }
+            foreach (var bind in bindFields)
+            {
+                if (queried.Add(bind.FieldName))
+                    sb.AppendLine($"{indent}    {bind.FieldName} = root.Q<{bind.FieldType.Name}>(\"{UITKNamingHelper.ToKebabCase(bind.FieldName)}\");");
+            }
+            foreach (var cmd in bindCommands)
+            {
+                if (queried.Add(cmd.FieldName))
+                    sb.AppendLine($"{indent}    {cmd.FieldName} = root.Q<{cmd.FieldType.Name}>(\"{UITKNamingHelper.ToKebabCase(cmd.FieldName)}\");");
             }
             sb.AppendLine($"{indent}}}");
             sb.AppendLine();
 
-            // __UITKAutoBindEvents
             // __UITKAutoBindEvents
             sb.AppendLine($"{indent}protected override void __UITKAutoBindEvents()");
             sb.AppendLine($"{indent}{{");
@@ -229,62 +256,26 @@ namespace TEngine.Editor.UITK
             }
             sb.AppendLine($"{indent}}}");
 
-            // MVVM: __UITKAutoBindViewModel (如果有 [Bind] 或 [BindCommand])
-            if (bindFields.Count > 0 || bindCommands.Count > 0)
+            // __UITKAutoBindMVVM（仅当解析到 ViewModel 字段时生成；解绑用基类默认实现）
+            if (vmField != null && (bindFields.Count > 0 || bindCommands.Count > 0))
             {
+                Type vmType = vmField.FieldType;
+                string vm = vmField.Name;
+
                 sb.AppendLine();
-                sb.AppendLine($"{indent}private List<Action> __mvvmUnbindActions = new List<Action>();");
-                sb.AppendLine();
-                sb.AppendLine($"{indent}protected override void __UITKAutoBindMVVM(GameLogic.ViewModelBase vm)");
+                sb.AppendLine($"{indent}protected override void __UITKAutoBindMVVM()");
                 sb.AppendLine($"{indent}{{");
-                sb.AppendLine($"{indent}    var typedVm = vm;");
+                sb.AppendLine($"{indent}    if ({vm} == null) {{ TEngine.Log.Warning(\"[MVVM] {type.Name}.{vm} 为 null，已跳过自动绑定。请确认已在 OnCreate 中构造 ViewModel。\"); return; }}");
 
                 foreach (var bind in bindFields)
                 {
-                    string propAccess = $"(({type.Name}ViewModel)vm).{bind.Path}";
-                    string formatExpr = bind.Format != null
-                        ? $"string.Format(\"{bind.Format}\", v)"
-                        : "v?.ToString() ?? \"\"";
-
-                    sb.AppendLine($"{indent}    // Bind: {bind.FieldName} ← {bind.Path}");
-                    sb.AppendLine($"{indent}    {{");
-                    sb.AppendLine($"{indent}        var prop = (({type.Name}ViewModel)vm).{bind.Path};");
-                    sb.AppendLine($"{indent}        Action<object> update = _ =>");
-                    sb.AppendLine($"{indent}        {{");
-                    sb.AppendLine($"{indent}            var val = prop.Value;");
-                    if (bind.Format != null)
-                        sb.AppendLine($"{indent}            if ({bind.FieldName} is Label lbl) lbl.text = string.Format(\"{bind.Format}\", val);");
-                    else
-                        sb.AppendLine($"{indent}            if ({bind.FieldName} is Label lbl) lbl.text = val?.ToString() ?? \"\";");
-                    sb.AppendLine($"{indent}        }};");
-                    sb.AppendLine($"{indent}        prop.OnValueChanged += v => update(null);");
-                    sb.AppendLine($"{indent}        update(null);");
-                    sb.AppendLine($"{indent}        __mvvmUnbindActions.Add(() => prop.OnValueChanged -= v => update(null));");
-                    sb.AppendLine($"{indent}    }}");
+                    EmitBindField(sb, indent, type, vmType, vm, bind);
                 }
-
                 foreach (var cmd in bindCommands)
                 {
-                    sb.AppendLine($"{indent}    // BindCommand: {cmd.FieldName} ← {cmd.CommandName}");
-                    sb.AppendLine($"{indent}    {{");
-                    sb.AppendLine($"{indent}        var command = (({type.Name}ViewModel)vm).{cmd.CommandName};");
-                    sb.AppendLine($"{indent}        if ({cmd.FieldName} is Button btn)");
-                    sb.AppendLine($"{indent}        {{");
-                    sb.AppendLine($"{indent}            btn.clicked += command.Execute;");
-                    sb.AppendLine($"{indent}            Action canExecUpdate = () => btn.SetEnabled(command.CanExecute());");
-                    sb.AppendLine($"{indent}            command.CanExecuteChanged += canExecUpdate;");
-                    sb.AppendLine($"{indent}            canExecUpdate();");
-                    sb.AppendLine($"{indent}            __mvvmUnbindActions.Add(() => {{ btn.clicked -= command.Execute; command.CanExecuteChanged -= canExecUpdate; }});");
-                    sb.AppendLine($"{indent}        }}");
-                    sb.AppendLine($"{indent}    }}");
+                    sb.AppendLine($"{indent}    BindCommand({cmd.FieldName}, {vm}.{cmd.CommandName});");
                 }
 
-                sb.AppendLine($"{indent}}}");
-                sb.AppendLine();
-                sb.AppendLine($"{indent}protected override void __UITKAutoUnbindMVVM()");
-                sb.AppendLine($"{indent}{{");
-                sb.AppendLine($"{indent}    foreach (var action in __mvvmUnbindActions) action();");
-                sb.AppendLine($"{indent}    __mvvmUnbindActions.Clear();");
                 sb.AppendLine($"{indent}}}");
             }
 
@@ -296,6 +287,112 @@ namespace TEngine.Editor.UITK
             }
 
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// 为单个 [Bind] 字段生成 helper 调用。根据控件类型 × 属性类型 × mode × converter/format 选择。
+        /// </summary>
+        private static void EmitBindField(StringBuilder sb, string indent, Type ownerType, Type vmType, string vm, BindFieldInfo bind)
+        {
+            Type propValueType = GetBindablePropertyValueType(vmType, bind.Path);
+            if (propValueType == null)
+            {
+                Debug.LogError($"[UITKBindingGenerator] {ownerType.Name}: [Bind] 路径 '{bind.Path}' 在 {vmType.Name} 上未找到对应的 BindableProperty<T>，已跳过该字段。");
+                sb.AppendLine($"{indent}    // [Bind] '{bind.Path}' 解析失败，已跳过");
+                return;
+            }
+
+            bool isLabel = typeof(Label).IsAssignableFrom(bind.FieldType);
+
+            // ── Label：恒 OneWay，输出 text ──
+            if (isLabel)
+            {
+                if (bind.Mode != GameLogic.BindingMode.OneWay)
+                    Debug.LogWarning($"[UITKBindingGenerator] {ownerType.Name}: Label '{bind.FieldName}' 仅支持 OneWay，已忽略 mode={bind.Mode}。");
+
+                if (bind.ConverterType != null)
+                    sb.AppendLine($"{indent}    BindLabel({bind.FieldName}, {vm}.{bind.Path}, v => new {bind.ConverterType.FullName}().Convert(v));");
+                else if (!string.IsNullOrEmpty(bind.Format))
+                    sb.AppendLine($"{indent}    BindLabel({bind.FieldName}, {vm}.{bind.Path}, v => string.Format(\"{bind.Format}\", v));");
+                else
+                    sb.AppendLine($"{indent}    BindLabel({bind.FieldName}, {vm}.{bind.Path});");
+                return;
+            }
+
+            // ── 值控件（INotifyValueChanged<T>）──
+            Type ctrlValueType = GetNotifyValueType(bind.FieldType);
+            if (ctrlValueType == null)
+            {
+                Debug.LogError($"[UITKBindingGenerator] {ownerType.Name}: 字段 '{bind.FieldName}'（{bind.FieldType.Name}）非 Label 且未实现 INotifyValueChanged<T>，不支持 [Bind]，已跳过。");
+                sb.AppendLine($"{indent}    // [Bind] '{bind.FieldName}' 控件类型不支持，已跳过");
+                return;
+            }
+
+            string mode = $"GameLogic.BindingMode.{bind.Mode}";
+
+            if (bind.ConverterType != null)
+            {
+                // 异类型：经 converter 转换
+                sb.AppendLine($"{indent}    BindField({bind.FieldName}, {vm}.{bind.Path}, new {bind.ConverterType.FullName}(), {mode});");
+            }
+            else if (propValueType == ctrlValueType)
+            {
+                // 同类型：直接绑定
+                sb.AppendLine($"{indent}    BindField({bind.FieldName}, {vm}.{bind.Path}, {mode});");
+            }
+            else
+            {
+                Debug.LogError($"[UITKBindingGenerator] {ownerType.Name}: 字段 '{bind.FieldName}' 控件值类型({ctrlValueType.Name}) 与 VM 属性类型({propValueType.Name}) 不一致，且未提供 converter，已跳过。请改用匹配控件（如 int 用 SliderInt）或在 [Bind] 指定 converter。");
+                sb.AppendLine($"{indent}    // [Bind] '{bind.FieldName}' 类型不匹配且无 converter，已跳过");
+            }
+        }
+
+        // ━━━ 类型解析 ━━━
+
+        /// <summary>在类型内查找唯一的 ViewModelBase 派生字段；0 个或多个返回 null。</summary>
+        private static FieldInfo FindViewModelField(Type type)
+        {
+            var flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
+            FieldInfo found = null;
+            foreach (var f in type.GetFields(flags))
+            {
+                if (typeof(GameLogic.ViewModelBase).IsAssignableFrom(f.FieldType))
+                {
+                    if (found != null) return null; // 歧义：多个 VM 字段
+                    found = f;
+                }
+            }
+            return found;
+        }
+
+        /// <summary>解析 VM 上某 path（属性或字段）的 BindableProperty&lt;T&gt; 的 T。</summary>
+        private static Type GetBindablePropertyValueType(Type vmType, string path)
+        {
+            var flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy;
+            Type pt = null;
+
+            var pi = vmType.GetProperty(path, flags);
+            if (pi != null) pt = pi.PropertyType;
+            else
+            {
+                var fi = vmType.GetField(path, flags);
+                if (fi != null) pt = fi.FieldType;
+            }
+
+            if (pt != null && pt.IsGenericType && pt.GetGenericTypeDefinition() == typeof(GameLogic.BindableProperty<>))
+                return pt.GetGenericArguments()[0];
+            return null;
+        }
+
+        /// <summary>取控件实现的 INotifyValueChanged&lt;T&gt; 的 T；未实现返回 null。</summary>
+        private static Type GetNotifyValueType(Type controlType)
+        {
+            foreach (var i in controlType.GetInterfaces())
+            {
+                if (i.IsGenericType && i.GetGenericTypeDefinition() == typeof(INotifyValueChanged<>))
+                    return i.GetGenericArguments()[0];
+            }
+            return null;
         }
 
         private static string FindSourceFile(Type type)
@@ -359,15 +456,17 @@ namespace TEngine.Editor.UITK
         private class BindFieldInfo
         {
             public string FieldName;
-            public string TypeName;
+            public Type FieldType;
             public string Path;
             public GameLogic.BindingMode Mode;
             public string Format;
+            public Type ConverterType;
         }
 
         private class BindCommandInfo
         {
             public string FieldName;
+            public Type FieldType;
             public string CommandName;
         }
     }

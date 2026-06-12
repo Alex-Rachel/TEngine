@@ -115,10 +115,16 @@ namespace GameLogic
             while (!window.IsLoadDone)
             {
                 time += Time.deltaTime;
-                if (time > 60f) break;
+                if (time > 60f)
+                {
+                    Log.Error($"UITKWindow 加载超时: {windowName}");
+                    return null;
+                }
                 await UniTask.Yield();
             }
-            return window;
+
+            // 加载失败/已销毁时 IsPrepare 为 false，返回 null 而非半成品窗口
+            return window.IsPrepare ? window : null;
         }
 
         private bool TryGetWindow(string windowName, out UITKWindow window, params object[] userDatas)

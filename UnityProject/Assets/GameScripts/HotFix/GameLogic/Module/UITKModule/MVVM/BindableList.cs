@@ -42,7 +42,11 @@ namespace GameLogic
 
         public void AddRange(IEnumerable<T> items)
         {
-            foreach (var item in items) _list.Add(item);
+            foreach (var item in items)
+            {
+                _list.Add(item);
+                OnItemAdded?.Invoke(_list.Count - 1, item);
+            }
             OnListChanged?.Invoke();
         }
 
@@ -71,7 +75,13 @@ namespace GameLogic
 
         public void Clear()
         {
-            _list.Clear();
+            // 逆序逐项触发移除事件，保证 index 有效，事件语义与 RemoveAt 一致
+            for (int i = _list.Count - 1; i >= 0; i--)
+            {
+                T item = _list[i];
+                _list.RemoveAt(i);
+                OnItemRemoved?.Invoke(i, item);
+            }
             OnListChanged?.Invoke();
         }
 

@@ -80,5 +80,23 @@ namespace GameLogic
             }
             _layerRoots[layer].Add(window.RootElement);
         }
+
+        /// <summary>
+        /// 按窗口栈顺序重排各层 VisualElement，使同层渲染顺序与栈序一致。
+        /// AttachToLayer 仅在加载时 Add 一次，重新 Show（Pop+Push）后需调用本方法对齐 z-order。
+        /// </summary>
+        internal void ReorderLayers()
+        {
+            // _windowStack 已按层级升序、同层按入栈顺序排列；
+            // 依次 BringToFront 后，各层父节点内的子元素顺序即与栈序一致。
+            for (int i = 0; i < _windowStack.Count; i++)
+            {
+                UITKWindow window = _windowStack[i];
+                if (window.IsPrepare && window.RootElement != null)
+                {
+                    window.RootElement.BringToFront();
+                }
+            }
+        }
     }
 }

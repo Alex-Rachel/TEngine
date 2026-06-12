@@ -8,11 +8,12 @@ ShowUIAsync<T>()
   → CloneTree()             实例化 VisualElement
   → 挂载到对应层 Panel
   → InternalCreate() [仅首次]
-      → __UITKAutoBind()        ← 自动填充 [Q] 字段（框架调用）
+      → __UITKAutoBind()        ← 自动填充 [Q]/[Bind]/[BindCommand] 字段（框架调用）
       → __UITKAutoBindEvents()  ← 自动注册 [OnClick]/[OnChange]（框架调用）
       → Inject()                ← DI 注入
-      → OnCreate()              ← 用户代码
+      → OnCreate()              ← 用户代码（在此构造 ViewModel）
       → RegisterEvent()         ← 用户注册 GameEvent
+      → __UITKAutoBindMVVM()    ← 自动绑定 [Bind]/[BindCommand]（框架调用，OnCreate 后 VM 已就绪）
   → InternalRefresh()
       → OnRefresh()             ← 每次 Show 都执行
   → OnSetWindowVisible()        ← 全屏遮挡处理
@@ -23,13 +24,18 @@ ShowUIAsync<T>()
 
 ```
 CloseUI<T>()
-  → OnDestroy()                  ← 用户代码
+  → __UITKAutoUnbindMVVM()       ← 自动解绑 [Bind]/[BindCommand]（VM 仍存活时，框架调用）
+  → OnDestroy()                  ← 用户代码（在此 Dispose ViewModel）
   → __UITKAutoUnbindEvents()     ← 自动解绑（框架调用）
   → RemoveAllUIEvent()           ← GameEvent 自动清理
   → 递归销毁子 Widget
   → RemoveFromHierarchy()
   → Unload(visualTreeAsset)      ← 释放资源
 ```
+
+> 销毁幂等：`InternalDestroy` 重复调用安全（动画关闭期间不会二次销毁）；
+> 加载未完成即关闭时跳过用户回调，避免对未初始化窗口跑代码导致 NPE。
+> 资源加载失败时窗口自动弹栈回滚（不会卡在栈中），并打 Log.Error。
 
 ## 隐藏流程
 

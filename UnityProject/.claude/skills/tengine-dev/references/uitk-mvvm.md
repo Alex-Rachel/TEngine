@@ -127,6 +127,69 @@ public partial class BagWindow : UITKWindow
 }
 ```
 
+## 自动绑定（[Bind] / [BindCommand]）
+
+除手动绑定外，可用特性声明 + 绑定生成器全自动绑定，**无需任何手动 += / -=**，框架在生命周期内自动绑定/解绑（无泄漏）。
+
+### 前置约定
+
+- View 声明为 `partial class`。
+- 类内**恰有一个** `ViewModelBase` 派生字段（如 `private XxxViewModel _vm;`），生成器据此解析 VM 类型与字段名。
+- VM 字段必须在 `OnCreate` 内赋值（自动绑定在 `OnCreate` 之后执行；为 null 时跳过）。
+- 改特性后经菜单 `TEngine → UITK → Generate All Bindings` 重新生成 `.bindgen.cs`。
+- `[Bind]/[BindCommand]` 字段会被**自动查询赋值**（等同隐含 `[Q]`），无需再加 `[Q]`。
+
+### 特性
+
+```csharp
+// OneWay：BindableProperty → Label.text（converter 优先于 format，皆无则 ToString）
+[Bind("Gold", format: "{0:N0}")] Label lblGold;
+[Bind("Hp", converter: typeof(IntToStringConverter))] Label lblHp;
+
+// 字段双向/单向（TextField/Slider/Toggle…），mode 默认 OneWay
+[Bind("PlayerName", BindingMode.TwoWay)] TextField inputName;   // string ↔ string
+[Bind("Volume", BindingMode.TwoWay)] Slider sliderVol;          // float ↔ float
+[Bind("Hp", BindingMode.TwoWay, converter: typeof(IntToStringConverter))] TextField inputHp; // int ↔ string
+
+// 命令：Button.clicked → Execute；CanExecuteChanged → SetEnabled
+[BindCommand("BuyCommand")] Button btnBuy;
+```
+
+### 完整示例
+
+```csharp
+[UIWindow(UILayer.UI)]
+public partial class BagWindow : UITKWindow
+{
+    [Bind("Gold", format: "{0:N0}")]          Label lblGold;
+    [Bind("PlayerName", BindingMode.TwoWay)]  TextField inputName;
+    [BindCommand("SortCommand")]              Button btnSort;
+
+    private BagViewModel _vm;   // ← 生成器据此解析 VM
+
+    protected override void OnCreate() => _vm = new BagViewModel();
+    protected override void OnDestroy() => _vm.Dispose();
+    // 无需手动绑定/解绑
+}
+```
+
+### 类型匹配规则
+
+| 控件 | 值类型 | 绑 int 属性 | 绑 string 属性 |
+|------|--------|------------|---------------|
+| Label | （text，恒 OneWay）| format/ToString | 直接 |
+| TextField | string | 需 converter（如 IntToStringConverter）| 直接 TwoWay |
+| Slider | float | 需 converter，或改用 SliderInt | — |
+| SliderInt | int | 直接 TwoWay | — |
+| Toggle | bool | — | — |
+
+> 控件值类型与 VM 属性类型不一致且未给 converter → 生成器报错并跳过该字段（不影响其它绑定）。
+
+### 手动 vs 自动
+
+- 两者可共存：复杂/动态绑定继续用手动 `prop.OnValueChanged += ...`；规整的属性/命令用 `[Bind]/[BindCommand]`。
+- 自动绑定使用 `UITKBase` 上的 `BindLabel/BindField/BindCommand` helper（订阅/解绑同一委托实例），无泄漏。
+
 ## UITKListView 使用
 
 ```csharp

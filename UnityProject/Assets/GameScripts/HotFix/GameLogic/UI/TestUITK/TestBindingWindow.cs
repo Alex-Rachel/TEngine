@@ -4,8 +4,8 @@ namespace GameLogic
 {
     /// <summary>
     /// MVVM 集成测试窗口。
-    /// 当 Source Generator 就绪后可改为 partial class + [Q]/[Bind] 自动绑定。
-    /// 当前使用手动绑定验证 MVVM 核心功能。
+    /// 本窗口用「手动绑定」验证 MVVM 核心功能；也可改为 partial class + [Q]/[Bind]，
+    /// 经菜单 TEngine/UITK/Generate All Bindings 自动生成绑定代码。
     /// </summary>
     [UIWindow(UILayer.UI)]
     public class TestBindingWindow : UITKWindow
@@ -21,7 +21,7 @@ namespace GameLogic
 
         protected override void OnCreate()
         {
-            // 手动 Q 绑定（Source Generator 就绪后替换为 [Q] 自动绑定）
+            // 手动 Q 绑定（可改用 [Q] 经绑定生成器自动生成）
             _lblTitle = RootElement.Q<Label>("lbl-title");
             _lblCounter = RootElement.Q<Label>("lbl-counter");
             _btnIncrement = RootElement.Q<Button>("btn-increment");
@@ -32,7 +32,7 @@ namespace GameLogic
             // 创建 ViewModel
             _vm = new TestBindingViewModel();
 
-            // 手动 MVVM 绑定（Source Generator 就绪后替换为 [Bind] 自动绑定）
+            // 手动 MVVM 绑定（可改用 [Bind]/[BindCommand] 经绑定生成器自动生成）
             _vm.Counter.OnValueChanged += v => _lblCounter.text = v.ToString();
             _vm.PlayerName.OnValueChanged += v => _lblNameDisplay.text = v;
 

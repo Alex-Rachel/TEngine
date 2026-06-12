@@ -7,7 +7,7 @@ namespace GameLogic
     /// <summary>
     /// UITKModule 全功能测试窗口。
     /// 覆盖：MVVM绑定、双向绑定、Command+CanExecute、Widget动态创建、动画。
-    /// Source Generator 就绪后可改为 partial + [Q]/[Bind] 自动绑定。
+    /// 本窗口用手动绑定演示全功能；也可改为 partial + [Q]/[Bind]，经绑定生成器自动生成。
     /// </summary>
     [UIWindow(UILayer.UI, FullScreen = true)]
     public class TestFullFeatureWindow : UITKWindow
@@ -40,7 +40,7 @@ namespace GameLogic
 
         protected override void OnCreate()
         {
-            // ━━━ 手动 Q 绑定（Source Generator 就绪后替换为 [Q]）━━━
+            // ━━━ 手动 Q 绑定（可改用 [Q] 经绑定生成器自动生成）━━━
             _lblTitle = RootElement.Q<Label>("lbl-title");
             _lblCounter = RootElement.Q<Label>("lbl-counter");
             _btnIncrement = RootElement.Q<Button>("btn-increment");

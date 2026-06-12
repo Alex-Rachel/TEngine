@@ -188,8 +188,8 @@ namespace GameLogic
         {
             string location = assetLocation ?? typeof(T).Name;
             var widget = new T();
-            await widget.CreateByPath(this, parentElement, location, visible);
-            return widget;
+            bool ok = await widget.CreateByPath(this, parentElement, location, visible);
+            return ok ? widget : null;
         }
 
         /// <summary>
@@ -202,40 +202,107 @@ namespace GameLogic
 
         // ━━━ MVVM 绑定支持 ━━━
 
-        private List<System.Action> _unbindActions;
+        private List<Action> _unbindActions;
 
         /// <summary>
-        /// 绑定 ViewModel。调用由 Editor 工具生成的 __UITKAutoBindMVVM 方法。
+        /// 自动绑定 ViewModel。由 .bindgen.cs 重写，框架在 OnCreate 后自动调用。
+        /// 生成代码直接读取本类的 ViewModel 字段并调用下方 Bind* helper。
         /// </summary>
-        protected void BindContext(ViewModelBase vm)
-        {
-            _unbindActions ??= new List<System.Action>();
-            __UITKAutoBindMVVM(vm);
-        }
+        protected virtual void __UITKAutoBindMVVM() { }
 
         /// <summary>
-        /// 解绑 ViewModel。
-        /// </summary>
-        protected void UnbindContext()
-        {
-            __UITKAutoUnbindMVVM();
-        }
-
-        /// <summary>
-        /// 由 Editor 生成工具重写。绑定 ViewModel。默认空实现。
-        /// </summary>
-        protected virtual void __UITKAutoBindMVVM(ViewModelBase vm) { }
-
-        /// <summary>
-        /// 由 Editor 生成工具重写。解绑 ViewModel。
+        /// 解绑所有 MVVM 订阅。框架在 OnDestroy 前自动调用。
+        /// 由于 Bind* helper 登记的是同一委托实例，-= 可正确移除，无泄漏。
         /// </summary>
         protected virtual void __UITKAutoUnbindMVVM()
         {
             if (_unbindActions != null)
             {
-                foreach (var action in _unbindActions) action();
+                for (int i = 0; i < _unbindActions.Count; i++) _unbindActions[i]();
                 _unbindActions.Clear();
             }
+        }
+
+        // ━━━ Bind* 运行时绑定 helper（订阅/解绑使用同一委托实例，杜绝 lambda -= 泄漏）━━━
+
+        /// <summary>
+        /// OneWay：BindableProperty → Label.text。toText 为 null 时用 ToString。
+        /// </summary>
+        protected void BindLabel<TSource>(Label label, BindableProperty<TSource> prop, Func<TSource, string> toText = null)
+        {
+            if (label == null || prop == null) return;
+            _unbindActions ??= new List<Action>();
+
+            Action<TSource> handler = v => label.text = toText != null ? toText(v) : v?.ToString() ?? "";
+            prop.OnValueChanged += handler;
+            handler(prop.Value); // 初始同步
+            _unbindActions.Add(() => prop.OnValueChanged -= handler);
+        }
+
+        /// <summary>
+        /// 字段同类型绑定（TextField/Slider/Toggle…），mode 控制方向。
+        /// </summary>
+        protected void BindField<TValue>(INotifyValueChanged<TValue> field, BindableProperty<TValue> prop, BindingMode mode = BindingMode.TwoWay)
+        {
+            if (field == null || prop == null) return;
+            _unbindActions ??= new List<Action>();
+
+            if (mode != BindingMode.OneWayToSource)
+            {
+                Action<TValue> toView = v => field.SetValueWithoutNotify(v);
+                prop.OnValueChanged += toView;
+                field.SetValueWithoutNotify(prop.Value); // 初始同步
+                _unbindActions.Add(() => prop.OnValueChanged -= toView);
+            }
+            if (mode != BindingMode.OneWay)
+            {
+                EventCallback<ChangeEvent<TValue>> toSource = evt => prop.Value = evt.newValue;
+                field.RegisterValueChangedCallback(toSource);
+                _unbindActions.Add(() => field.UnregisterValueChangedCallback(toSource));
+            }
+        }
+
+        /// <summary>
+        /// 字段异类型绑定（VM 类型 TSource ↔ 控件类型 TTarget，经 IValueConverter 转换）。
+        /// </summary>
+        protected void BindField<TSource, TTarget>(INotifyValueChanged<TTarget> field, BindableProperty<TSource> prop, IValueConverter<TSource, TTarget> conv, BindingMode mode = BindingMode.TwoWay)
+        {
+            if (field == null || prop == null || conv == null) return;
+            _unbindActions ??= new List<Action>();
+
+            if (mode != BindingMode.OneWayToSource)
+            {
+                Action<TSource> toView = v => field.SetValueWithoutNotify(conv.Convert(v));
+                prop.OnValueChanged += toView;
+                field.SetValueWithoutNotify(conv.Convert(prop.Value)); // 初始同步
+                _unbindActions.Add(() => prop.OnValueChanged -= toView);
+            }
+            if (mode != BindingMode.OneWay)
+            {
+                EventCallback<ChangeEvent<TTarget>> toSource = evt => prop.Value = conv.ConvertBack(evt.newValue);
+                field.RegisterValueChangedCallback(toSource);
+                _unbindActions.Add(() => field.UnregisterValueChangedCallback(toSource));
+            }
+        }
+
+        /// <summary>
+        /// 命令绑定：Button.clicked → Execute；CanExecuteChanged → SetEnabled。
+        /// </summary>
+        protected void BindCommand(Button button, BindableCommand command)
+        {
+            if (button == null || command == null) return;
+            _unbindActions ??= new List<Action>();
+
+            Action exec = command.Execute;
+            Action canExec = () => button.SetEnabled(command.CanExecute());
+            button.clicked += exec;
+            command.CanExecuteChanged += canExec;
+            button.SetEnabled(command.CanExecute()); // 初始状态
+            _unbindActions.Add(() =>
+            {
+                button.clicked -= exec;
+                command.CanExecuteChanged -= canExec;
+            });
         }
     }
 }

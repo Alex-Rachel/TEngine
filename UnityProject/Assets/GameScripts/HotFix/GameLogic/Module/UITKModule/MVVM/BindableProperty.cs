@@ -25,7 +25,7 @@ namespace GameLogic
         public BindableProperty() { }
         public BindableProperty(T initial) => _value = initial;
 
-        public static implicit operator T(BindableProperty<T> prop) => prop.Value;
+        public static implicit operator T(BindableProperty<T> prop) => prop is null ? default : prop.Value;
 
         public override string ToString() => _value?.ToString() ?? "null";
     }

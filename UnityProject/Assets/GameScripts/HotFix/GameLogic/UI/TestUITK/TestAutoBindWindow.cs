@@ -3,8 +3,8 @@ using UnityEngine.UIElements;
 namespace GameLogic
 {
     /// <summary>
-    /// Source Generator 自动绑定测试窗口。
-    /// 使用 [Q] + [OnClick] + [OnChange] 验证编译期代码生成。
+    /// 自动绑定测试窗口。
+    /// 使用 [Q] + [OnClick] + [OnChange]，经绑定生成器生成 .bindgen.cs（编译期代码，零反射）。
     /// </summary>
     [UIWindow(UILayer.UI)]
     public partial class TestAutoBindWindow : UITKWindow

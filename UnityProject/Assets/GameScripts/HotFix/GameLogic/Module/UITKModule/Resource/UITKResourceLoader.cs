@@ -11,7 +11,8 @@ namespace GameLogic
     /// </summary>
     public class UITKResourceLoader : IUITKResourceLoader
     {
-        private readonly IResourceModule _resource = ModuleSystem.GetModule<IResourceModule>();
+        // 通过 GameModule 统一访问模块（符合框架约定）
+        private readonly IResourceModule _resource = GameModule.Resource;
 
         public VisualTreeAsset LoadVisualTreeAsset(string location, string packageName = "")
         {

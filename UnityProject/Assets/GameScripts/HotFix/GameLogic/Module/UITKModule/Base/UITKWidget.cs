@@ -13,6 +13,7 @@ namespace GameLogic
 
         private VisualTreeAsset _widgetAsset;
         private bool _fromResource;
+        private bool _isDestroyed;
 
         /// <summary>
         /// 获取所属 Window（向上遍历）。
@@ -65,17 +66,33 @@ namespace GameLogic
         }
 
         /// <summary>
-        /// 通过资源路径异步创建。
+        /// 通过资源路径异步创建。加载失败返回 false。
         /// </summary>
-        internal async UniTask CreateByPath(UITKBase parent, VisualElement parentElement, string location, bool visible)
+        internal async UniTask<bool> CreateByPath(UITKBase parent, VisualElement parentElement, string location, bool visible)
         {
             _parent = parent;
 
-            _widgetAsset = await UITKModule.Resource.LoadVisualTreeAssetAsync(location);
+            try
+            {
+                _widgetAsset = await UITKModule.Resource.LoadVisualTreeAssetAsync(location);
+            }
+            catch (System.Exception e)
+            {
+                Log.Error($"UITKWidget CreateByPath 异常: {GetType().Name} ({location})\n{e}");
+                _widgetAsset = null;
+            }
+
+            if (_widgetAsset == null)
+            {
+                Log.Error($"UITKWidget CreateByPath 资源加载失败: {GetType().Name} ({location})");
+                return false;
+            }
+
             RootElement = _widgetAsset.CloneTree();
             parentElement.Add(RootElement);
 
             InitWidget(visible);
+            return true;
         }
 
         /// <summary>
@@ -108,8 +125,9 @@ namespace GameLogic
             __UITKAutoBind(RootElement);  // 自动绑定 UI 元素
             __UITKAutoBindEvents();       // 自动绑定事件
             Inject();
-            OnCreate();
+            OnCreate();                   // 用户在此构造 ViewModel
             RegisterEvent();
+            __UITKAutoBindMVVM();         // MVVM 自动绑定（OnCreate 后，VM 已就绪）
             OnRefresh();
 
             IsPrepare = true;
@@ -134,6 +152,10 @@ namespace GameLogic
 
         internal void InternalDestroy()
         {
+            if (_isDestroyed) return;  // 幂等：防止重复销毁
+            _isDestroyed = true;
+
+            __UITKAutoUnbindMVVM();       // 先解绑 MVVM（VM 仍存活）
             OnDestroy();
             __UITKAutoUnbindEvents();     // 自动解绑事件
             RemoveAllUIEvent();
