@@ -1,0 +1,59 @@
+.uitk-window-root {
+    flex-grow: 1;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.btn {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--border-radius-md);
+    background-color: var(--color-primary);
+    color: var(--color-text-primary);
+    font-size: var(--font-size-md);
+    transition-duration: var(--transition-fast);
+    transition-property: background-color, scale;
+}
+
+.btn:hover {
+    background-color: var(--color-primary-hover);
+    scale: 1.02 1.02;
+}
+
+.btn:active {
+    scale: 0.98 0.98;
+}
+
+.btn:disabled {
+    background-color: var(--color-secondary);
+    color: var(--color-text-disabled);
+}
+
+.text-title {
+    font-size: var(--font-size-title);
+    color: var(--color-text-primary);
+}
+
+.text-body {
+    font-size: var(--font-size-md);
+    color: var(--color-text-primary);
+}
+
+.text-secondary {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
+.panel {
+    background-color: var(--color-bg-panel);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-md);
+}
+
+.card {
+    background-color: var(--color-bg-card);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-md);
+}

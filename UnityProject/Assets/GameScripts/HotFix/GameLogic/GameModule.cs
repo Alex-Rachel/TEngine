@@ -65,6 +65,13 @@ public class GameModule
     private static UIModule _ui;
 
     /// <summary>
+    /// 获取UIToolkit模块。
+    /// </summary>
+    public static UITKModule UITK => _uitk ??= UITKModule.Instance;
+
+    private static UITKModule _uitk;
+
+    /// <summary>
     /// 获取场景模块。
     /// </summary>
     public static ISceneModule Scene => _scene ??= Get<ISceneModule>();
@@ -114,5 +121,6 @@ public class GameModule
         _scene = null;
         _timer = null;
         _localization = null;
+        _uitk = null;
     }
 }

@@ -1,0 +1,11 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement class="uitk-window-root" style="align-items: center; justify-content: center; padding: 40px; background-color: rgba(0,0,0,0.85);">
+        <ui:Label text="Auto-Bind Test" name="lbl-title" class="text-title" />
+        <ui:Label text="0" name="lbl-count" class="text-body" style="margin-top: 20px; color: #4CAF50;" />
+        <ui:Button text="Increment" name="btn-increment" class="btn" style="margin-top: 20px;" />
+        <ui:Button text="Decrement" name="btn-decrement" class="btn" style="margin-top: 10px;" />
+        <ui:TextField label="Name" name="input-name" style="margin-top: 20px;" />
+        <ui:Label text="" name="lbl-name-echo" class="text-secondary" style="margin-top: 10px;" />
+        <ui:Button text="Close" name="btn-close" class="btn" style="margin-top: 30px;" />
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,0 +1,15 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="project://database/Assets/AssetRaw/UITK/Shared/Styles/variables.uss" />
+    <Style src="project://database/Assets/AssetRaw/UITK/Shared/Styles/common.uss" />
+    <ui:VisualElement class="uitk-window-root" style="justify-content: center; align-items: center; background-color: rgba(0,0,0,0.6);">
+        <ui:VisualElement class="card" style="width: 400px; padding: 30px; align-items: center;">
+            <ui:Label text="System 层确认框" name="lbl-title" class="text-title" style="font-size: 22px;" />
+            <ui:Label text="我在 System 层 (最高层级)" name="lbl-desc" class="text-secondary" style="margin-top: 10px;" />
+            <ui:Label text="即使有 Tips 弹窗，我也在其上方" class="text-secondary" style="margin-top: 5px; white-space: normal;" />
+            <ui:VisualElement style="flex-direction: row; margin-top: 20px;">
+                <ui:Button text="确认" name="btn-confirm" class="btn" style="width: 100px;" />
+                <ui:Button text="取消" name="btn-cancel" class="btn" style="width: 100px; margin-left: 20px; background-color: #7B8794;" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

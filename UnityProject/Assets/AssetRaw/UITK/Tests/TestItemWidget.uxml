@@ -1,0 +1,7 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement class="card" style="flex-direction: row; align-items: center; margin-top: 5px; padding: 8px;">
+        <ui:Label text="#0" name="lbl-index" class="text-secondary" style="width: 30px;" />
+        <ui:Label text="Item" name="lbl-item-name" class="text-body" style="flex-grow: 1; margin-left: 10px;" />
+        <ui:Button text="X" name="btn-remove" style="width: 30px; height: 30px;" />
+    </ui:VisualElement>
+</ui:UXML>

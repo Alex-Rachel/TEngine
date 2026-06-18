@@ -1,0 +1,10 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement class="uitk-window-root" style="align-items: center; justify-content: center; padding: 40px;">
+        <ui:Label text="MVVM Test" name="lbl-title" class="text-title" />
+        <ui:Label text="0" name="lbl-counter" class="text-body" style="margin-top: 20px;" />
+        <ui:Button text="Increment" name="btn-increment" class="btn" style="margin-top: 20px;" />
+        <ui:Button text="Close" name="btn-close" class="btn" style="margin-top: 10px;" />
+        <ui:TextField label="Name" name="input-name" style="margin-top: 20px;" />
+        <ui:Label text="" name="lbl-name-display" class="text-secondary" style="margin-top: 10px;" />
+    </ui:VisualElement>
+</ui:UXML>

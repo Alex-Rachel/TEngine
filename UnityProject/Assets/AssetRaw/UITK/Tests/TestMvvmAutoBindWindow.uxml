@@ -1,0 +1,11 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement class="uitk-window-root" style="align-items: center; justify-content: center; padding: 40px;">
+        <ui:Label text="MVVM AutoBind Test" name="lbl-title" class="text-title" />
+        <ui:Label text="Count: 0" name="lbl-counter" class="text-body" style="margin-top: 20px;" />
+        <ui:TextField label="Counter(conv)" name="input-counter" style="margin-top: 10px;" />
+        <ui:TextField label="Name" name="input-name" style="margin-top: 10px;" />
+        <ui:Slider label="Volume" name="slider-volume" low-value="0" high-value="100" style="margin-top: 10px; width: 300px;" />
+        <ui:Button text="Increment" name="btn-increment" class="btn" style="margin-top: 20px;" />
+        <ui:Button text="Close" name="btn-close" class="btn" style="margin-top: 10px;" />
+    </ui:VisualElement>
+</ui:UXML>

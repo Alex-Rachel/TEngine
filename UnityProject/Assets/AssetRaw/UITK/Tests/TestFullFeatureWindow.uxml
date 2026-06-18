@@ -1,0 +1,58 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="project://database/Assets/AssetRaw/UITK/Shared/Styles/variables.uss" />
+    <Style src="project://database/Assets/AssetRaw/UITK/Shared/Styles/common.uss" />
+    <ui:VisualElement class="uitk-window-root" style="padding: 40px; background-color: rgba(0,0,0,0.85);">
+
+        <!-- 标题区 -->
+        <ui:Label text="UITKModule 全功能测试" name="lbl-title" class="text-title" style="align-self: center;" />
+
+        <!-- MVVM 绑定测试区 -->
+        <ui:VisualElement class="panel" style="margin-top: 20px;">
+            <ui:Label text="MVVM 数据绑定" class="text-body" style="color: #4A90D9;" />
+
+            <ui:VisualElement style="flex-direction: row; margin-top: 10px; align-items: center;">
+                <ui:Label text="计数器:" class="text-body" />
+                <ui:Label text="0" name="lbl-counter" class="text-body" style="margin-left: 10px; color: #4CAF50;" />
+            </ui:VisualElement>
+
+            <ui:VisualElement style="flex-direction: row; margin-top: 10px;">
+                <ui:Button text="+" name="btn-increment" class="btn" style="width: 60px;" />
+                <ui:Button text="-" name="btn-decrement" class="btn" style="width: 60px; margin-left: 10px;" />
+                <ui:Button text="重置" name="btn-reset" class="btn" style="margin-left: 10px;" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- 双向绑定测试区 -->
+        <ui:VisualElement class="panel" style="margin-top: 20px;">
+            <ui:Label text="双向绑定 (TwoWay)" class="text-body" style="color: #4A90D9;" />
+
+            <ui:TextField label="输入名称" name="input-name" style="margin-top: 10px;" />
+            <ui:Label text="实时同步:" name="lbl-name-sync" class="text-secondary" style="margin-top: 5px;" />
+
+            <ui:Slider label="滑块" name="slider-value" low-value="0" high-value="100" style="margin-top: 10px;" />
+            <ui:Label text="滑块值: 0" name="lbl-slider-value" class="text-secondary" style="margin-top: 5px;" />
+        </ui:VisualElement>
+
+        <!-- CanExecute 测试区 -->
+        <ui:VisualElement class="panel" style="margin-top: 20px;">
+            <ui:Label text="Command CanExecute" class="text-body" style="color: #4A90D9;" />
+            <ui:Label text="计数器 >= 5 时 Buy 可用" class="text-secondary" style="margin-top: 5px;" />
+            <ui:Button text="Buy (需要 >= 5)" name="btn-buy" class="btn" style="margin-top: 10px;" />
+            <ui:Label text="" name="lbl-buy-result" class="text-secondary" style="margin-top: 5px; color: #4CAF50;" />
+        </ui:VisualElement>
+
+        <!-- Widget 测试区 -->
+        <ui:VisualElement class="panel" style="margin-top: 20px;">
+            <ui:Label text="Widget 子组件" class="text-body" style="color: #4A90D9;" />
+            <ui:VisualElement name="widget-container" style="margin-top: 10px;" />
+            <ui:Button text="添加 Widget" name="btn-add-widget" class="btn" style="margin-top: 10px;" />
+        </ui:VisualElement>
+
+        <!-- 动画 & 关闭 -->
+        <ui:VisualElement style="flex-direction: row; margin-top: 30px; justify-content: center;">
+            <ui:Button text="FadeOut 关闭" name="btn-close-fade" class="btn" />
+            <ui:Button text="SlideDown 关闭" name="btn-close-slide" class="btn" style="margin-left: 10px;" />
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+</ui:UXML>
