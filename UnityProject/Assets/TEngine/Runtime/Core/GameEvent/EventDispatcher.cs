@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace TEngine
@@ -38,6 +38,17 @@ namespace TEngine
             }
 
             return data.AddHandler(handler);
+        }
+
+        /// <summary>
+        /// 是否已注册事件监听。
+        /// </summary>
+        /// <param name="eventType">事件类型。</param>
+        /// <param name="handler">事件处理委托。</param>
+        /// <returns>是否存在事件监听。</returns>
+        public bool HasEventListener(int eventType, Delegate handler)
+        {
+            return _eventTable.TryGetValue(eventType, out var data) && data.HasHandler(handler);
         }
 
         /// <summary>

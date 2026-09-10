@@ -51,6 +51,26 @@ namespace TEngine
         }
 
         /// <summary>
+        /// 是否包含指定委托。
+        /// </summary>
+        /// <param name="handler">事件处理回调。</param>
+        /// <returns>是否存在回调。</returns>
+        internal bool HasHandler(Delegate handler)
+        {
+            if (_isExecute && _deleteList.Contains(handler))
+            {
+                return false;
+            }
+
+            if (_listExist.Contains(handler))
+            {
+                return true;
+            }
+
+            return _isExecute && _addList.Contains(handler);
+        }
+
+        /// <summary>
         /// 移除反注册委托。
         /// </summary>
         /// <param name="handler">事件处理回调。</param>
