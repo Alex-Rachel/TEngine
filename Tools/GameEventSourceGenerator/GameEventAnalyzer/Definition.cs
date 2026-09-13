@@ -78,7 +78,7 @@ public sealed class Definition
     /// </summary>
     public static readonly List<string> CheckMethodNameList =
     [
-        "AddUIEvent", "AddEventListener"
+        "AddUIEvent", "AddEventListener", "RemoveEventListener"
     ];
 
     /// <summary>
