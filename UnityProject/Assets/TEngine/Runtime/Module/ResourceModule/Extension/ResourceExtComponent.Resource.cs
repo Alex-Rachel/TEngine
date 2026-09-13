@@ -107,6 +107,10 @@ namespace TEngine
                     loadedResource = await _resourceModule.LoadAssetAsync<T>(location, linkedTokenSource.Token);
                     if (loadedResource == null)
                     {
+                        if (linkedTokenSource.IsCancellationRequested)
+                        {
+                            return;
+                        }
                         Log.Error("加载资源失败，资源为空: '{0}'", location);
                         return;
                     }

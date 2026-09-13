@@ -9,15 +9,15 @@ using Analyzer;
 [Generator]
 public class EventInterfaceGenerator : ISourceGenerator
 {
-    private sealed class EventCenterInterfaceInfo
+    private sealed class GameEventHelperInterfaceInfo
     {
         public string InterfaceName { get; set; } = string.Empty;
         public string EventClassName { get; set; } = string.Empty;
         public string GroupClassName { get; set; } = string.Empty;
-        public List<EventCenterMethodInfo> Methods { get; } = new List<EventCenterMethodInfo>();
+        public List<GameEventHelperMethodInfo> Methods { get; } = new List<GameEventHelperMethodInfo>();
     }
 
-    private sealed class EventCenterMethodInfo
+    private sealed class GameEventHelperMethodInfo
     {
         public string MethodName { get; set; } = string.Empty;
         public string ActionType { get; set; } = string.Empty;
@@ -31,7 +31,7 @@ public class EventInterfaceGenerator : ISourceGenerator
     {
         var syntaxTrees = context.Compilation.SyntaxTrees;
         List<string> classNameList = new List<string>();
-        List<EventCenterInterfaceInfo> eventCenterInterfaceInfos = new List<EventCenterInterfaceInfo>();
+        List<GameEventHelperInterfaceInfo> gameEventHelperInterfaceInfos = new List<GameEventHelperInterfaceInfo>();
 
         foreach (var tree in syntaxTrees)
         {
@@ -61,15 +61,15 @@ public class EventInterfaceGenerator : ISourceGenerator
                 context.AddSource($"{interfaceName}_Gen.g.cs", implementationClassCode);
 
                 classNameList.Add($"{interfaceName}_Gen");
-                eventCenterInterfaceInfos.Add(GenerateEventCenterInterfaceInfo(interfaceName, eventClassName, interfaceNode, context));
+                gameEventHelperInterfaceInfos.Add(GenerateGameEventHelperInterfaceInfo(interfaceName, eventClassName, interfaceNode, context));
             }
         }
 
         if (classNameList.Count > 0)
         {
-            string uniqueFileName = $"GameEventHelper.g.cs";
+            string uniqueFileName = $"GameEventHelper.Init.g.cs";
             context.AddSource(uniqueFileName, GenerateGameEventHelper(classNameList));
-            context.AddSource("EventCenter.g.cs", GenerateEventCenter(eventCenterInterfaceInfos));
+            context.AddSource("GameEventHelper.g.cs", GenerateGameEventHelper(gameEventHelperInterfaceInfos));
         }
     }
 
@@ -90,7 +90,7 @@ public class EventInterfaceGenerator : ISourceGenerator
         sb.AppendLine();
         sb.AppendLine($"namespace {Definition.NameSpace}");
         sb.AppendLine($"{{");
-        sb.AppendLine($"    public static class GameEventHelper");
+        sb.AppendLine($"    public static partial class GameEventHelper");
         sb.AppendLine("    {");
         sb.AppendLine($"        public static void Init()");
         sb.AppendLine("        {");
@@ -106,7 +106,7 @@ public class EventInterfaceGenerator : ISourceGenerator
         return sb.ToString();
     }
 
-    private string GenerateEventCenter(List<EventCenterInterfaceInfo> eventCenterInterfaceInfos)
+    private string GenerateGameEventHelper(List<GameEventHelperInterfaceInfo> gameEventHelperInterfaceInfos)
     {
         var sb = new StringBuilder();
         sb.AppendLine($"//------------------------------------------------------------------------------");
@@ -123,24 +123,24 @@ public class EventInterfaceGenerator : ISourceGenerator
         sb.AppendLine();
         sb.AppendLine($"namespace {Definition.NameSpace}");
         sb.AppendLine($"{{");
-        sb.AppendLine($"    public partial class EventCenter");
+        sb.AppendLine($"    public static partial class GameEventHelper");
         sb.AppendLine("    {");
-        GenerateEventCenterGroup(sb, eventCenterInterfaceInfos, "AddEvent", "AddEventListener");
+        GenerateGameEventHelperGroup(sb, gameEventHelperInterfaceInfos, "AddEvent", "AddEventListener");
         sb.AppendLine();
-        GenerateEventCenterGroup(sb, eventCenterInterfaceInfos, "RemoveEvent", "RemoveEventListener");
+        GenerateGameEventHelperGroup(sb, gameEventHelperInterfaceInfos, "RemoveEvent", "RemoveEventListener");
         sb.AppendLine("    }");
         sb.AppendLine("}");
         return sb.ToString();
     }
 
-    private void GenerateEventCenterGroup(StringBuilder sb, List<EventCenterInterfaceInfo> eventCenterInterfaceInfos, string className, string methodName)
+    private void GenerateGameEventHelperGroup(StringBuilder sb, List<GameEventHelperInterfaceInfo> gameEventHelperInterfaceInfos, string className, string methodName)
     {
         sb.AppendLine($"        public partial class {className}");
         sb.AppendLine("        {");
 
-        for (int i = 0; i < eventCenterInterfaceInfos.Count; i++)
+        for (int i = 0; i < gameEventHelperInterfaceInfos.Count; i++)
         {
-            var interfaceInfo = eventCenterInterfaceInfos[i];
+            var interfaceInfo = gameEventHelperInterfaceInfos[i];
             sb.AppendLine($"            public partial class {interfaceInfo.GroupClassName}");
             sb.AppendLine("            {");
 
@@ -160,7 +160,7 @@ public class EventInterfaceGenerator : ISourceGenerator
 
             sb.AppendLine("            }");
 
-            if (i < eventCenterInterfaceInfos.Count - 1)
+            if (i < gameEventHelperInterfaceInfos.Count - 1)
             {
                 sb.AppendLine();
             }
@@ -169,29 +169,29 @@ public class EventInterfaceGenerator : ISourceGenerator
         sb.AppendLine("        }");
     }
 
-    private EventCenterInterfaceInfo GenerateEventCenterInterfaceInfo(string interfaceName, string eventClassName, InterfaceDeclarationSyntax interfaceNode, GeneratorExecutionContext context)
+    private GameEventHelperInterfaceInfo GenerateGameEventHelperInterfaceInfo(string interfaceName, string eventClassName, InterfaceDeclarationSyntax interfaceNode, GeneratorExecutionContext context)
     {
         var semanticModel = context.Compilation.GetSemanticModel(interfaceNode.SyntaxTree);
-        var eventCenterInterfaceInfo = new EventCenterInterfaceInfo
+        var gameEventHelperInterfaceInfo = new GameEventHelperInterfaceInfo
         {
             InterfaceName = interfaceName,
             EventClassName = eventClassName,
-            GroupClassName = GetEventCenterGroupName(interfaceName),
+            GroupClassName = GetGameEventHelperGroupName(interfaceName),
         };
 
         foreach (var method in interfaceNode.Members.OfType<MethodDeclarationSyntax>())
         {
-            eventCenterInterfaceInfo.Methods.Add(new EventCenterMethodInfo
+            gameEventHelperInterfaceInfo.Methods.Add(new GameEventHelperMethodInfo
             {
                 MethodName = method.Identifier.ToString(),
                 ActionType = GenerateActionType(method, semanticModel),
             });
         }
 
-        return eventCenterInterfaceInfo;
+        return gameEventHelperInterfaceInfo;
     }
 
-    private string GetEventCenterGroupName(string interfaceName)
+    private string GetGameEventHelperGroupName(string interfaceName)
     {
         if (interfaceName.Length > 1 && interfaceName[0] == 'I' && char.IsUpper(interfaceName[1]))
         {
