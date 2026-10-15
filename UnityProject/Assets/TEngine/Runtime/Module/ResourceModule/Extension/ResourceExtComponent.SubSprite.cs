@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.U2D;
 using YooAsset;
 
 namespace TEngine
@@ -12,12 +14,19 @@ namespace TEngine
     /// </summary>
     internal partial class ResourceExtComponent
     {
-        private readonly Dictionary<string, SubAssetsHandle> _subAssetsHandles = new Dictionary<string, SubAssetsHandle>();
-        private readonly Dictionary<string, int> _subSpriteReferences = new Dictionary<string, int>();
+        private sealed class SubSpriteAsset
+        {
+            public HandleBase Handle;
+            public int References;
+            // GetSprite 返回克隆；按名字复用，并随图集一起释放。
+            public readonly Dictionary<string, Sprite> Sprites = new Dictionary<string, Sprite>();
+        }
+
+        private readonly Dictionary<string, SubSpriteAsset> _subSpriteAssets = new Dictionary<string, SubSpriteAsset>();
 
         public async UniTask SetSubSprite(Image image, string location, string spriteName, bool setNativeSize = false, CancellationToken cancellationToken = default)
         {
-            var subSprite = await GetSubSpriteImp(location, spriteName, cancellationToken);
+            var subSprite = await GetSubSpriteImp(image, location, spriteName, cancellationToken);
 
             if (image == null)
             {
@@ -30,12 +39,11 @@ namespace TEngine
             {
                 image.SetNativeSize();
             }
-            AddReference(image.gameObject, location);
         }
         
         public async UniTask SetSubSprite(SpriteRenderer spriteRenderer, string location, string spriteName, CancellationToken cancellationToken = default)
         {
-            var subSprite = await GetSubSpriteImp(location, spriteName, cancellationToken);
+            var subSprite = await GetSubSpriteImp(spriteRenderer, location, spriteName, cancellationToken);
 
             if (spriteRenderer == null)
             {
@@ -44,32 +52,82 @@ namespace TEngine
             }
 
             spriteRenderer.sprite = subSprite;
-            AddReference(spriteRenderer.gameObject, location);
         }
 
-        private async UniTask<Sprite> GetSubSpriteImp(string location, string spriteName, CancellationToken cancellationToken = default)
+        private async UniTask<Sprite> GetSubSpriteImp(Component target, string location, string spriteName, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (target == null)
+            {
+                return null;
+            }
+
             var assetInfo = YooAssets.GetAssetInfo(location);
             if (assetInfo.IsInvalid)
             {
                 throw new GameFrameworkException($"Invalid location: {location}");
             }
 
-            await TryWaitingLoading(location);
-
-            if (!_subAssetsHandles.TryGetValue(location, out var subAssetsHandle))
+            if (!_subSpriteAssets.TryGetValue(location, out var asset))
             {
-                subAssetsHandle = YooAssets.LoadSubAssetsAsync<Sprite>(location);
-                await subAssetsHandle.ToUniTask(cancellationToken: cancellationToken);
-                _subAssetsHandles[location] = subAssetsHandle;
+                var isAtlas = assetInfo.AssetPath.EndsWith(".spriteatlas", StringComparison.OrdinalIgnoreCase)
+                    || assetInfo.AssetPath.EndsWith(".spriteatlasv2", StringComparison.OrdinalIgnoreCase);
+                asset = new SubSpriteAsset();
+                if (isAtlas)
+                {
+                    asset.Handle = YooAssets.LoadAssetAsync<SpriteAtlas>(location);
+                }
+                else
+                {
+                    asset.Handle = YooAssets.LoadSubAssetsAsync<Sprite>(location);
+                }
+                // 在等待前缓存，列表并发加载共享同一个句柄。
+                _subSpriteAssets.Add(location, asset);
             }
 
-            var subSprite = subAssetsHandle.GetSubAssetObject<Sprite>(spriteName);
-            if (subSprite == null)
+            // 等待中的请求也持有引用，单个请求取消不能释放其他请求的句柄。
+            asset.References++;
+            try
             {
-                throw new GameFrameworkException($"Invalid sprite name: {spriteName}");
+                await UniTask.WaitUntil(() => asset.Handle.IsDone, cancellationToken: cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
+                if (asset.Handle.Status != EOperationStatus.Succeed)
+                {
+                    throw new GameFrameworkException($"Failed to load sprites: {location} ({assetInfo.AssetPath}), {asset.Handle.LastError}");
+                }
+                if (target == null)
+                {
+                    return null;
+                }
+
+                Sprite subSprite;
+                if (asset.Handle is AssetHandle atlasHandle)
+                {
+                    if (!asset.Sprites.TryGetValue(spriteName, out subSprite))
+                    {
+                        var atlas = atlasHandle.AssetObject as SpriteAtlas;
+                        subSprite = atlas != null ? atlas.GetSprite(spriteName) : null;
+                        if (subSprite != null)
+                        {
+                            asset.Sprites.Add(spriteName, subSprite);
+                        }
+                    }
+                }
+                else
+                {
+                    subSprite = ((SubAssetsHandle)asset.Handle).GetSubAssetObject<Sprite>(spriteName);
+                }
+                if (subSprite == null)
+                {
+                    throw new GameFrameworkException($"Invalid sprite name: {spriteName}, location: {location} ({assetInfo.AssetPath})");
+                }
+                AddReference(target.gameObject, location);
+                return subSprite;
             }
-            return subSprite;
+            finally
+            {
+                DeleteReference(location);
+            }
         }
 
         private void AddReference(GameObject target,string location)
@@ -79,23 +137,28 @@ namespace TEngine
             {
                 subSpriteReference = target.AddComponent<SubSpriteReference>();
             }
-            _subSpriteReferences[location] = _subSpriteReferences.TryGetValue(location, out var count) ? count + 1 : 1;
+            if (subSpriteReference.Location == location)
+            {
+                return;
+            }
+            _subSpriteAssets[location].References++;
             subSpriteReference.Reference(location);
         }
         
         internal void DeleteReference(string location)
         {
-            if (string.IsNullOrEmpty(location))
+            if (string.IsNullOrEmpty(location) || !_subSpriteAssets.TryGetValue(location, out var asset))
             {
                 return;
             }
-            _subSpriteReferences[location] = _subSpriteReferences.TryGetValue(location, out var count) ? count - 1 : 0;
-            if (_subSpriteReferences[location] <= 0)
+            if (--asset.References <= 0)
             {
-                var subAssetsHandle = _subAssetsHandles[location];
-                subAssetsHandle.Dispose();
-                _subAssetsHandles.Remove(location);
-                _subSpriteReferences.Remove(location);
+                foreach (var sprite in asset.Sprites.Values)
+                {
+                    UnityEngine.Object.Destroy(sprite);
+                }
+                asset.Handle.Dispose();
+                _subSpriteAssets.Remove(location);
             }
         }
     }
@@ -104,6 +167,8 @@ namespace TEngine
     public class SubSpriteReference : MonoBehaviour
     {
         private string _location;
+
+        internal string Location => _location;
         
         public void Reference(string location)
         {
