@@ -54,7 +54,7 @@ public static class SetSpriteExtensions
         {
             return;
         }
-        ResourceExtComponent.Instance.SetSubSprite(image, location, spriteName, setNativeSize, cancellationToken).Forget();
+        ResourceExtComponent.Instance.SetSubSprite(SetSpriteObject.Create(image, location, setNativeSize, cancellationToken: cancellationToken), spriteName, cancellationToken).Forget();
     }
     
     /// <summary>
@@ -70,6 +70,6 @@ public static class SetSpriteExtensions
         {
             return;
         }
-        ResourceExtComponent.Instance.SetSubSprite(spriteRenderer, location, spriteName, cancellationToken).Forget();
+        ResourceExtComponent.Instance.SetSubSprite(SetSpriteObject.Create(spriteRenderer, location, cancellationToken: cancellationToken), spriteName, cancellationToken).Forget();
     }
 }

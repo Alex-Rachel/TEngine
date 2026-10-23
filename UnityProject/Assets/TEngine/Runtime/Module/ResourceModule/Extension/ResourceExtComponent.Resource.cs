@@ -39,6 +39,8 @@ namespace TEngine
 
         private static readonly Dictionary<UnityEngine.Object, LoadingState> _loadingStates = new Dictionary<UnityEngine.Object, LoadingState>();
 
+        private bool _isDestroyed;
+
         private void InitializedResources()
         {
             _resourceModule = ModuleSystem.GetModule<IResourceModule>();
@@ -55,18 +57,14 @@ namespace TEngine
             var target = setAssetObject.TargetObject;
             var location = setAssetObject.Location;
 
-            if (target == null)
+            if (target == null || _isDestroyed)
             {
                 MemoryPool.Release(setAssetObject);
                 return;
             }
 
-            // 创建新的加载状态
-            var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            var loadingState = MemoryPool.Acquire<LoadingState>();
-            loadingState.Cts = linkedTokenSource;
-            loadingState.Location = location;
-            ReplaceLoadingState(target, loadingState);
+            var loadingState = CreateLoadingState(target, location, cancellationToken);
+            var linkedTokenSource = loadingState.Cts;
 
             var hasLoadingMarker = false;
             var setAssetObjectTransferred = false;
@@ -107,11 +105,10 @@ namespace TEngine
                     loadedResource = await _resourceModule.LoadAssetAsync<T>(location, linkedTokenSource.Token);
                     if (loadedResource == null)
                     {
-                        if (linkedTokenSource.IsCancellationRequested)
+                        if (!linkedTokenSource.IsCancellationRequested)
                         {
-                            return;
+                            Log.Error("加载资源失败，资源为空: '{0}'", location);
                         }
-                        Log.Error("加载资源失败，资源为空: '{0}'", location);
                         return;
                     }
 
@@ -157,6 +154,15 @@ namespace TEngine
             }
         }
 
+        private LoadingState CreateLoadingState(UnityEngine.Object target, string location, CancellationToken cancellationToken)
+        {
+            var loadingState = MemoryPool.Acquire<LoadingState>();
+            loadingState.Cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            loadingState.Location = location;
+            ReplaceLoadingState(target, loadingState);
+            return loadingState;
+        }
+
         private void DetachCurrentRequest(UnityEngine.Object target, LoadingState expectedState)
         {
             if (_loadingStates.TryGetValue(target, out var curState)
@@ -177,7 +183,7 @@ namespace TEngine
 
         private bool IsCurrentRequest(UnityEngine.Object target, LoadingState expectedState)
         {
-            if (target == null)
+            if (target == null || _isDestroyed || expectedState.Cts.IsCancellationRequested)
             {
                 return false;
             }
@@ -190,6 +196,12 @@ namespace TEngine
         /// </summary>
         private void OnDestroy()
         {
+            _isDestroyed = true;
+            if (Instance == this)
+            {
+                Instance = null;
+            }
+
             var loadingStates = new LoadingState[_loadingStates.Count];
             _loadingStates.Values.CopyTo(loadingStates, 0);
             _loadingStates.Clear();
@@ -197,6 +209,17 @@ namespace TEngine
             {
                 state.Cancel();
             }
+
+            if (_loadAssetObjectsLinkedList != null)
+            {
+                foreach (var loadAssetObject in _loadAssetObjectsLinkedList)
+                {
+                    ReleaseAsset(loadAssetObject, true);
+                }
+                _loadAssetObjectsLinkedList.Clear();
+            }
+            _currentProcessNode = null;
+            ReleaseSubSpriteAssets();
         }
     }
 }

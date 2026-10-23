@@ -6,7 +6,7 @@
 
 | 需求 | API | 释放责任 |
 |---|---|---|
-| Image/SpriteRenderer 显示图片 | `SetSprite`、`SetSubSprite` | 资源扩展池管理；仍需防止过期请求覆盖 |
+| Image/SpriteRenderer 显示图片 | `SetSprite`、`SetSubSprite` | 扩展组件管理；同目标新请求替换旧请求 |
 | 实例化 Prefab | `LoadGameObjectAsync` | 销毁实例，由 AssetsReference 释放 |
 | 普通 Asset | `LoadAssetAsync<T>` | 每次成功取得后配对 `UnloadAsset` |
 | 原始句柄 | `LoadAssetAsyncHandle<T>` | 调用方持有并释放句柄，不能与对象池 API 混用 |
@@ -30,6 +30,7 @@ finally
 ```
 
 上述为嵌入业务的片段；`Consume`、`token`、地址由调用方提供。
+`SetSubSprite` 支持 SpriteAtlas 与纹理切片，共享句柄并管理图集 Sprite 克隆。清空、换图或销毁目标后，既有使用扫描归还引用；隐藏但保留图片时继续持有。两种图片入口共用请求替换状态，取消或失败保留当前图片；直接清空图片不会取消未完成请求。
 取消可能返回 null，也可能抛异常，核实当前实现，不能只捕获 `OperationCanceledException`。
 异步后的所有权转移见 [resource-patterns.md](resource-patterns.md)。
 
