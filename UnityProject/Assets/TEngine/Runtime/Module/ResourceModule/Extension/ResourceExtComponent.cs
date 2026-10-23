@@ -131,8 +131,7 @@ namespace TEngine
                 
                 if (current.Value.AssetObject.IsCanRelease())
                 {
-                    _assetItemPool.Unspawn(current.Value.AssetTarget);
-                    MemoryPool.Release(current.Value.AssetObject);
+                    ReleaseAsset(current.Value);
                     _loadAssetObjectsLinkedList.Remove(current);
                 }
 
@@ -150,10 +149,24 @@ namespace TEngine
             }
         }
 
-        private void SetAsset(ISetAssetObject setAssetObject, Object assetObject)
+        private void SetAsset(ISetAssetObject setAssetObject, Object assetObject, bool isSubSprite = false)
         {
-            _loadAssetObjectsLinkedList.AddLast(new LoadAssetObject(setAssetObject, assetObject));
+            _loadAssetObjectsLinkedList.AddLast(new LoadAssetObject(setAssetObject, assetObject, isSubSprite));
             setAssetObject.SetAsset(assetObject);
+        }
+
+        private void ReleaseAsset(LoadAssetObject loadAssetObject, bool isShutdown = false)
+        {
+            if (loadAssetObject.IsSubSprite)
+            {
+                ReleaseSubSprite(loadAssetObject.AssetObject.Location);
+            }
+            else if (!isShutdown || (_assetItemPool != null && _assetItemPool.Count > 0))
+            {
+                // 模块关闭时对象池可能已经先于组件清空。
+                _assetItemPool.Unspawn(loadAssetObject.AssetTarget);
+            }
+            MemoryPool.Release(loadAssetObject.AssetObject);
         }
 
         private async UniTask TryWaitingLoading(string assetObjectKey)
