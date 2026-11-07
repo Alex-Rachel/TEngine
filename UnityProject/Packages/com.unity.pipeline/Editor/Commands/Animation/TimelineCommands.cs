@@ -11,6 +11,9 @@ using Unity.Pipeline.Models;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
+#if UNITY_6000_5_OR_NEWER
+using Unity.Scripting.LifecycleManagement;
+#endif
 
 namespace Unity.Pipeline.Editor.Commands.Animation
 {
@@ -31,8 +34,13 @@ namespace Unity.Pipeline.Editor.Commands.Animation
     /// Out of scope (v1): markers, signal emitters/receivers, custom playable tracks, and track bindings
     /// to scene objects.
     /// </summary>
-    public static class TimelineCommands
+#if UNITY_6000_5_OR_NEWER
+    [NoAutoStaticsCleanup]
+#endif
+    static class TimelineCommands
     {
+        const string Group = "animation.timeline";
+
         private const string Asm = "Unity.Timeline";
 
         // Friendly track-type name => concrete TrackAsset subclass full name.
@@ -47,14 +55,15 @@ namespace Unity.Pipeline.Editor.Commands.Animation
             { "Marker", "UnityEngine.Timeline.MarkerTrack" },
         };
 
-        [CliCommand("create_timeline",
+        [CliGroupCommand(Group,
             "Create a .playable TimelineAsset under the authoring root (optional frame rate). Requires the com.unity.timeline package.",
-            MainThreadRequired = true)]
-        public static object CreateTimeline(
+            MainThreadRequired = true,
+            Tags = new[] { "animation/timeline" })]
+        public static object Create(
             [CliArg("path", "Asset path ending in .playable, relative to the authoring root. The Assets/ prefix is optional.", Required = true)] string path,
-            [CliArg("frameRate", "Timeline frame rate (default 60).")] float frameRate = 60f,
+            [CliArg("frame-rate", "Timeline frame rate (default 60).")] float frameRate = 60f,
             [CliArg("confirm", "Required (true) only when overwriting an existing asset at the path.")] bool confirm = false,
-            [CliArg("dry_run", "If true, validate inputs and report what would be created without writing anything.")] bool dryRun = false)
+            [CliArg("dry-run", "If true, validate inputs and report what would be created without writing anything.")] bool dryRun = false)
         {
             if (!TimelineGuard.IsInstalled())
                 return TimelineGuard.NotInstalledError();
@@ -67,7 +76,7 @@ namespace Unity.Pipeline.Editor.Commands.Animation
                 throw new ArgumentException($"Timeline path '{normalized}' must end in .playable.");
 
             if (frameRate <= 0f)
-                throw new ArgumentException($"frameRate must be positive (got {frameRate}).");
+                throw new ArgumentException($"frame-rate must be positive (got {frameRate}).");
 
             var exists = AssetDatabase.LoadMainAssetAtPath(normalized) != null;
             if (exists && !confirm)
@@ -96,15 +105,16 @@ namespace Unity.Pipeline.Editor.Commands.Animation
             return result;
         }
 
-        [CliCommand("add_timeline_track",
+        [CliGroupCommand(Group,
             "Add a track (Animation | Audio | Activation | Control | Playable | Signal | Marker) to a TimelineAsset, optionally nested under a parent group/track. Requires the com.unity.timeline package.",
-            MainThreadRequired = true)]
-        public static object AddTimelineTrack(
+            MainThreadRequired = true,
+            Tags = new[] { "animation/timeline" })]
+        public static object AddTrack(
             [CliArg("timeline", "Reference to the TimelineAsset to edit (path / guid / globalId).", Required = true)] ObjectRef timeline,
-            [CliArg("trackType", "Track type: Animation | Audio | Activation | Control | Playable | Signal | Marker.", Required = true)] string trackType = null,
+            [CliArg("track-type", "Track type: Animation | Audio | Activation | Control | Playable | Signal | Marker.", Required = true)] string trackType = null,
             [CliArg("name", "Optional track display name.")] string name = null,
-            [CliArg("parentTrack", "Optional name of an existing group/track to nest the new track under.")] string parentTrack = null,
-            [CliArg("dry_run", "If true, validate inputs without writing the track.")] bool dryRun = false)
+            [CliArg("parent-track", "Optional name of an existing group/track to nest the new track under.")] string parentTrack = null,
+            [CliArg("dry-run", "If true, validate inputs without writing the track.")] bool dryRun = false)
         {
             if (!TimelineGuard.IsInstalled())
                 return TimelineGuard.NotInstalledError();
@@ -112,7 +122,7 @@ namespace Unity.Pipeline.Editor.Commands.Animation
             var (asset, assetPath, timelineType) = ResolveTimeline(timeline);
 
             if (string.IsNullOrWhiteSpace(trackType) || !TrackTypeNames.TryGetValue(trackType, out var trackTypeFullName))
-                throw new ArgumentException($"Unknown trackType '{trackType}'. Use Animation | Audio | Activation | Control | Playable | Signal | Marker.");
+                throw new ArgumentException($"Unknown track-type '{trackType}'. Use Animation | Audio | Activation | Control | Playable | Signal | Marker.");
 
             var concreteTrackType = Type.GetType($"{trackTypeFullName}, {Asm}", throwOnError: false);
             if (concreteTrackType == null)
@@ -153,16 +163,17 @@ namespace Unity.Pipeline.Editor.Commands.Animation
             return result;
         }
 
-        [CliCommand("add_timeline_clip",
+        [CliGroupCommand(Group,
             "Add a clip to a named track on a TimelineAsset. For Animation tracks pass an AnimationClip asset; for Audio tracks an AudioClip. Requires the com.unity.timeline package.",
-            MainThreadRequired = true)]
-        public static object AddTimelineClip(
+            MainThreadRequired = true,
+            Tags = new[] { "animation/timeline" })]
+        public static object AddClip(
             [CliArg("timeline", "Reference to the TimelineAsset to edit (path / guid / globalId).", Required = true)] ObjectRef timeline,
             [CliArg("track", "Target track name.", Required = true)] string track = null,
             [CliArg("start", "Clip start time in seconds.", Required = true)] float start = 0f,
             [CliArg("duration", "Clip duration in seconds.", Required = true)] float duration = 0f,
             [CliArg("asset", "Source asset: for Animation tracks an AnimationClip; for Audio tracks an AudioClip. Required for those track types.")] ObjectRef asset = null,
-            [CliArg("dry_run", "If true, validate inputs without writing the clip.")] bool dryRun = false)
+            [CliArg("dry-run", "If true, validate inputs without writing the clip.")] bool dryRun = false)
         {
             if (!TimelineGuard.IsInstalled())
                 return TimelineGuard.NotInstalledError();
@@ -209,7 +220,7 @@ namespace Unity.Pipeline.Editor.Commands.Animation
 
             if (dryRun)
             {
-                // Even in dry_run, validate that a clip can be created for this track/asset combination so
+                // Even in dry-run, validate that a clip can be created for this track/asset combination so
                 // a missing-required-asset case fails fast and writes nothing.
                 ValidateClipCreatable(trackObj, sourceAsset);
                 return result;
@@ -228,10 +239,11 @@ namespace Unity.Pipeline.Editor.Commands.Animation
             return result;
         }
 
-        [CliCommand("get_timeline",
+        [CliGroupCommand(Group,
             "Read a TimelineAsset's structure: frame rate, duration, and its tracks with their clips. Requires the com.unity.timeline package.",
-            MainThreadRequired = true)]
-        public static object GetTimeline(
+            MainThreadRequired = true,
+            Tags = new[] { "animation/timeline" })]
+        public static object Get(
             [CliArg("timeline", "Reference to the TimelineAsset to read (path / guid / globalId).", Required = true)] ObjectRef timeline)
         {
             if (!TimelineGuard.IsInstalled())
@@ -557,7 +569,7 @@ namespace Unity.Pipeline.Editor.Commands.Animation
     // ---- result models ----
 
     [Serializable]
-    public class TimelineTrackSummary
+    class TimelineTrackSummary
     {
         [JsonProperty("name")]
         public string Name { get; set; }
@@ -567,14 +579,14 @@ namespace Unity.Pipeline.Editor.Commands.Animation
     }
 
     [Serializable]
-    public class AddTimelineTrackResult : AuthoringResult
+    class AddTimelineTrackResult : AuthoringResult
     {
         [JsonProperty("track")]
         public TimelineTrackSummary Track { get; set; }
     }
 
     [Serializable]
-    public class TimelineClipSummary
+    class TimelineClipSummary
     {
         [JsonProperty("track")]
         public string Track { get; set; }
@@ -587,14 +599,14 @@ namespace Unity.Pipeline.Editor.Commands.Animation
     }
 
     [Serializable]
-    public class AddTimelineClipResult : AuthoringResult
+    class AddTimelineClipResult : AuthoringResult
     {
         [JsonProperty("clip")]
         public TimelineClipSummary Clip { get; set; }
     }
 
     [Serializable]
-    public class TimelineInfo
+    class TimelineInfo
     {
         [JsonProperty("assetPath")]
         public string AssetPath { get; set; }
@@ -610,7 +622,7 @@ namespace Unity.Pipeline.Editor.Commands.Animation
     }
 
     [Serializable]
-    public class TimelineTrackInfo
+    class TimelineTrackInfo
     {
         [JsonProperty("name")]
         public string Name { get; set; }
@@ -623,7 +635,7 @@ namespace Unity.Pipeline.Editor.Commands.Animation
     }
 
     [Serializable]
-    public class TimelineClipInfo
+    class TimelineClipInfo
     {
         [JsonProperty("start")]
         public double Start { get; set; }

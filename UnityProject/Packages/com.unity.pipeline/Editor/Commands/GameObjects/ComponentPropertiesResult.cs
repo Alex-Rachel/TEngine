@@ -12,7 +12,7 @@ namespace Unity.Pipeline.Editor.Commands.GameObjects
     /// current serialized values in one round trip, which also makes set return the committed state
     /// for a read-after-write check.
     /// </summary>
-    public sealed class ComponentPropertiesResult
+    sealed class ComponentPropertiesResult
     {
         /// <summary>Canonical identity of the component the properties belong to.</summary>
         [JsonProperty("component")]

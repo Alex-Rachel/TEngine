@@ -13,9 +13,11 @@ namespace Unity.Pipeline.Editor.Commands.Assets
     /// the canonical <see cref="AuthoringResult"/> envelope so an agent can reference the created
     /// folder in follow-up calls.
     /// </summary>
-    public static class FolderCommands
+    static class FolderCommands
     {
-        [CliCommand("create_folder", "Create a folder under the authoring root (creates intermediate folders).")]
+        const string Group = "asset";
+
+        [CliGroupCommand(Group, "Create a folder under the authoring root (creates intermediate folders).", Tags = new[] { "assets" })]
         public static AuthoringResult CreateFolder(
             [CliArg("path", "Folder path relative to the authoring root (default Assets/); the Assets/ prefix is optional. e.g. Gameplay/Enemies or Assets/Gameplay/Enemies", Required = true)] string path)
         {

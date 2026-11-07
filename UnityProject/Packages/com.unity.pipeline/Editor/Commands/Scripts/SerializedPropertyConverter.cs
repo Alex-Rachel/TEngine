@@ -18,7 +18,7 @@ namespace Unity.Pipeline.Editor.Commands.Scripts
     /// objects by instanceId/hierarchyPath. Arrays are addressed element-by-element via a path like
     /// "myArray.Array.data[2]" (Unity's native SerializedProperty path syntax) — see the commands.
     /// </summary>
-    public static class SerializedPropertyConverter
+    static class SerializedPropertyConverter
     {
         /// <summary>
         /// Assign a JSON value to a serialized property, converting by the property's type. Throws

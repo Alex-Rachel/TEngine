@@ -2,6 +2,9 @@ using System;
 using System.Collections.Generic;
 using Unity.Profiling;
 using UnityEngine;
+#if UNITY_6000_5_OR_NEWER
+using Unity.Scripting.LifecycleManagement;
+#endif
 
 namespace Unity.Pipeline.Runtime.Telemetry
 {
@@ -10,7 +13,7 @@ namespace Unity.Pipeline.Runtime.Telemetry
     /// frame-time statistics over a rolling window.
     ///
     /// A Player build has no Editor profiler window to read from and no <c>EditorApplication.update</c>
-    /// to drive sampling, so <see cref="RuntimePipelineManager"/> owns one shared instance and feeds it
+    /// to drive sampling, so <see cref="RuntimePipelineDriver"/> owns one shared instance and feeds it
     /// every frame from its <c>Update</c>. The sampler is deliberately allocation-free on the hot path:
     /// each frame time is written into a fixed ring buffer and only reduced to a <see cref="FrameStatsSnapshot"/>
     /// on demand when a telemetry request arrives (far rarer than the frame rate).
@@ -18,11 +21,14 @@ namespace Unity.Pipeline.Runtime.Telemetry
     /// Sampling uses <c>Time.unscaledDeltaTime</c> so reported fps reflects real wall-clock frame pacing
     /// independent of <c>Time.timeScale</c> — a paused or slow-motion game still reports its true fps.
     /// </summary>
-    public sealed class FrameStatsSampler : IDisposable
+#if UNITY_6000_5_OR_NEWER
+    [NoAutoStaticsCleanup]
+#endif
+    sealed class FrameStatsSampler : IDisposable
     {
         /// <summary>
-        /// The process-wide sampler fed by the active <see cref="RuntimePipelineManager"/>. Null when no
-        /// manager is present (e.g. EditMode tests, or a scene without the component). Telemetry consumers
+        /// The process-wide sampler fed by the active <see cref="RuntimePipelineDriver"/>. Null when no
+        /// driver is present (e.g. EditMode tests, or a Player build without Pipeline enabled). Telemetry consumers
         /// must treat a null sampler as "frame stats unavailable" rather than failing — memory and counter
         /// data that do not depend on per-frame sampling can still be reported without it.
         /// </summary>
@@ -52,6 +58,8 @@ namespace Unity.Pipeline.Runtime.Telemetry
         /// <summary>Number of frames currently recorded (ramps up to <see cref="Capacity"/>).</summary>
         public int SampleCount => m_Count;
 
+        /// <summary>Create a sampler with the given rolling-window size.</summary>
+        /// <param name="windowFrames">Number of frames the rolling window holds (minimum 1).</param>
         public FrameStatsSampler(int windowFrames = 120)
         {
             if (windowFrames < 1)
@@ -64,6 +72,7 @@ namespace Unity.Pipeline.Runtime.Telemetry
         /// <paramref name="deltaSeconds"/> is the unscaled delta time of the frame just completed
         /// (typically <c>Time.unscaledDeltaTime</c>).
         /// </summary>
+        /// <param name="deltaSeconds">Unscaled delta time of the frame just completed.</param>
         public void Sample(float deltaSeconds)
         {
             var ms = deltaSeconds * 1000f;
@@ -82,6 +91,7 @@ namespace Unity.Pipeline.Runtime.Telemetry
         /// Reduce the current window to an immutable snapshot. Must be called on the main thread (it reads
         /// profiler recorders and the frame timing manager).
         /// </summary>
+        /// <returns>A point-in-time snapshot of the current window.</returns>
         public FrameStatsSnapshot GetSnapshot()
         {
             var snap = new FrameStatsSnapshot();
@@ -163,6 +173,7 @@ namespace Unity.Pipeline.Runtime.Telemetry
             });
         }
 
+        /// <summary>Dispose the underlying profiler recorders.</summary>
         public void Dispose()
         {
             foreach (var c in m_Counters)
@@ -181,7 +192,7 @@ namespace Unity.Pipeline.Runtime.Telemetry
     /// telemetry response.
     /// </summary>
     [Serializable]
-    public class FrameStatsSnapshot
+    class FrameStatsSnapshot
     {
         /// <summary>True when at least one frame has been sampled (i.e. a manager is feeding the sampler).</summary>
         public bool Available { get; set; }
@@ -192,14 +203,20 @@ namespace Unity.Pipeline.Runtime.Telemetry
         /// <summary>Frames per second derived from the average frame time over the window.</summary>
         public float Fps { get; set; }
 
+        /// <summary>Average frame time over the window, in milliseconds.</summary>
         public float AverageFrameTimeMs { get; set; }
+        /// <summary>Minimum frame time over the window, in milliseconds.</summary>
         public float MinFrameTimeMs { get; set; }
+        /// <summary>Maximum frame time over the window, in milliseconds.</summary>
         public float MaxFrameTimeMs { get; set; }
+        /// <summary>Most recently sampled frame's time, in milliseconds.</summary>
         public float LastFrameTimeMs { get; set; }
 
         /// <summary>True when FrameTimingManager returned CPU/GPU timings for a recent frame.</summary>
         public bool GpuTimingAvailable { get; set; }
+        /// <summary>CPU frame time from FrameTimingManager, in milliseconds. Only valid when <see cref="GpuTimingAvailable"/> is true.</summary>
         public double CpuFrameTimeMs { get; set; }
+        /// <summary>GPU frame time from FrameTimingManager, in milliseconds. Only valid when <see cref="GpuTimingAvailable"/> is true.</summary>
         public double GpuFrameTimeMs { get; set; }
 
         /// <summary>Valid profiler counters by reported name (e.g. DrawCalls, Triangles).</summary>

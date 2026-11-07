@@ -1,7 +1,7 @@
 using System;
 using Unity.Pipeline.Commands;
 using UnityEngine;
-#if ENABLE_INPUT_SYSTEM
+#if ENABLE_INPUT_SYSTEM && PIPELINE_HAS_INPUT_SYSTEM_PACKAGE
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
 using UnityEngine.InputSystem.LowLevel;
@@ -18,8 +18,8 @@ namespace Unity.Pipeline.Runtime.Commands
     /// on-screen UI the same way a real one does.
     /// </para>
     ///
-    /// <para><b>Input stack:</b> device injection requires the Input System package to be present and active
-    /// (<c>ENABLE_INPUT_SYSTEM</c>). Legacy <c>UnityEngine.Input</c> is poll-only and exposes no injection
+    /// <para><b>Input stack:</b> device injection requires the Input System package to be present
+    /// (<c>PIPELINE_HAS_INPUT_SYSTEM_PACKAGE</c>) and active (<c>ENABLE_INPUT_SYSTEM</c>). Legacy <c>UnityEngine.Input</c> is poll-only and exposes no injection
     /// API, so it is intentionally not supported; when the Input System is absent these commands report an
     /// "unavailable" result rather than silently no-op'ing.</para>
     ///
@@ -28,21 +28,24 @@ namespace Unity.Pipeline.Runtime.Commands
     /// <c>set_target_framerate</c>). TODO(CAT-2509): route input commands through the safety policy when it
     /// lands.</para>
     /// </summary>
-    public static class RuntimeInputCommand
+    static class RuntimeInputCommand
     {
-        [CliCommand("simulate_key", "Simulate a keyboard key event (Input System). Drives the running app.",
-            MainThreadRequired = true, RuntimeOnly = true)]
+        const string Group = "runtime";
+
+        [CliGroupCommand(Group, "Simulate a keyboard key event (Input System). Drives the running app.",
+            MainThreadRequired = true,
+            Tags = new[] { "runtime/input" })]
         public static InputSimulationResponse SimulateKey(
             [CliArg("key", "Input System Key name, e.g. Space, W, Enter, LeftArrow", Required = true)] string key,
             [CliArg("action", "down | up | press (down+up). Default: press")] string action = "press")
         {
-#if ENABLE_INPUT_SYSTEM
+#if ENABLE_INPUT_SYSTEM && PIPELINE_HAS_INPUT_SYSTEM_PACKAGE
             var keyboard = Keyboard.current;
             if (keyboard == null)
-                return InputSimulationResponse.Fail("simulate_key", "No keyboard device is present.");
+                return InputSimulationResponse.Fail(CommandNames.RuntimeSimulateKey, "No keyboard device is present.");
 
             if (!Enum.TryParse<Key>(key, ignoreCase: true, out var parsedKey) || parsedKey == Key.None)
-                return InputSimulationResponse.Fail("simulate_key", $"Unknown key '{key}'. Use an Input System Key name (e.g. Space, W, Enter).");
+                return InputSimulationResponse.Fail(CommandNames.RuntimeSimulateKey, $"Unknown key '{key}'. Use an Input System Key name (e.g. Space, W, Enter).");
 
             var control = keyboard[parsedKey];
             var act = Normalize(action);
@@ -59,29 +62,30 @@ namespace Unity.Pipeline.Runtime.Commands
                     QueueButton(control, false);
                     break;
                 default:
-                    return InputSimulationResponse.Fail("simulate_key", $"Unknown action '{action}'. Use down | up | press.");
+                    return InputSimulationResponse.Fail(CommandNames.RuntimeSimulateKey, $"Unknown action '{action}'. Use down | up | press.");
             }
 
             // Flush queued events so the effect is observable synchronously to the caller.
             InputSystem.Update();
-            return InputSimulationResponse.Ok("simulate_key", $"key={parsedKey} action={act}");
+            return InputSimulationResponse.Ok(CommandNames.RuntimeSimulateKey, $"key={parsedKey} action={act}");
 #else
-            return InputSimulationResponse.Unavailable("simulate_key");
+            return InputSimulationResponse.Unavailable(CommandNames.RuntimeSimulateKey);
 #endif
         }
 
-        [CliCommand("simulate_pointer", "Simulate a mouse/pointer event at screen coordinates (Input System).",
-            MainThreadRequired = true, RuntimeOnly = true)]
+        [CliGroupCommand(Group, "Simulate a mouse/pointer event at screen coordinates (Input System).",
+            MainThreadRequired = true,
+            Tags = new[] { "runtime/input" })]
         public static InputSimulationResponse SimulatePointer(
             [CliArg("x", "Screen X in pixels (origin bottom-left)", Required = true)] float x,
             [CliArg("y", "Screen Y in pixels (origin bottom-left)", Required = true)] float y,
             [CliArg("action", "move | down | up | click (down+up). Default: click")] string action = "click",
             [CliArg("button", "left | right | middle. Default: left")] string button = "left")
         {
-#if ENABLE_INPUT_SYSTEM
+#if ENABLE_INPUT_SYSTEM && PIPELINE_HAS_INPUT_SYSTEM_PACKAGE
             var mouse = Mouse.current;
             if (mouse == null)
-                return InputSimulationResponse.Fail("simulate_pointer", "No mouse/pointer device is present.");
+                return InputSimulationResponse.Fail(CommandNames.RuntimeSimulatePointer, "No mouse/pointer device is present.");
 
             var position = new Vector2(x, y);
             var act = Normalize(action);
@@ -93,7 +97,7 @@ namespace Unity.Pipeline.Runtime.Commands
                 case "right": btn = mouse.rightButton; break;
                 case "middle": btn = mouse.middleButton; break;
                 default:
-                    return InputSimulationResponse.Fail("simulate_pointer", $"Unknown button '{button}'. Use left | right | middle.");
+                    return InputSimulationResponse.Fail(CommandNames.RuntimeSimulatePointer, $"Unknown button '{button}'. Use left | right | middle.");
             }
 
             switch (act)
@@ -112,17 +116,17 @@ namespace Unity.Pipeline.Runtime.Commands
                     QueuePointer(mouse, position, btn, false);
                     break;
                 default:
-                    return InputSimulationResponse.Fail("simulate_pointer", $"Unknown action '{action}'. Use move | down | up | click.");
+                    return InputSimulationResponse.Fail(CommandNames.RuntimeSimulatePointer, $"Unknown action '{action}'. Use move | down | up | click.");
             }
 
             InputSystem.Update();
-            return InputSimulationResponse.Ok("simulate_pointer", $"pos=({x},{y}) action={act} button={Normalize(button)}");
+            return InputSimulationResponse.Ok(CommandNames.RuntimeSimulatePointer, $"pos=({x},{y}) action={act} button={Normalize(button)}");
 #else
-            return InputSimulationResponse.Unavailable("simulate_pointer");
+            return InputSimulationResponse.Unavailable(CommandNames.RuntimeSimulatePointer);
 #endif
         }
 
-#if ENABLE_INPUT_SYSTEM
+#if ENABLE_INPUT_SYSTEM && PIPELINE_HAS_INPUT_SYSTEM_PACKAGE
         // Capture the device's current state into a state event, override a single control, then queue it.
         // Capturing current state (rather than sending a zeroed full state) preserves any other controls
         // that are already held — so chained down/up calls compose correctly.
@@ -155,7 +159,7 @@ namespace Unity.Pipeline.Runtime.Commands
     /// human-readable detail (or an error / unavailable reason).
     /// </summary>
     [Serializable]
-    public class InputSimulationResponse
+    class InputSimulationResponse
     {
         public bool Success { get; set; }
         public string Command { get; set; }
@@ -173,8 +177,24 @@ namespace Unity.Pipeline.Runtime.Commands
             {
                 Success = false,
                 Command = command,
-                Error = "Input simulation requires the Input System package to be present and active " +
-                        "(ENABLE_INPUT_SYSTEM). Legacy input injection is not supported."
+                Error = UnavailableReason
             };
+
+        // Two causes, two different remedies, so they get two different messages.
+        // PIPELINE_HAS_INPUT_SYSTEM_PACKAGE comes from the versionDefines entry on
+        // Unity.Pipeline.asmdef and means com.unity.inputsystem is installed. ENABLE_INPUT_SYSTEM is
+        // Unity's own define, set only when Active Input Handling actually includes the new system.
+        // The package installed but excluded by the handler is a settings fix, not an install.
+        internal static readonly string UnavailableReason =
+#if PIPELINE_HAS_INPUT_SYSTEM_PACKAGE
+            "Input simulation requires Active Input Handling to include the Input System. The " +
+            "com.unity.inputsystem package is installed but inactive: set Project Settings > Player > " +
+            "Active Input Handling to 'Input System Package' or 'Both'. Legacy input injection is " +
+            "not supported.";
+#else
+            "Input simulation requires the com.unity.inputsystem package, which is not installed in " +
+            "this project. Install it, then set Project Settings > Player > Active Input Handling to " +
+            "'Input System Package' or 'Both'. Legacy input injection is not supported.";
+#endif
     }
 }

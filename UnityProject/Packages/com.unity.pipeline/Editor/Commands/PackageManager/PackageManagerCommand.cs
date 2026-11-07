@@ -3,12 +3,16 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Unity.Pipeline.Commands;
 using UnityEditor;
 using UnityEditor.PackageManager;
 using UnityEditor.PackageManager.Requests;
 using UnityEngine;
 using PackageInfo = UnityEditor.PackageManager.PackageInfo;
+#if UNITY_6000_5_OR_NEWER
+using Unity.Scripting.LifecycleManagement;
+#endif
 
 namespace Unity.Pipeline.Editor.Commands.PackageManager
 {
@@ -41,17 +45,18 @@ namespace Unity.Pipeline.Editor.Commands.PackageManager
     ///    file on the next load.
     ///  - <c>package_resolve</c> records its status too, so <c>package_status</c> validates it.
     ///
-    /// Mutating commands (add / remove) follow the shared <c>confirm</c>/<c>dry_run</c> convention.
+    /// Mutating commands (add / remove) follow the shared <c>confirm</c>/<c>dry-run</c> convention.
     /// UPM operations are not part of Unity's Undo.
     /// </summary>
     [InitializeOnLoad]
-    public static class PackageManagerCommand
+#if UNITY_6000_5_OR_NEWER
+    [NoAutoStaticsCleanup]
+#endif
+    static class PackageManagerCommand
     {
+        const string Group = "package";
         const string StatusFile = "Temp/pipeline_package_status.json";
 
-        // Bound on a synchronous wait, kept under the CLI's default request timeout so a stuck operation
-        // surfaces as a clean error rather than a dropped connection.
-        const int WaitTimeoutSeconds = 25;
         const int PollIntervalMs = 50;
 
         static readonly object s_Lock = new object();
@@ -72,24 +77,28 @@ namespace Unity.Pipeline.Editor.Commands.PackageManager
 
         // ---- List / search (synchronous) -------------------------------------------------------
 
-        [CliCommand("package_list",
+        [CliGroupCommand(Group,
             "List packages by scope: installed (default) | available (registry) | all (both). Returns the full " +
             "result synchronously — available/all block until the registry query completes.",
-            MainThreadRequired = false)]
-        public static object PackageList(
+            MainThreadRequired = false,
+            Tags = new[] { "packages" })]
+        public static object List(
             [CliArg("scope", "Which packages to list: installed (default) | available | all.")] string scope = "installed",
-            [CliArg("include_indirect", "Include indirect (transitive) installed dependencies (applies to scope=installed/all).")]
+            [CliArg("include-indirect", "Include indirect (transitive) installed dependencies (applies to scope=installed/all).")]
             bool includeIndirect = true,
-            [CliArg("offline", "For available/all: query the local cache instead of the registry.")] bool offline = false)
+            [CliArg("offline", "For available/all: query the local cache instead of the registry.")] bool offline = false,
+            [CliArg("timeout", "Seconds to wait for the registry (available/all).")] double timeoutInSeconds = 60)
         {
+            var start = System.Diagnostics.Stopwatch.GetTimestamp();
+            var timeout = PipelineTimeout.FromSeconds(timeoutInSeconds);
             switch ((scope ?? "installed").Trim().ToLowerInvariant())
             {
                 case "installed":
-                    return RunOnMain(() => ListInstalled(includeIndirect));
+                    return RunOnMain(() => ListInstalled(includeIndirect), timeout, start);
                 case "available":
-                    return ListFromRegistry("available", includeIndirect, offline);
+                    return ListFromRegistry("available", includeIndirect, offline, timeout, start);
                 case "all":
-                    return ListFromRegistry("all", includeIndirect, offline);
+                    return ListFromRegistry("all", includeIndirect, offline, timeout, start);
                 default:
                     return new PackageListResponse
                     {
@@ -129,11 +138,11 @@ namespace Unity.Pipeline.Editor.Commands.PackageManager
         /// started on the main thread and awaited here (on the command's background thread). For
         /// <c>all</c>, the installed set is merged in (and marked) so callers see one unified list.
         /// </summary>
-        static object ListFromRegistry(string scope, bool includeIndirect, bool offline)
+        static object ListFromRegistry(string scope, bool includeIndirect, bool offline, TimeSpan timeout, long start)
         {
-            var request = RunOnMain(() => Client.SearchAll(offline));
+            var request = RunOnMain(() => Client.SearchAll(offline), timeout, start);
 
-            if (!WaitForCompletion(request, out var waitError))
+            if (!WaitForCompletion(request, timeout, start, out var waitError))
                 return new PackageListResponse { Success = false, Scope = scope, Message = waitError };
 
             return RunOnMain<object>(() =>
@@ -156,7 +165,7 @@ namespace Unity.Pipeline.Editor.Commands.PackageManager
                     Manifest = SafeReadManifest(),
                     Message = $"{packages.Count} package(s)."
                 };
-            });
+            }, timeout, start);
         }
 
         /// <summary>
@@ -197,21 +206,25 @@ namespace Unity.Pipeline.Editor.Commands.PackageManager
             return result;
         }
 
-        [CliCommand("package_search",
+        [CliGroupCommand(Group,
             "Search packages available in the registry. Provide a name (e.g. com.unity.foo) or omit to list all. " +
             "Returns the full result synchronously (blocks until the registry query completes).",
-            MainThreadRequired = false)]
-        public static object PackageSearch(
+            MainThreadRequired = false,
+            Tags = new[] { "packages" })]
+        public static object Search(
             [CliArg("query", "Package name to search for. Omit/empty to list all available packages.")] string query = "",
-            [CliArg("offline", "Search the local cache only.")] bool offline = false)
+            [CliArg("offline", "Search the local cache only.")] bool offline = false,
+            [CliArg("timeout", "Seconds to wait for the registry.")] double timeoutInSeconds = 60)
         {
+            var start = System.Diagnostics.Stopwatch.GetTimestamp();
+            var timeout = PipelineTimeout.FromSeconds(timeoutInSeconds);
             var trimmed = (query ?? string.Empty).Trim();
 
             var request = RunOnMain(() => string.IsNullOrEmpty(trimmed)
                 ? Client.SearchAll(offline)
-                : Client.Search(trimmed, offline));
+                : Client.Search(trimmed, offline), timeout, start);
 
-            if (!WaitForCompletion(request, out var waitError))
+            if (!WaitForCompletion(request, timeout, start, out var waitError))
                 return new PackageSearchResponse { Success = false, Query = trimmed, Message = waitError };
 
             return RunOnMain<object>(() =>
@@ -233,21 +246,23 @@ namespace Unity.Pipeline.Editor.Commands.PackageManager
                     Packages = packages,
                     Message = $"{packages.Count} package(s)."
                 };
-            });
+            }, timeout, start);
         }
 
         // ---- Mutating operations (dual-mode, CAT-2509 gated) -----------------------------------
 
-        [CliCommand("package_add",
+        [CliGroupCommand(Group,
             "Add a UPM package by name@version, git URL, or 'file:' local path. Async by default (returns " +
-            "in_progress; poll package_status); pass wait=true to block until added. A recompile/domain reload " +
-            "follows — poll recompile_status. Requires confirm=true; use dry_run to preview.",
-            MainThreadRequired = false)]
-        public static object PackageAdd(
-            [CliArg("identifier", "Package to add: 'com.unity.foo@1.2.3', a git URL, or 'file:../Path'.", Required = true)] string identifier = "",
+            "in_progress; poll " + CommandNames.PackageStatus + "); pass wait=true to block until added. A recompile/domain reload " +
+            "follows — poll " + CommandNames.ScriptRecompileStatus + ". Requires confirm=true; use dry-run to preview.",
+            MainThreadRequired = false,
+            Tags = new[] { "packages" })]
+        public static object Add(
+            [CliArg("name", "Package to add: 'com.unity.foo@1.2.3', a git URL, or 'file:../Path'.", Required = true)] string identifier = "",
             [CliArg("confirm", "Apply the change. Without it the call is refused.")] bool confirm = false,
-            [CliArg("dry_run", "Preview the change without applying it.")] bool dryRun = false,
-            [CliArg("wait", "Block until the operation completes and return the result (synchronous). Default: return immediately and poll package_status.")] bool wait = false)
+            [CliArg("dry-run", "Preview the change without applying it.")] bool dryRun = false,
+            [CliArg("wait", "Block until the operation completes and return the result (synchronous). Default: return immediately and poll " + CommandNames.PackageStatus + ".")] bool wait = false,
+            [CliArg("timeout", "Seconds to wait when wait=true.")] double timeoutInSeconds = 300)
         {
             if (!PackageIdentifier.TryParse(identifier, out var parsed, out var parseError))
                 return PackageMutationResponse.Failed("add", identifier, parseError);
@@ -257,12 +272,14 @@ namespace Unity.Pipeline.Editor.Commands.PackageManager
 
             return ExecuteMutation(
                 operation: "add",
-                commandName: "package_add",
+                commandName: CommandNames.PackageAdd,
                 argument: parsed.Identifier,
                 planText: $"Add package {parsed.Description} [{parsed.Kind}]",
                 confirm: confirm,
                 dryRun: dryRun,
                 wait: wait,
+                timeout: PipelineTimeout.FromSeconds(timeoutInSeconds),
+                startTimestamp: System.Diagnostics.Stopwatch.GetTimestamp(),
                 start: () => Client.Add(parsed.Identifier),
                 readPackage: req =>
                 {
@@ -271,16 +288,18 @@ namespace Unity.Pipeline.Editor.Commands.PackageManager
                 });
         }
 
-        [CliCommand("package_remove",
-            "Remove a UPM package by name. Async by default (returns in_progress; poll package_status); pass " +
-            "wait=true to block until removed. A recompile/domain reload follows — poll recompile_status. " +
-            "Requires confirm=true; use dry_run to preview.",
-            MainThreadRequired = false)]
-        public static object PackageRemove(
+        [CliGroupCommand(Group,
+            "Remove a UPM package by name. Async by default (returns in_progress; poll " + CommandNames.PackageStatus + "); pass " +
+            "wait=true to block until removed. A recompile/domain reload follows — poll " + CommandNames.ScriptRecompileStatus + ". " +
+            "Requires confirm=true; use dry-run to preview.",
+            MainThreadRequired = false,
+            Tags = new[] { "packages" })]
+        public static object Remove(
             [CliArg("name", "Package name to remove (e.g. com.unity.foo).", Required = true)] string name = "",
             [CliArg("confirm", "Apply the change. Without it the call is refused.")] bool confirm = false,
-            [CliArg("dry_run", "Preview the change without applying it.")] bool dryRun = false,
-            [CliArg("wait", "Block until the operation completes and return the result (synchronous). Default: return immediately and poll package_status.")] bool wait = false)
+            [CliArg("dry-run", "Preview the change without applying it.")] bool dryRun = false,
+            [CliArg("wait", "Block until the operation completes and return the result (synchronous). Default: return immediately and poll " + CommandNames.PackageStatus + ".")] bool wait = false,
+            [CliArg("timeout", "Seconds to wait when wait=true.")] double timeoutInSeconds = 300)
         {
             if (string.IsNullOrWhiteSpace(name))
                 return PackageMutationResponse.Failed("remove", name, "A package name is required.");
@@ -292,21 +311,24 @@ namespace Unity.Pipeline.Editor.Commands.PackageManager
 
             return ExecuteMutation(
                 operation: "remove",
-                commandName: "package_remove",
+                commandName: CommandNames.PackageRemove,
                 argument: packageName,
                 planText: $"Remove package '{packageName}'",
                 confirm: confirm,
                 dryRun: dryRun,
                 wait: wait,
+                timeout: PipelineTimeout.FromSeconds(timeoutInSeconds),
+                startTimestamp: System.Diagnostics.Stopwatch.GetTimestamp(),
                 start: () => Client.Remove(packageName),
                 readPackage: null);
         }
 
-        [CliCommand("package_resolve",
+        [CliGroupCommand(Group,
             "Resolve/refresh packages from the manifest (re-fetch and re-link). May trigger a recompile/domain " +
-            "reload — poll recompile_status. Its outcome is recorded for package_status.",
-            MainThreadRequired = true)]
-        public static object PackageResolve()
+            "reload — poll " + CommandNames.ScriptRecompileStatus + ". Its outcome is recorded for " + CommandNames.PackageStatus + ".",
+            MainThreadRequired = true,
+            Tags = new[] { "packages" })]
+        public static object Resolve()
         {
             WriteStatus(new PackageStatus
             {
@@ -346,7 +368,7 @@ namespace Unity.Pipeline.Editor.Commands.PackageManager
                 RequiresRecompile = true,
                 Manifest = SafeReadManifest(),
                 CompletedAt = NowIso(),
-                Message = "Resolve requested. If assemblies changed, a domain reload follows — poll recompile_status."
+                Message = "Resolve requested. If assemblies changed, a domain reload follows — poll " + CommandNames.ScriptRecompileStatus + "."
             };
             WriteStatus(done);
             return ToMutationResponse(done, plan: null);
@@ -354,15 +376,14 @@ namespace Unity.Pipeline.Editor.Commands.PackageManager
 
         // ---- Status ----------------------------------------------------------------------------
 
-        [CliCommand("package_status",
+        [CliGroupCommand(Group,
             "Status of the last async package operation (add/remove/resolve): idle | in_progress | completed | " +
             "failed, with the added package, manifest, and any error.",
-            MainThreadRequired = false)]
-        public static string GetPackageStatus()
+            MainThreadRequired = false,
+            Tags = new[] { "packages" })]
+        public static JToken Status()
         {
-            if (File.Exists(StatusFile))
-                return File.ReadAllText(StatusFile);
-            return "{\"status\":\"idle\"}";
+            return StatusFileReader.ReadOrIdle(StatusFile);
         }
 
         // ---- Mutation execution ----------------------------------------------------------------
@@ -375,14 +396,14 @@ namespace Unity.Pipeline.Editor.Commands.PackageManager
         /// </summary>
         static object ExecuteMutation(
             string operation, string commandName, string argument, string planText,
-            bool confirm, bool dryRun, bool wait,
+            bool confirm, bool dryRun, bool wait, TimeSpan timeout, long startTimestamp,
             Func<Request> start, Func<Request, PackageSummary> readPackage)
         {
             if (dryRun)
                 return PackageMutationResponse.DryRunPreview(operation, argument, planText, $"Dry run — {planText}");
             if (!confirm)
                 return PackageMutationResponse.Rejected(operation, argument,
-                    "Refused: this changes project packages. Re-run with confirm=true to apply, or dry_run=true to preview.");
+                    "Refused: this changes project packages. Re-run with confirm=true to apply, or dry-run=true to preview.");
 
             // UPM operations are not part of Unity's Undo system, so there is no undo scope here.
             var request = RunOnMain(() =>
@@ -391,7 +412,7 @@ namespace Unity.Pipeline.Editor.Commands.PackageManager
                 // async mode finalizes via the update-loop poller; sync mode finalizes itself.
                 BeginTracking(operation, argument, r, readPackage, subscribePoll: !wait);
                 return r;
-            });
+            }, timeout, startTimestamp);
 
             if (request == null)
                 return PackageMutationResponse.Failed(operation, argument, "Operation was confirmed but failed to start.");
@@ -401,19 +422,18 @@ namespace Unity.Pipeline.Editor.Commands.PackageManager
 
             // Synchronous: poll until complete, capturing status + result atomically on the main thread
             // (a reload can only fire between ticks, so the snapshot can't be interleaved).
-            var deadline = DateTime.UtcNow.AddSeconds(WaitTimeoutSeconds);
             while (true)
             {
-                var status = RunOnMain(TryFinalize);
+                var status = RunOnMain(TryFinalize, timeout, startTimestamp);
                 if (status != null)
                     return ToMutationResponse(status, planText);
 
-                if (DateTime.UtcNow > deadline)
+                if (TimedOut(timeout, startTimestamp))
                 {
                     // Hand off to the update-loop poller so package_status still settles after we bail.
-                    RunOnMain<object>(() => { SubscribePoll(); return null; });
+                    RunOnMain<object>(() => { SubscribePoll(); return null; }, timeout, startTimestamp);
                     return PackageMutationResponse.Failed(operation, argument,
-                        $"Timed out after {WaitTimeoutSeconds}s; the operation may still be in progress — poll package_status.");
+                        $"Timed out after {PipelineTimeout.Describe(timeout)}; the operation may still be in progress — poll {CommandNames.PackageStatus}.");
                 }
 
                 Thread.Sleep(PollIntervalMs);
@@ -439,7 +459,7 @@ namespace Unity.Pipeline.Editor.Commands.PackageManager
                 Operation = operation,
                 Argument = argument,
                 StartedAt = NowIso(),
-                Message = $"{operation} in progress. Poll package_status."
+                Message = $"{operation} in progress. Poll {CommandNames.PackageStatus}."
             });
 
             if (subscribePoll)
@@ -552,7 +572,7 @@ namespace Unity.Pipeline.Editor.Commands.PackageManager
                 status.RequiresRecompile = true;
                 status.CompletedAt = NowIso();
                 status.Manifest = SafeReadManifest();
-                status.Message = $"{status.Operation} completed (domain reload). Manifest updated; poll recompile_status for the recompile.";
+                status.Message = $"{status.Operation} completed (domain reload). Manifest updated; poll {CommandNames.ScriptRecompileStatus} for the recompile.";
                 WriteStatus(status);
             }
             catch (Exception ex)
@@ -570,15 +590,14 @@ namespace Unity.Pipeline.Editor.Commands.PackageManager
         /// <see cref="RunOnMain"/> while this thread sleeps between checks. Returns false with
         /// <paramref name="error"/> set on timeout. Used by the read-only registry queries.
         /// </summary>
-        static bool WaitForCompletion(Request request, out string error)
+        static bool WaitForCompletion(Request request, TimeSpan timeout, long startTimestamp, out string error)
         {
             error = null;
-            var deadline = DateTime.UtcNow.AddSeconds(WaitTimeoutSeconds);
-            while (!RunOnMain(() => request.IsCompleted))
+            while (!RunOnMain(() => request.IsCompleted, timeout, startTimestamp))
             {
-                if (DateTime.UtcNow > deadline)
+                if (TimedOut(timeout, startTimestamp))
                 {
-                    error = $"Timed out after {WaitTimeoutSeconds}s waiting for the package manager.";
+                    error = $"Timed out after {PipelineTimeout.Describe(timeout)} waiting for the package manager.";
                     return false;
                 }
                 Thread.Sleep(PollIntervalMs);
@@ -586,16 +605,22 @@ namespace Unity.Pipeline.Editor.Commands.PackageManager
             return true;
         }
 
+        /// <summary>True once a wait that started at <paramref name="startTimestamp"/> should stop and report its timeout.</summary>
+        static bool TimedOut(TimeSpan timeout, long startTimestamp) =>
+            PipelineTimeout.Remaining(PipelineTimeout.StopBefore(timeout), startTimestamp) == TimeSpan.Zero;
+
         /// <summary>
         /// Run <paramref name="fn"/> on the Unity main thread. When invoked off-thread (the normal case
-        /// for the waiting commands), it marshals through the live server's dispatcher; when already on
-        /// the main thread (e.g. a direct in-process/test call, or no server running) it runs inline.
+        /// for the waiting commands), it marshals through the live server's dispatcher, waiting at most
+        /// what is left of <paramref name="timeout"/> since <paramref name="startTimestamp"/>; when
+        /// already on the main thread (e.g. a direct in-process/test call, or no server running) it
+        /// runs inline.
         /// </summary>
-        static T RunOnMain<T>(Func<T> fn)
+        static T RunOnMain<T>(Func<T> fn, TimeSpan timeout, long startTimestamp)
         {
             var dispatcher = PipelineServerStartup.Server?.Dispatcher;
             if (dispatcher != null && dispatcher.IsInitialized && !dispatcher.IsMainThread())
-                return dispatcher.Invoke(fn);
+                return dispatcher.Invoke(fn, PipelineTimeout.Remaining(timeout, startTimestamp));
             return fn();
         }
 

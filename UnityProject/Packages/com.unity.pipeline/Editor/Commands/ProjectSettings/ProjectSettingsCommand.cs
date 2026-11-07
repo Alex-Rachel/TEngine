@@ -9,7 +9,7 @@ namespace Unity.Pipeline.Editor.Commands.ProjectSettings
     /// <c>get</c>/<c>set</c> handler stays thin and the policy is applied uniformly:
     /// <list type="bullet">
     /// <item><description><see cref="Get"/> — read a group's values into a <see cref="ProjectSettingsResponse"/>.</description></item>
-    /// <item><description><see cref="Apply"/> — gate a write with the <c>confirm</c>/<c>dry_run</c> convention and
+    /// <item><description><see cref="Apply"/> — gate a write with the <c>confirm</c>/<c>dry-run</c> convention and
     /// apply it (project-settings writes are not part of Unity's Undo), then re-read the group so the response
     /// reflects the post-change state, and surface domain-reload / reimport signals.</description></item>
     /// </list>
@@ -18,7 +18,7 @@ namespace Unity.Pipeline.Editor.Commands.ProjectSettings
     /// and, for writes, <c>apply</c> (perform the mutation) plus a <c>plan</c> describing the intended
     /// effect. All run on the main thread (these commands are <c>MainThreadRequired = true</c>).
     /// </summary>
-    public static class ProjectSettingsCommand
+    static class ProjectSettingsCommand
     {
         /// <summary>
         /// Read-only path: build a success response carrying the group's current values.
@@ -41,7 +41,7 @@ namespace Unity.Pipeline.Editor.Commands.ProjectSettings
         }
 
         /// <summary>
-        /// Write path: gate the change with the <c>confirm</c>/<c>dry_run</c> convention and apply it
+        /// Write path: gate the change with the <c>confirm</c>/<c>dry-run</c> convention and apply it
         /// (project-settings writes are not undoable via Ctrl+Z), then re-read the
         /// group. <paramref name="requiresDomainReload"/> / <paramref name="requiresReimport"/> declare
         /// side effects of this specific change (Unity defers them, so the response returns first);
@@ -76,7 +76,7 @@ namespace Unity.Pipeline.Editor.Commands.ProjectSettings
                 return ProjectSettingsResponse.Fail(group, $"Failed to compute the operation preview: {ex.Message}");
             }
 
-            // Inline confirm / dry_run gate + Undo grouping (the codebase-wide mutating convention).
+            // Inline confirm / dry-run gate + Undo grouping (the codebase-wide mutating convention).
             var response = new ProjectSettingsResponse { Group = group };
             if (dryRun)
             {
@@ -91,7 +91,7 @@ namespace Unity.Pipeline.Editor.Commands.ProjectSettings
                 response.Applied = false;
                 response.Message =
                     "Refused: this operation mutates the project. Re-run with confirm=true to apply, " +
-                    "or dry_run=true to preview the change.";
+                    "or dry-run=true to preview the change.";
             }
             else
             {

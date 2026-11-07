@@ -1,1 +1,35 @@
-{"name":"com.unity.pipeline","displayName":"Unity Pipeline","version":"0.3.1-exp.1","unity":"2022.3","category":"Pipeline","description":"This package allows application (cli, agent or other) to connect to the editor or a running game and execute commands (build, run_tests, play/pause, hotreload)","keywords":["pipeline","connected","authoring","hotreload"],"dependencies":{"com.unity.test-framework":"1.1.33","com.unity.modules.jsonserialize":"1.0.0","com.unity.nuget.newtonsoft-json":"3.0.2","com.unity.nuget.mono-cecil":"1.11.6","com.unity.modules.uielements":"1.0.0","com.unity.modules.screencapture":"1.0.0"},"samples":[{"displayName":"Hot Reload Examples","description":"In-place [HotReload] editing and override-file ([HotReloadOverrideMethod]) hot reload examples.","path":"Samples~/HotReload"}],"repository":{"revision":"528431a225335e21313c86a2d4eac0b0212cba47","type":"git","url":"https://github.cds.internal.unity3d.com/unity/com.unity.pipeline.git"},"documentationUrl":"https://docs.unity3d.com/Packages/com.unity.pipeline@0.3/manual/index.html","_upm":{"changelog":"- Update docs"}}
+{
+  "name": "com.unity.pipeline",
+  "displayName": "Unity Pipeline",
+  "version": "0.10.0-exp.1",
+  "unity": "2022.3",
+  "category": "Pipeline",
+  "description": "This package allows application (cli, agent or other) to connect to the editor or a running game and execute commands (build, run_tests, play/pause, methodreload)",
+  "keywords": [
+    "pipeline",
+    "connected",
+    "authoring",
+    "methodreload"
+  ],
+  "dependencies": {
+    "com.unity.test-framework": "1.1.33",
+    "com.unity.modules.jsonserialize": "1.0.0",
+    "com.unity.nuget.newtonsoft-json": "3.0.2",
+    "com.unity.nuget.mono-cecil": "1.11.6",
+    "com.unity.modules.uielements": "1.0.0",
+    "com.unity.modules.screencapture": "1.0.0"
+  },
+  "relatedPackages": {
+    "com.unity.pipeline.tests": "0.0.0"
+  },
+  "repository": {
+    "revision": "8c52ede3f9f3514111961927c9688a70a6322309",
+    "type": "git",
+    "url": "https://github.cds.internal.unity3d.com/unity/com.unity.pipeline.git"
+  },
+  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.pipeline@0.10/manual/index.html",
+  "_upm": {
+    "changelog": "### Added\n\n- [AUTHAPI-104] The Pipeline Runtime settings page warns that the runtime workflow is experimental and currently targets desktop Player builds only.\n- [EAD-2430] An importer that produces PNG previews of assets on demand, up to 512×512.\n- The Editor advertises the Pipeline protocol transport in its capabilities.\n- [MTT-16535] Add a top-level networking tag with a netcode subtag, and guidance on shipping commands from another package.\n- Command-reference.md.\n- [AUTHAPI-55] `editor status` reports the domain reload count and the Auto Refresh setting.\n- [UUM-159061] Window > Pipeline menu items to open the Pipeline Editor and Runtime settings pages.\n- [UUM-159061] A main toolbar toggle to start and stop the Pipeline Server, on Unity 6.3 and later.\n- Commands to record Profiler captures and take memory snapshots from the Editor or a connected Player.\n- [UUM-153627] `capture game_view` opens a Game view window when none is showing.\n- [UUM-153627] Camera captures include Screen Space - Overlay UI on URP and HDRP, controlled by a new `overlay` argument.\n- `capture editor_window` captures any open Editor window as drawn, found by title or type name.\n- `capture scene_view` takes a `source`: `camera` (default) renders the Scene view camera, `screen` captures the Scene window as drawn.\n- [AUTHAPI-112] A command's output can be formatted by the package and streamed to the `unity` CLI while the command runs, picked with `--format human|tsv|json`.\n- [AUTHAPI-101] new analytics to get more data about eval usage.\n- [AUTHAPI-101] diagnostics recent_analytics lists the last analytics events the Editor sent.\n- [MTT-15607] `multiplayer.role` commands to read and set multiplayer roles for the Editor, objects, build profiles and component types on Unity 6000.6+.\n\n### Changed\n\n- The Pipeline protocol's server exit codes now start at 100, leaving 0–99 to commands.\n- [AUTHAPI-74] Improve Async Eval.\n- [UUM-159061] Moved the Window > Pipeline menu into the main tools section of the Window menu.\n- [AUTHAPI-76] The Pipeline protocol transport returns the unity CLI's exit codes.\n- [UUM-157059] A relative capture `save_path` resolves from the project root instead of `Assets/`, an absolute path is accepted, and `savedPath` is absolute.\n- [AUTHAPI-112] `pipeline list_commands` and a bare group name list commands as the `unity` CLI lays them out, when the client asks for formatted output.\n- [AUTHAPI-112] `component get_fields` takes `detail=value` in place of `format=value`.\n- [AUTHAPI-112] `script run` lists a script's compile errors in its failure message.\n- [AUTHAPI-112] A command can no longer name a parameter format, json, fields, verbose or omit-nulls; the executor takes those options from a command line.\n- [DOCATT-11460] updating the samples page to make sure it matches the content model.\n- [AUTHAPI-119] The editor server's settings are now stored per user in UserSettings/, no longer in version-controlled ProjectSettings/; an existing settings file is moved there.\n- [AUTHAPI-119] An override from editor.playmode set_run_in_background now ends when the Editor quits, as documented.\n\n### Deprecated\n\n- `capture screenshot`; use `capture game_view` or `capture scene_view` with `save_path`.\n\n### Removed\n\n- [DOCATT-11505] removing the command index section from the index page.\n\n### Fixed\n\n- [UUM-157583] Fix editor closing in automated.\n- [UUM-153626] Fix editor closing in batchmode.\n- [UUM-157051] Fix editor closing in batchmode.\n- [UUM-156858] The Editor server no longer leaves a stale listener behind after a script reload, and keeps the same port.\n- [MTT-16498]`recompile` no longer reports success while a compile is still running.\n- [MTT-16496] Clones added with `editor.playmode add_player` now launch on Unity 6000.5 and newer, and a fourth clone is refused with an error.\n- [MTT-16497] `editor.playmode list_players` and `editor.playmode get_scenario_status` now list a scenario's players on Unity 6000.5 and newer.\n- [UUM-151576] The Pipeline Server now starts in Multiplayer Play Mode virtual players when a fixed port is set.\n- [UUM-159191] F"
+  },
+  "_fingerprint": "303cb578aa664fd6f4c220c3d85bb2ba6ca78d0b"
+}

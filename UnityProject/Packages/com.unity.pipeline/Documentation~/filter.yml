@@ -1,0 +1,20 @@
+apiRules:
+  # Everything under Unity.Pipeline.Tests.* (Tests/Editor, Tests/Runtime, and their
+  # sub-namespaces) is test-only. Some of it is forced `public` for a compiler reason, not
+  # because it's consumable package API: e.g. method-reload/IL-interpreter probe classes are named
+  # literally by SourceCodeTransformer in a freshly-generated override that Roslyn compiles into
+  # a separate, uniquely named in-memory assembly (no InternalsVisibleTo exists for those
+  # ephemeral assemblies), so `internal` fails the compile with CS0122. Exempting the whole test
+  # namespace tree means a future probe/fixture that needs the same `public` workaround doesn't
+  # need a new filter.yml entry. This does not affect PVP-150/151 for the shipped Runtime/Editor
+  # assemblies — only Unity.Pipeline.Tests.* is excluded.
+  - exclude:
+      uidRegex: ^Unity\.Pipeline\.Tests\..+$
+      type: Type
+
+  # Decoy attribute (MethodReloadInPlaceTests.cs) that only exists to prove the IL weaver matches
+  # by full name, not simple name — not consumable API, test-only despite living outside the
+  # Unity.Pipeline.Tests namespace.
+  - exclude:
+      uidRegex: ^FakeReload\.MethodReloadAttribute$
+      type: Type

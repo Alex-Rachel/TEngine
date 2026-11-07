@@ -17,15 +17,18 @@ namespace Unity.Pipeline.Runtime.Commands
     /// The panel is identified by name (the <see cref="PanelSettings"/> asset name or the host
     /// GameObject name) rather than an asset path, because a Player has no AssetDatabase.
     /// </summary>
-    public static class CaptureRuntimeElementCommand
+    static class CaptureRuntimeElementCommand
     {
-        [CliCommand("capture_runtime_element",
+        const string Group = "capture";
+
+        [CliGroupCommand(Group,
             "Capture a UI Toolkit VisualElement (by selector) from a live runtime panel (UIDocument or PanelRenderer) to a PNG; returns path + base64.",
-            MainThreadRequired = true, RuntimeOnly = true)]
-        public static CaptureElementResponse CaptureRuntimeElement(
+            MainThreadRequired = true,
+            Tags = new[] { "capture", "ui", "runtime" })]
+        public static CaptureElementResponse RuntimeElement(
             [CliArg("panel", "Name of the target panel: matches the PanelSettings asset name or the host GameObject name (UIDocument or PanelRenderer). Optional when exactly one panel exists.")] string panel = "",
             [CliArg("selector", "Element selector: '#name', '.class', a type name (e.g. Button), descendant (space) / child ('>') chains, optional pseudo-states (:checked,:hover,:focus,:active,:enabled,:disabled,:not(...)).", Required = true)] string selector = "",
-            [CliArg("output", "Output PNG path (absolute, or relative to Application.persistentDataPath). Defaults to a timestamped file under Application.persistentDataPath.")] string output = "")
+            [CliArg("output-path", "Output PNG path (absolute, or relative to Application.persistentDataPath). Defaults to a timestamped file under Application.persistentDataPath.")] string output = "")
         {
             if (string.IsNullOrWhiteSpace(selector))
                 return CaptureElementResponse.Fail("A 'selector' is required.");

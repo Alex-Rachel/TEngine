@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using Unity.Pipeline.Commands;
@@ -7,6 +8,11 @@ using Unity.Pipeline.Models;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
+#if UNITY_6000_0_OR_NEWER
+using PipelinePhysicsMaterial = UnityEngine.PhysicsMaterial;
+#else
+using PipelinePhysicsMaterial = UnityEngine.PhysicMaterial;
+#endif
 
 namespace Unity.Pipeline.Editor.Commands.Assets
 {
@@ -24,17 +30,19 @@ namespace Unity.Pipeline.Editor.Commands.Assets
     /// NOTE: AssetDatabase create/move/copy/rename/delete are NOT part of Unity's Undo system, so
     /// <see cref="AuthoringUndoScope"/> would have no effect here — these operations are intentionally
     /// not wrapped in an undo scope, and destructive/overwriting operations instead require an explicit
-    /// <c>confirm</c> argument (and support <c>dry_run</c>) so an agent cannot silently lose data.
+    /// <c>confirm</c> argument (and support <c>dry-run</c>) so an agent cannot silently lose data.
     /// </summary>
-    public static class AssetCommands
+    static class AssetCommands
     {
-        [CliCommand("create_asset", "Create a new ScriptableObject (or other UnityEngine.Object) asset of the given type at a path under the authoring root.")]
-        public static AuthoringResult CreateAsset(
+        const string Group = "asset";
+
+        [CliGroupCommand(Group, "Create a new ScriptableObject (or other UnityEngine.Object) asset of the given type at a path under the authoring root.", Tags = new[] { "assets" })]
+        public static AuthoringResult Create(
             [CliArg("path", "Asset path relative to the authoring root, including extension (e.g. Data/Config.asset or Materials/Wall.mat). The Assets/ prefix is optional.", Required = true)] string path,
             [CliArg("type", "Fully-qualified or short type name to instantiate (e.g. UnityEngine.Material, MyGame.GameConfig). Must derive from UnityEngine.Object and be creatable.", Required = true)] string type,
             [CliArg("shader", "Material-only (ignored otherwise): shader name to assign (e.g. Standard, \"Universal Render Pipeline/Lit\"). When omitted, defaults to \"Universal Render Pipeline/Lit\" if a Scriptable Render Pipeline is active, otherwise the built-in \"Standard\" shader (falling back to \"Standard\" if URP/Lit is unavailable).")] string shader = null,
             [CliArg("confirm", "Required (true) only when overwriting an existing asset at the path. Ignored when the path is empty.")] bool confirm = false,
-            [CliArg("dry_run", "If true, validate inputs and report what would be created without writing anything.")] bool dryRun = false)
+            [CliArg("dry-run", "If true, validate inputs and report what would be created without writing anything.")] bool dryRun = false)
         {
             var normalized = ProjectPaths.Resolve(path, out var error);
             if (normalized == null)
@@ -49,29 +57,22 @@ namespace Unity.Pipeline.Editor.Commands.Assets
             if (!typeof(Object).IsAssignableFrom(resolvedType))
                 throw new ArgumentException($"Type '{resolvedType.FullName}' does not derive from UnityEngine.Object.");
 
-#if UNITY_6000_0_OR_NEWER
-            // Unity 2022 uses PhysicMaterial; accept the newer spelling in user input below.
-            if (typeof(PhysicsMaterial).IsAssignableFrom(resolvedType) &&
+            // CLI-222: Unity 6 renamed PhysicMaterial -> PhysicsMaterial, but the on-disk asset
+            // extension remains ".physicMaterial" in both supported editor generations.
+            // AssetDatabase.CreateAsset rejects a ".physicsMaterial" file, so accept either spelling
+            // from the agent and normalize to the extension Unity writes.
+            if (typeof(PipelinePhysicsMaterial).IsAssignableFrom(resolvedType) &&
                 normalized.EndsWith(".physicsMaterial", StringComparison.OrdinalIgnoreCase))
             {
                 normalized = normalized.Substring(0, normalized.Length - ".physicsMaterial".Length) + ".physicMaterial";
             }
-#else
-            // Unity 2022 uses PhysicMaterial; accept the newer spelling in user input below.
-            if (typeof(PhysicMaterial).IsAssignableFrom(resolvedType) &&
-                normalized.EndsWith(".physicsMaterial", StringComparison.OrdinalIgnoreCase))
-            {
-                normalized = normalized.Substring(0, normalized.Length - ".physicsMaterial".Length) + ".physicMaterial";
-            }
-#endif
-            
 
             var exists = AssetDatabase.LoadMainAssetAtPath(normalized) != null;
             if (exists && !confirm)
                 throw new ArgumentException($"An asset already exists at '{normalized}'. Pass confirm=true to overwrite it.");
 
-            // CLI-221: for a Material, resolve (and thereby validate) the shader up front so dry_run
-            // also fails fast on an unknown shader — dry_run is documented as "validate inputs".
+            // CLI-221: for a Material, resolve (and thereby validate) the shader up front so dry-run
+            // also fails fast on an unknown shader — dry-run is documented as "validate inputs".
             Shader materialShader = null;
             if (typeof(Material).IsAssignableFrom(resolvedType))
                 materialShader = ResolveShader(shader);
@@ -94,31 +95,18 @@ namespace Unity.Pipeline.Editor.Commands.Assets
                 // every other type.
                 asset = new Material(materialShader);
             }
-#if UNITY_6000_0_OR_NEWER
-            else if (typeof(PhysicsMaterial).IsAssignableFrom(resolvedType))
+            else if (typeof(PipelinePhysicsMaterial).IsAssignableFrom(resolvedType))
             {
-                // PhysicMaterial has a public parameterless ctor, but create it explicitly so
-                // we can stamp the documented sensible defaults rather than relying on engine defaults.
-                asset = new PhysicsMaterial
+                // CLI-222: PhysicMaterial/PhysicsMaterial has a public parameterless ctor, but create
+                // it explicitly so we can stamp the documented sensible defaults rather than relying
+                // on engine defaults.
+                asset = new PipelinePhysicsMaterial
                 {
                     dynamicFriction = 0.6f,
                     staticFriction = 0.6f,
                     bounciness = 0f,
                 };
             }
-#else
-            else if (typeof(PhysicMaterial).IsAssignableFrom(resolvedType))
-            {
-                // PhysicMaterial has a public parameterless ctor, but create it explicitly so
-                // we can stamp the documented sensible defaults rather than relying on engine defaults.
-                asset = new PhysicMaterial
-                {
-                    dynamicFriction = 0.6f,
-                    staticFriction = 0.6f,
-                    bounciness = 0f,
-                };
-            }
-#endif
             else
             {
                 // Other UnityEngine.Object subclasses with a public parameterless ctor.
@@ -153,12 +141,12 @@ namespace Unity.Pipeline.Editor.Commands.Assets
             return result;
         }
 
-        [CliCommand("import_asset", "Import an external file (e.g. a texture, model, audio clip) into the project by copying it to a path under the authoring root, then importing it.")]
-        public static AuthoringResult ImportAsset(
+        [CliGroupCommand(Group, "Import an external file (e.g. a texture, model, audio clip) into the project by copying it to a path under the authoring root, then importing it.", Tags = new[] { "assets/import" })]
+        public static AuthoringResult Import(
             [CliArg("source", "Absolute filesystem path to the external file to import.", Required = true)] string source,
             [CliArg("path", "Destination asset path relative to the authoring root, including extension. The Assets/ prefix is optional.", Required = true)] string path,
             [CliArg("confirm", "Required (true) only when overwriting an existing asset at the destination path.")] bool confirm = false,
-            [CliArg("dry_run", "If true, validate inputs and report what would be imported without writing anything.")] bool dryRun = false)
+            [CliArg("dry-run", "If true, validate inputs and report what would be imported without writing anything.")] bool dryRun = false)
         {
             if (string.IsNullOrWhiteSpace(source))
                 throw new ArgumentException("source is required.");
@@ -186,11 +174,11 @@ namespace Unity.Pipeline.Editor.Commands.Assets
             return result;
         }
 
-        [CliCommand("move_asset", "Move (or rename via a new path) an asset to a new location under the authoring root. Preserves the asset's GUID.")]
-        public static AuthoringResult MoveAsset(
+        [CliGroupCommand(Group, "Move (or rename via a new path) an asset to a new location under the authoring root. Preserves the asset's GUID.", Tags = new[] { "assets" })]
+        public static AuthoringResult Move(
             [CliArg("asset", "Reference to the asset to move (path / guid / globalId).", Required = true)] ObjectRef asset,
             [CliArg("destination", "Destination asset path relative to the authoring root, including extension. The Assets/ prefix is optional.", Required = true)] string destination,
-            [CliArg("dry_run", "If true, validate the move (via AssetDatabase.ValidateMoveAsset) without performing it.")] bool dryRun = false)
+            [CliArg("dry-run", "If true, validate the move (via AssetDatabase.ValidateMoveAsset) without performing it.")] bool dryRun = false)
         {
             var sourcePath = ResolveAssetPath(asset);
 
@@ -222,12 +210,12 @@ namespace Unity.Pipeline.Editor.Commands.Assets
             return result;
         }
 
-        [CliCommand("copy_asset", "Copy an asset to a new path under the authoring root. The copy gets a fresh GUID.")]
-        public static AuthoringResult CopyAsset(
+        [CliGroupCommand(Group, "Copy an asset to a new path under the authoring root. The copy gets a fresh GUID.", Tags = new[] { "assets" })]
+        public static AuthoringResult Copy(
             [CliArg("asset", "Reference to the asset to copy (path / guid / globalId).", Required = true)] ObjectRef asset,
             [CliArg("destination", "Destination asset path relative to the authoring root, including extension. The Assets/ prefix is optional.", Required = true)] string destination,
             [CliArg("confirm", "Required (true) only when overwriting an existing asset at the destination path.")] bool confirm = false,
-            [CliArg("dry_run", "If true, validate inputs and report what would be copied without writing anything.")] bool dryRun = false)
+            [CliArg("dry-run", "If true, validate inputs and report what would be copied without writing anything.")] bool dryRun = false)
         {
             var sourcePath = ResolveAssetPath(asset);
 
@@ -258,16 +246,16 @@ namespace Unity.Pipeline.Editor.Commands.Assets
             return result;
         }
 
-        [CliCommand("rename_asset", "Rename an asset in place (keeps it in the same folder, keeps its GUID).")]
-        public static AuthoringResult RenameAsset(
+        [CliGroupCommand(Group, "Rename an asset in place (keeps it in the same folder, keeps its GUID).", Tags = new[] { "assets" })]
+        public static AuthoringResult Rename(
             [CliArg("asset", "Reference to the asset to rename (path / guid / globalId).", Required = true)] ObjectRef asset,
-            [CliArg("new_name", "New file name WITHOUT a folder path. The extension is preserved if omitted.", Required = true)] string newName,
-            [CliArg("dry_run", "If true, validate the rename without performing it.")] bool dryRun = false)
+            [CliArg("new-name", "New file name WITHOUT a folder path. The extension is preserved if omitted.", Required = true)] string newName,
+            [CliArg("dry-run", "If true, validate the rename without performing it.")] bool dryRun = false)
         {
             if (string.IsNullOrWhiteSpace(newName))
-                throw new ArgumentException("new_name is required.");
+                throw new ArgumentException("new-name is required.");
             if (newName.Contains("/") || newName.Contains("\\"))
-                throw new ArgumentException("new_name must be a file name only, not a path. Use move_asset to relocate an asset.");
+                throw new ArgumentException("new-name must be a file name only, not a path. Use " + CommandNames.AssetMove + " to relocate an asset.");
 
             var sourcePath = ResolveAssetPath(asset);
 
@@ -293,11 +281,11 @@ namespace Unity.Pipeline.Editor.Commands.Assets
             return result;
         }
 
-        [CliCommand("delete_asset", "Delete an asset from the project. Destructive: requires confirm=true.")]
-        public static AuthoringResult DeleteAsset(
+        [CliGroupCommand(Group, "Delete an asset from the project. Destructive: requires confirm=true.", Tags = new[] { "assets" })]
+        public static AuthoringResult Delete(
             [CliArg("asset", "Reference to the asset to delete (path / guid / globalId).", Required = true)] ObjectRef asset,
             [CliArg("confirm", "Must be true to actually delete. Without it the command refuses (destructive guard).")] bool confirm = false,
-            [CliArg("dry_run", "If true, report the asset that would be deleted without deleting it.")] bool dryRun = false)
+            [CliArg("dry-run", "If true, report the asset that would be deleted without deleting it.")] bool dryRun = false)
         {
             var sourcePath = ResolveAssetPath(asset);
 
@@ -318,12 +306,12 @@ namespace Unity.Pipeline.Editor.Commands.Assets
             return result;
         }
 
-        [CliCommand("find_assets", "Find assets by type and/or name and/or label, returning their path, GUID and type. At least one filter is required.")]
-        public static FindAssetsResult FindAssets(
+        [CliGroupCommand(Group, "Find assets by type and/or name and/or label, returning their path, GUID and type. At least one filter is required.", Tags = new[] { "assets" })]
+        public static FindAssetsResult Find(
             [CliArg("type", "Type name to filter by (e.g. Material, GameObject, ScriptableObject, MyGame.GameConfig). Resolved to a System.Type and matched against each asset's actual main type.")] string type = null,
             [CliArg("name", "Name substring to filter by (AssetDatabase name filter).")] string name = null,
             [CliArg("label", "Asset label to filter by (AssetDatabase 'l:' filter).")] string label = null,
-            [CliArg("search_in", "Folder to scope the search to, relative to the authoring root (default: the authoring root).")] string searchIn = null,
+            [CliArg("search-in", "Folder to scope the search to, relative to the authoring root (default: the authoring root).")] string searchIn = null,
             [CliArg("limit", "Maximum number of results to return (default 200).")] int limit = 200)
         {
             if (string.IsNullOrWhiteSpace(type) && string.IsNullOrWhiteSpace(name) && string.IsNullOrWhiteSpace(label))
@@ -412,6 +400,16 @@ namespace Unity.Pipeline.Editor.Commands.Assets
                     return byFullName;
             }
 
+            return FindTypeByShortName(LoadedTypes(), typeName);
+        }
+
+        /// <summary>
+        /// Every type in every loaded, non-dynamic assembly. An assembly whose type list is only
+        /// partly loadable yields the types that did load (<see cref="ReflectionTypeLoadException"/>
+        /// hands those back alongside nulls for the rest).
+        /// </summary>
+        static IEnumerable<Type> LoadedTypes()
+        {
             foreach (var assembly in PipelineUtils.GetLoadedAssemblies())
             {
                 if (assembly.IsDynamic)
@@ -427,14 +425,52 @@ namespace Unity.Pipeline.Editor.Commands.Assets
                     types = ex.Types;
                 }
 
-                foreach (var candidate in types)
-                {
-                    if (candidate != null && candidate.Name == typeName)
-                        return candidate;
-                }
+                foreach (var type in types)
+                    yield return type;
+            }
+        }
+
+        /// <summary>
+        /// The candidate whose short name is <paramref name="typeName"/>, preferring one that derives
+        /// from <see cref="Object"/>; the first non-Object match only when no Object-derived one
+        /// exists; null when nothing matches.
+        ///
+        /// The preference is what keeps a collision deterministic. A short name is not unique: Unity 7
+        /// ships UnityEditor.LightBaking.Material next to UnityEngine.Material, so a plain "first match
+        /// wins" scan answers "Material" differently depending on whether UnityEngine.CoreModule or
+        /// UnityEditor.CoreModule is enumerated first — which varies by project. Preferring the
+        /// Object-derived type makes that answer UnityEngine.Material whatever the order.
+        ///
+        /// It is a preference and not a filter because the two callers do not require the same thing.
+        /// create_asset needs an Object-derived type and rejects anything else itself, with a clearer
+        /// error than "could not resolve". find_assets matches each asset's main type with
+        /// IsAssignableFrom, so an interface is a legitimate filter there — find_assets(type:
+        /// "IAssetMarker") returns every asset implementing it — and dropping non-Object types
+        /// outright would make such a filter unresolvable by its short name.
+        ///
+        /// Fully-qualified names are resolved before this is reached and bypass it entirely.
+        ///
+        /// Order still decides between two Object-derived types sharing a short name, or between two
+        /// non-Object ones when no Object-derived one exists. That ambiguity is real but has no better
+        /// answer here; a fully-qualified name settles it.
+        /// </summary>
+        internal static Type FindTypeByShortName(IEnumerable<Type> candidates, string typeName)
+        {
+            Type fallback = null;
+            foreach (var candidate in candidates)
+            {
+                // Null entries come from ReflectionTypeLoadException.Types, one per type that failed
+                // to load.
+                if (candidate == null || candidate.Name != typeName)
+                    continue;
+
+                if (typeof(Object).IsAssignableFrom(candidate))
+                    return candidate;
+
+                fallback ??= candidate;
             }
 
-            return null;
+            return fallback;
         }
 
         /// <summary>
@@ -555,17 +591,14 @@ namespace Unity.Pipeline.Editor.Commands.Assets
             // type and rejected for another.
             typeName = typeName.Trim();
 
-            // Normalize both Unity 6 and Unity 2022 spellings to the type available in this editor.
+            // CLI-222: Unity 6 calls this UnityEngine.PhysicsMaterial; Unity 2022 calls it
+            // UnityEngine.PhysicMaterial. Normalize both short and fully-qualified spellings to the
+            // type available in the running editor so callers can use either name.
             if (typeName == "PhysicsMaterial" || typeName == "PhysicMaterial"
                 || typeName == "UnityEngine.PhysicsMaterial" || typeName == "UnityEngine.PhysicMaterial")
             {
-#if UNITY_6000_0_OR_NEWER
-                return typeof(PhysicsMaterial);
-#else
-                return typeof(PhysicMaterial);
-#endif
+                return typeof(PipelinePhysicsMaterial);
             }
-
 
             var direct = Type.GetType(typeName, throwOnError: false);
             if (direct != null)
@@ -578,27 +611,10 @@ namespace Unity.Pipeline.Editor.Commands.Assets
                     return byFullName;
             }
 
-            // Fall back to a short-name match across all loaded types.
-            foreach (var assembly in PipelineUtils.GetLoadedAssemblies())
-            {
-                Type[] types;
-                try
-                {
-                    types = assembly.GetTypes();
-                }
-                catch (ReflectionTypeLoadException ex)
-                {
-                    types = ex.Types;
-                }
-
-                foreach (var candidate in types)
-                {
-                    if (candidate != null && candidate.Name == typeName)
-                        return candidate;
-                }
-            }
-
-            return null;
+            // Fall back to a short-name match across all loaded types, preferring
+            // UnityEngine.Object-derived types — see FindTypeByShortName for why that preference makes
+            // this deterministic rather than assembly-order dependent.
+            return FindTypeByShortName(LoadedTypes(), typeName);
         }
     }
 }

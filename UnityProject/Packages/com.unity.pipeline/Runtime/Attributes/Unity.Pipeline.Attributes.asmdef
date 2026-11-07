@@ -1,0 +1,14 @@
+{
+    "name": "Unity.Pipeline.Attributes",
+    "rootNamespace": "Unity.Pipeline.MethodReload",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

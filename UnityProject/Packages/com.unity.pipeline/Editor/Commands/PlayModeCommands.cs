@@ -8,12 +8,14 @@ namespace Unity.Pipeline.Editor.Commands
     /// Commands for controlling Unity Editor play mode state.
     /// Enables automation workflows to control Editor play/stop/pause from CLI tools.
     /// </summary>
-    public static class PlayModeCommands
+    static class PlayModeCommands
     {
+        const string Group = "editor.playmode";
+
         // TODO Pipeline: should all commands have name with namespace: editor.play build.generate instead of using _
 
-        [CliCommand("editor_play", "Enter Unity Editor play mode")]
-        public static string EnterPlayMode()
+        [CliGroupCommand(Group, "Enter Unity Editor play mode", Tags = new[] { "editor/playmode" })]
+        public static string Start()
         {
             if (EditorApplication.isPlaying)
             {
@@ -25,8 +27,47 @@ namespace Unity.Pipeline.Editor.Commands
             return "Entered play mode";
         }
 
-        [CliCommand("editor_stop", "Exit Unity Editor play mode")]
-        public static string ExitPlayMode()
+        /// <summary>
+        /// Override the project's Run In Background Player Setting so the Play-mode player loop
+        /// keeps running while the Editor is unfocused (CLI-1432). Unlike <c>editor.playmode start</c>, which
+        /// used to do this implicitly and silently for every Play session, this records an explicit
+        /// override that lasts until reverted or until the Editor quits: <c>enabled: true</c>
+        /// remembers the project's own value (unless an override is already active) and turns Run
+        /// In Background on; <c>enabled: false</c> stops
+        /// the override and restores the project's own value, unless the "Ensure editor runs in
+        /// background in PlayMode" project setting is still forcing it on right now. A build always
+        /// uses the project's own value regardless of either — see
+        /// <see cref="BuildProcessors.PipelineRuntimeBuildProcessor"/>.
+        /// </summary>
+        [CliGroupCommand(Group,
+            "Override the project's Run In Background Player Setting, recording enough state to restore it later and to keep it out of builds",
+            Tags = new[] { "editor/playmode" })]
+        public static string SetRunInBackground(
+            [CliArg("enabled", "Turn the override on (true, default) or stop it (false) and restore the project's own value, unless the \"Ensure editor runs in background in PlayMode\" setting is still forcing it on right now")] bool enabled = true)
+        {
+            var cfg = EditorPipelineConfig.Load() ?? ScriptableObject.CreateInstance<EditorPipelineConfig>();
+            try
+            {
+                // First settle any change the user made themselves (they win and the stored override
+                // ends), so this explicit request is applied on top of it instead of being swallowed
+                // by it: asking again is how the override comes back.
+                PipelineServerStartup.ReconcileRunInBackground(cfg, EditorApplication.isPlaying, out _);
+                cfg.SetRunInBackgroundCommandOverride(enabled);
+                PipelineServerStartup.ReconcileRunInBackground(cfg, EditorApplication.isPlaying, out var message);
+                // Always persisted, regardless of whether the override's net effect changed: the
+                // command's own record field (RunInBackgroundCommandOverride) always needs saving,
+                // even when e.g. the Play-mode setting was already forcing the same result.
+                cfg.Save();
+                return message;
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(cfg);
+            }
+        }
+
+        [CliGroupCommand(Group, "Exit Unity Editor play mode", Tags = new[] { "editor/playmode" })]
+        public static string Stop()
         {
             if (!EditorApplication.isPlaying)
             {
@@ -38,8 +79,8 @@ namespace Unity.Pipeline.Editor.Commands
             return "Exited play mode";
         }
 
-        [CliCommand("editor_pause", "Pause Unity Editor play mode")]
-        public static string PausePlayMode()
+        [CliGroupCommand(Group, "Toggle pause state of Unity Editor play mode", Tags = new[] { "editor/playmode" })]
+        public static string Pause()
         {
             if (!EditorApplication.isPlaying)
             {

@@ -6,7 +6,7 @@ How the package's tests exercise commands. There are two complementary styles �
 
 ### ViaClient — exercise the full HTTP path
 
-Spin up an isolated `PipelineTestServer` and call `server.Execute(command, params)`. This goes over HTTP through the same routing, parameter coercion, and threading the real server uses — it tests the command *as a client sees it*.
+Spin up an isolated `PipelineTestServer` and call `server.Execute(command, params)`, naming the command through the `CommandNames` constants (`CommandNames.GameobjectSetTransform` names the `gameobject set_transform` command). This goes over HTTP through the same routing, parameter coercion, and threading the real server uses — it tests the command *as a client sees it*.
 
 ```csharp
 [Test]
@@ -16,7 +16,7 @@ public void SetTransform_ViaClient_ArrayParams_Apply()
 
     using (var server = new PipelineTestServer())
     {
-        var response = server.Execute("set_transform", new
+        var response = server.Execute(CommandNames.GameobjectSetTransform, new
         {
             target   = new { instanceId = PipelineUtils.GetObjectId(go) },
             position = new[] { 1f, 2f, 3f },
@@ -24,7 +24,7 @@ public void SetTransform_ViaClient_ArrayParams_Apply()
             scale    = new[] { 2f, 2f, 2f }
         });
 
-        Assert.IsTrue(response.IsSuccess, $"set_transform should succeed: {response.Error}");
+        Assert.IsTrue(response.IsSuccess, $"{CommandNames.GameobjectSetTransform} should succeed: {response.Error}");
         Assert.AreEqual(new Vector3(1, 2, 3), go.transform.localPosition);
     }
 }
@@ -58,10 +58,10 @@ Use **CommandDirect** to verify a command's behavior with strongly-typed inputs;
 
 | Helper | Role |
 |--------|------|
-| `PipelineTestServer` | Disposable wrapper that starts an isolated `TestEditorPipelineServer`, wires up a `PipelineClient`, and exposes `Execute(command, parameters, timeoutMs = 30000)`. Pumps the server dispatcher during each call to avoid main-thread deadlock. |
-| `TestEditorPipelineServer` | `EditorPipelineServer` subclass for tests. Overrides `WritesDescriptor => false`, `GetPortRange() => (7850, 7899)`, and `GetToken()` (from `SecurityTokenManager`) so it is fully isolated from the live server. |
+| `PipelineTestServer` | Disposable wrapper that starts an isolated `TestEditorPipelineServer`, wires up a `PipelineClient`, and exposes `Execute(command, parameters, timeout = null, requestTimeout = null)` (both `TimeSpan?`; `timeout` defaults to 30 s); `requestTimeout` is sent as the request's `timeout`. Pumps the server dispatcher during each call to avoid main-thread deadlock. |
+| `TestEditorPipelineServer` | `EditorPipelineServer` subclass for tests. Overrides `AdvertisesEndpoint => false`, `GetPortRange() => (7850, 7899)`, and `GetToken()` (from `SecurityTokenManager`) so it is fully isolated from the live server. |
 | `PipelineClient` | Test-side HTTP client. Constructed from a URL+token or a server/manager instance. Key methods: `ExecuteCommandAsync` (`/api/exec`), `GetStatusAsync` (`/api/status`), `PostJsonAsync`. Returns a `PipelineResponse` (`IsSuccess`, `StatusCode`, `Error`, `JsonResponse`, `IsCommandSuccess`). |
-| `EditorTestUtilities` | Async helpers for editor state, e.g. `WaitFor(Func<bool> condition, timeoutMs)` to poll a condition without busy-waiting. |
+| `EditorTestUtilities` | Async helpers for editor state, e.g. `WaitFor(Func<bool> condition, TimeSpan? timeout = null)` to poll a condition without busy-waiting. |
 | `LiveServerGuard` | Assembly-level `ITestAction` that asserts the **live editor server survives the test run**. |
 
 ### `PipelineTestServer` setup
@@ -71,7 +71,7 @@ public PipelineTestServer()
 {
     m_Server = new TestEditorPipelineServer();
     m_Server.Start(); // auto-assigns a port in 7850-7899; writes no descriptor
-    m_Client = new PipelineClient($"http://localhost:{m_Server.Port}", SecurityTokenManager.GetOrCreateToken());
+    m_Client = new PipelineClient($"http://127.0.0.1:{m_Server.Port}", SecurityTokenManager.GetOrCreateToken());
 }
 ```
 

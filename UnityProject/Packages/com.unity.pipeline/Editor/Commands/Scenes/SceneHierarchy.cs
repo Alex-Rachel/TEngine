@@ -18,7 +18,7 @@ namespace Unity.Pipeline.Editor.Commands.Scenes
     /// survives the HTTP boundary cleanly.
     /// </summary>
     [Serializable]
-    public class SceneHierarchy
+    class SceneHierarchy
     {
         /// <summary>Scene name (the file name without extension for a saved scene).</summary>
         [JsonProperty("sceneName")]
@@ -47,7 +47,7 @@ namespace Unity.Pipeline.Editor.Commands.Scenes
     /// follow-up GameObject commands.
     /// </summary>
     [Serializable]
-    public class SceneHierarchyNode
+    class SceneHierarchyNode
     {
         /// <summary>GameObject name.</summary>
         [JsonProperty("name")]

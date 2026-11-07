@@ -1,4 +1,7 @@
 using System;
+#if UNITY_6000_5_OR_NEWER
+using Unity.Scripting.LifecycleManagement;
+#endif
 
 namespace Unity.Pipeline.Editor.Commands.Animation
 {
@@ -14,7 +17,10 @@ namespace Unity.Pipeline.Editor.Commands.Animation
     /// The guard caches its result for the lifetime of the domain; a package add/remove triggers a
     /// domain reload, which resets the cache.
     /// </summary>
-    public static class TimelineGuard
+#if UNITY_6000_5_OR_NEWER
+    [NoAutoStaticsCleanup]
+#endif
+    static class TimelineGuard
     {
         /// <summary>The package id, surfaced in the not-installed error message.</summary>
         public const string PackageId = "com.unity.timeline";

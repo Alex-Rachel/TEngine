@@ -15,15 +15,15 @@ namespace Unity.Pipeline.Editor.Commands.ProjectSettings
     /// name → value map — returned by a <c>get</c>, and re-read after a <c>set</c> so the caller can
     /// confirm the change without a second round-trip.</para>
     ///
-    /// <para>Writes follow the shared <c>confirm</c>/<c>dry_run</c> convention, so
+    /// <para>Writes follow the shared <c>confirm</c>/<c>dry-run</c> convention, so
     /// <see cref="Applied"/> / <see cref="DryRun"/> mirror its semantics: a change only mutates when
     /// it actually ran (not a preview, not refused). <see cref="RequiresDomainReload"/> and
     /// <see cref="RequiresReimport"/> flag side effects an agent must wait out — e.g. switching the
     /// scripting backend or API level triggers a domain reload; some graphics/texture changes trigger
-    /// an asset reimport. They describe the operation, so a <c>dry_run</c> still reports them.</para>
+    /// an asset reimport. They describe the operation, so a <c>dry-run</c> still reports them.</para>
     /// </summary>
     [Serializable]
-    public class ProjectSettingsResponse
+    class ProjectSettingsResponse
     {
         [JsonProperty("success")]
         public bool Success { get; set; }

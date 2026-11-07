@@ -10,9 +10,10 @@ namespace Unity.Pipeline.Editor.Commands.ProjectSettings
     /// reads/writes its serialized properties (global volume, rolloff scale, doppler factor) via
     /// <see cref="ProjectSettingsAsset"/>. Properties absent in a given Unity version are skipped.
     /// </summary>
-    public static class AudioSettingsCommands
+    static class AudioSettingsCommands
     {
-        const string Group = "audio";
+        const string Domain = "audio";
+        const string Group = "settings." + Domain;
         const string AssetPath = "ProjectSettings/AudioManager.asset";
 
         // Serialized property name -> response/plan label.
@@ -20,23 +21,23 @@ namespace Unity.Pipeline.Editor.Commands.ProjectSettings
         const string RolloffProp = "Rolloff Scale";
         const string DopplerProp = "Doppler Factor";
 
-        [CliCommand("get_audio_settings", "Read project Audio settings (volume, rolloff scale, doppler factor).", MainThreadRequired = true)]
-        public static ProjectSettingsResponse Get() => ProjectSettingsCommand.Get(Group, Read);
+        [CliGroupCommand(Group, "Read project Audio settings (volume, rolloff scale, doppler factor).", MainThreadRequired = true, Tags = new[] { "settings/audio" })]
+        public static ProjectSettingsResponse Get() => ProjectSettingsCommand.Get(Domain, Read);
 
-        [CliCommand("set_audio_settings", "Change project Audio settings. Requires confirm=true; use dry_run to preview. Not undoable via Ctrl+Z.", MainThreadRequired = true)]
+        [CliGroupCommand(Group, "Change project Audio settings. Requires confirm=true; use dry-run to preview. Not undoable via Ctrl+Z.", MainThreadRequired = true, Tags = new[] { "settings/audio" })]
         public static ProjectSettingsResponse Set(
             [CliArg("settings", "Fields to change; omitted fields are left unchanged.")] AudioSettingsInput settings = null,
             [CliArg("confirm", "Apply the change. Without it the call is refused.")] bool confirm = false,
-            [CliArg("dry_run", "Preview the change without applying it.")] bool dryRun = false)
+            [CliArg("dry-run", "Preview the change without applying it.")] bool dryRun = false)
         {
             if (settings == null)
-                return ProjectSettingsResponse.Fail(Group, "No 'settings' object provided.");
+                return ProjectSettingsResponse.Fail(Domain, "No 'settings' object provided.");
 
             var so = ProjectSettingsAsset.Load(AssetPath);
             var changes = new List<string>();
             AddFloatChange(so, VolumeProp, "volume", settings.Volume, changes);
-            AddFloatChange(so, RolloffProp, "rolloffScale", settings.RolloffScale, changes);
-            AddFloatChange(so, DopplerProp, "dopplerFactor", settings.DopplerFactor, changes);
+            AddFloatChange(so, RolloffProp, "rolloff-scale", settings.RolloffScale, changes);
+            AddFloatChange(so, DopplerProp, "doppler-factor", settings.DopplerFactor, changes);
 
             if (changes.Count == 0)
                 return NoChanges();
@@ -53,12 +54,12 @@ namespace Unity.Pipeline.Editor.Commands.ProjectSettings
                 AssetDatabase.SaveAssets();
             }
 
-            return ProjectSettingsCommand.Apply(Group, confirm, dryRun, settings, () => planText, Apply, Read);
+            return ProjectSettingsCommand.Apply(Domain, confirm, dryRun, settings, () => planText, Apply, Read);
         }
 
         static ProjectSettingsResponse NoChanges()
         {
-            var response = ProjectSettingsCommand.Get(Group, Read);
+            var response = ProjectSettingsCommand.Get(Domain, Read);
             response.Message = "No changes specified; nothing to apply.";
             return response;
         }
@@ -68,8 +69,8 @@ namespace Unity.Pipeline.Editor.Commands.ProjectSettings
             var so = ProjectSettingsAsset.Load(AssetPath);
             var values = new Dictionary<string, object>();
             AddFloat(so, VolumeProp, "volume", values);
-            AddFloat(so, RolloffProp, "rolloffScale", values);
-            AddFloat(so, DopplerProp, "dopplerFactor", values);
+            AddFloat(so, RolloffProp, "rolloff-scale", values);
+            AddFloat(so, DopplerProp, "doppler-factor", values);
             return values;
         }
 
@@ -102,15 +103,15 @@ namespace Unity.Pipeline.Editor.Commands.ProjectSettings
     }
 
     /// <summary>Audio settings to change. Null/omitted fields are left unchanged.</summary>
-    public class AudioSettingsInput : IStructuredCommandInput
+    class AudioSettingsInput : IStructuredCommandInput
     {
         [CliArg("volume", "Global audio volume (0..1).")]
         public float? Volume { get; set; }
 
-        [CliArg("rolloffScale", "Global rolloff scale.")]
+        [CliArg("rolloff-scale", "Global rolloff scale.")]
         public float? RolloffScale { get; set; }
 
-        [CliArg("dopplerFactor", "Global doppler factor.")]
+        [CliArg("doppler-factor", "Global doppler factor.")]
         public float? DopplerFactor { get; set; }
     }
 }

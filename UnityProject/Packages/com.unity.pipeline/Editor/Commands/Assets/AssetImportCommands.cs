@@ -6,6 +6,9 @@ using Unity.Pipeline.Commands;
 using Unity.Pipeline.Editor.Authoring;
 using Unity.Pipeline.Models;
 using UnityEditor;
+#if UNITY_6000_5_OR_NEWER
+using Unity.Scripting.LifecycleManagement;
+#endif
 
 namespace Unity.Pipeline.Editor.Commands.Assets
 {
@@ -39,8 +42,13 @@ namespace Unity.Pipeline.Editor.Commands.Assets
     /// source file, so no <c>confirm</c> is required.
     /// </para>
     /// </summary>
-    public static class AssetImportCommands
+#if UNITY_6000_5_OR_NEWER
+    [NoAutoStaticsCleanup]
+#endif
+    static class AssetImportCommands
     {
+        const string Group = "asset";
+
         // Caller-facing platform names accepted by both commands. "Default" means the default platform
         // (top-level importer properties / default sample settings); the rest are real build platforms.
         private static readonly HashSet<string> s_SupportedPlatforms = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -48,12 +56,12 @@ namespace Unity.Pipeline.Editor.Commands.Assets
             "Default", "Standalone", "iOS", "Android", "WebGL", "tvOS"
         };
 
-        [CliCommand("set_import_settings", "Set import settings on an asset's AssetImporter (default platform top-level properties, or a texture/audio per-platform override) and re-import it.")]
+        [CliGroupCommand(Group, "Set import settings on an asset's AssetImporter (default platform top-level properties, or a texture/audio per-platform override) and re-import it.", Tags = new[] { "assets/import" })]
         public static SetImportSettingsResult SetImportSettings(
             [CliArg("asset", "Reference to the asset whose importer to edit (path / guid / globalId).", Required = true)] ObjectRef asset,
             [CliArg("settings", "JSON object of importer property/field names to values, e.g. {\"isReadable\": true, \"textureType\": \"NormalMap\"}. For platform != Default on a texture/audio importer, keys map onto the platform-settings struct (e.g. maxTextureSize, format, compressionFormat, quality, and overridden).", Required = true)] JObject settings,
             [CliArg("platform", "Target platform: Default | Standalone | iOS | Android | WebGL | tvOS. Defaults to Default (top-level importer properties). A real platform writes a per-platform override (textures/audio only).")] string platform = "Default",
-            [CliArg("dry_run", "If true, validate which settings would apply (and which are unknown) without writing or re-importing.")] bool dryRun = false)
+            [CliArg("dry-run", "If true, validate which settings would apply (and which are unknown) without writing or re-importing.")] bool dryRun = false)
         {
             var importer = ResolveImporter(asset, out var assetPath);
 
@@ -118,7 +126,7 @@ namespace Unity.Pipeline.Editor.Commands.Assets
             return result;
         }
 
-        [CliCommand("get_import_settings", "Read an asset's import settings, structured by importer type (texture/model/audio), including the default-platform fields and (for textures/audio) one platform override block.")]
+        [CliGroupCommand(Group, "Read an asset's import settings, structured by importer type (texture/model/audio), including the default-platform fields and (for textures/audio) one platform override block.", Tags = new[] { "assets/import" })]
         public static GetImportSettingsResult GetImportSettings(
             [CliArg("asset", "Reference to the asset whose importer to read (path / guid / globalId).", Required = true)] ObjectRef asset,
             [CliArg("platform", "Platform whose override to read: Default | Standalone | iOS | Android | WebGL | tvOS. Defaults to Default.")] string platform = "Default")
@@ -226,7 +234,7 @@ namespace Unity.Pipeline.Editor.Commands.Assets
 
             foreach (var key in keys)
             {
-                // In dry_run we only validate the member exists and the value converts — never mutate the
+                // In dry-run we only validate the member exists and the value converts — never mutate the
                 // (possibly cached) importer instance, so a dry run leaves no trace.
                 var applied = TryApplyMember(importer, importerType, flags, key, settings[key], write);
                 if (applied)
@@ -599,7 +607,7 @@ namespace Unity.Pipeline.Editor.Commands.Assets
     /// Result of <c>set_import_settings</c>: target platform plus which keys were applied vs. unknown.
     /// </summary>
     [Serializable]
-    public class SetImportSettingsResult
+    class SetImportSettingsResult
     {
         [Newtonsoft.Json.JsonProperty("assetPath")]
         public string AssetPath { get; set; }
@@ -623,7 +631,7 @@ namespace Unity.Pipeline.Editor.Commands.Assets
     /// non-import assets.
     /// </summary>
     [Serializable]
-    public class GetImportSettingsResult
+    class GetImportSettingsResult
     {
         [Newtonsoft.Json.JsonProperty("assetPath")]
         public string AssetPath { get; set; }
@@ -643,7 +651,7 @@ namespace Unity.Pipeline.Editor.Commands.Assets
 
     /// <summary>Structured error payload serialized into the thrown ArgumentException message.</summary>
     [Serializable]
-    public class ErrorResult
+    class ErrorResult
     {
         [Newtonsoft.Json.JsonProperty("code")]
         public string Code { get; set; }

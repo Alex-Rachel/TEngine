@@ -25,8 +25,10 @@ namespace Unity.Pipeline.Editor.Commands.GameObjects
     /// <see cref="AuthoringResult"/> envelope (via <see cref="ObjectResolver.Describe"/>) so the
     /// agent can address the same object in a follow-up call.
     /// </summary>
-    public static class GameObjectCommands
+    static class GameObjectCommands
     {
+        const string Group = "gameobject";
+
         /// <summary>
         /// Create an empty GameObject or a built-in primitive in the active scene.
         ///
@@ -36,9 +38,10 @@ namespace Unity.Pipeline.Editor.Commands.GameObjects
         /// <see cref="Undo.RegisterCreatedObjectUndo"/> so it can be reverted, and an optional parent
         /// is resolved by handle so a whole hierarchy can be built in one sequence of calls.
         /// </summary>
-        [CliCommand("create_gameobject",
-            "Create an empty GameObject or a built-in primitive (cube/sphere/capsule/cylinder/plane/quad) in the active scene.")]
-        public static AuthoringResult CreateGameObject(
+        [CliGroupCommand(Group,
+            "Create an empty GameObject or a built-in primitive (cube/sphere/capsule/cylinder/plane/quad) in the active scene.",
+            Tags = new[] { "gameobjects" })]
+        public static AuthoringResult Create(
             [CliArg("name", "Name for the new GameObject. Defaults to 'GameObject' (or the primitive name).")] string name = null,
             [CliArg("primitive", "Optional primitive type: cube, sphere, capsule, cylinder, plane, quad. Omit for an empty GameObject.")] string primitive = null,
             [CliArg("parent", "Optional parent handle (globalId/path/guid/instanceId/hierarchyPath). The new object becomes a child of it.")] ObjectRef parent = null)
@@ -57,7 +60,7 @@ namespace Unity.Pipeline.Editor.Commands.GameObjects
         /// <summary>
         /// Create N GameObjects (empty or a primitive) in one server round-trip (CLI-223).
         ///
-        /// WHY a separate plural command rather than overloading <see cref="CreateGameObject"/>: the
+        /// WHY a separate plural command rather than overloading <see cref="Create"/>: the
         /// single command's contract — one call returns one <see cref="AuthoringResult"/> — is relied
         /// on by existing callers and tests, so it is left untouched. This plural command is the batch
         /// surface and returns a <see cref="CreateGameObjectsResult"/> envelope (count + per-item
@@ -70,9 +73,10 @@ namespace Unity.Pipeline.Editor.Commands.GameObjects
         /// object at its creation default (origin / identity / unit scale). The whole batch is wrapped
         /// in ONE <see cref="AuthoringUndoScope"/> so it reverts as a single Undo step.
         /// </summary>
-        [CliCommand("create_gameobjects",
-            "Batch-create N empty GameObjects or primitives in one call. Optional positions/rotations/scales are arrays of [x,y,z] (length must equal count). Returns the created identities.")]
-        public static CreateGameObjectsResult CreateGameObjects(
+        [CliGroupCommand(Group,
+            "Batch-create N empty GameObjects or primitives in one call. Optional positions/rotations/scales are arrays of [x,y,z] (length must equal count). Returns the created identities.",
+            Tags = new[] { "gameobjects" })]
+        public static CreateGameObjectsResult CreateMany(
             [CliArg("name", "Base name. With count>1 and no explicit names, objects are suffixed Name1..NameN.")] string name = null,
             [CliArg("primitive", "Optional primitive type: cube, sphere, capsule, cylinder, plane, quad. Omit for empty GameObjects.")] string primitive = null,
             [CliArg("parent", "Optional parent handle. Every created object becomes a child of it.")] ObjectRef parent = null,
@@ -128,14 +132,15 @@ namespace Unity.Pipeline.Editor.Commands.GameObjects
         /// to discover what exists before they can reference it, and the result set carries the same
         /// <see cref="AuthoringResult"/> identities used everywhere else.
         /// </summary>
-        [CliCommand("find_gameobjects",
-            "Find GameObjects in loaded scenes by name, tag, component type, and/or hierarchy path (filters are combined). Returns structured identities.")]
-        public static FindGameObjectsResult FindGameObjects(
+        [CliGroupCommand(Group,
+            "Find GameObjects in loaded scenes by name, tag, component type, and/or hierarchy path (filters are combined). Returns structured identities.",
+            Tags = new[] { "gameobjects" })]
+        public static FindGameObjectsResult Find(
             [CliArg("name", "Exact name to match.")] string name = null,
             [CliArg("tag", "Tag to match (e.g. 'Player').")] string tag = null,
             [CliArg("type", "Component type name to match (e.g. 'Rigidbody', 'UnityEngine.Camera').")] string type = null,
-            [CliArg("hierarchy_path", "Exact hierarchy path to match (e.g. '/Root/Child').")] string hierarchyPath = null,
-            [CliArg("include_inactive", "Include inactive GameObjects. Default true.")] bool includeInactive = true)
+            [CliArg("hierarchy-path", "Exact hierarchy path to match (e.g. '/Root/Child').")] string hierarchyPath = null,
+            [CliArg("include-inactive", "Include inactive GameObjects. Default true.")] bool includeInactive = true)
         {
             Type componentType = null;
             if (!string.IsNullOrEmpty(type))
@@ -181,8 +186,9 @@ namespace Unity.Pipeline.Editor.Commands.GameObjects
         /// Any omitted channel is left unchanged. Goes through <see cref="Undo.RegisterCompleteObjectUndo"/>
         /// on the Transform so the change is reversible and recorded as a prefab override where relevant.
         /// </summary>
-        [CliCommand("set_transform",
-            "Set a GameObject's local position/rotation(euler)/scale. Omitted channels are left unchanged.")]
+        [CliGroupCommand(Group,
+            "Set a GameObject's local position/rotation(euler)/scale. Omitted channels are left unchanged.",
+            Tags = new[] { "gameobjects" })]
         public static AuthoringResult SetTransform(
             [CliArg("target", "Handle of the GameObject to modify.", Required = true)] ObjectRef target,
             [CliArg("position", "Local position as [x,y,z].")] float[] position = null,
@@ -213,12 +219,13 @@ namespace Unity.Pipeline.Editor.Commands.GameObjects
         /// is a single undoable operation. World position is preserved by default to match the
         /// Editor's drag-to-reparent behavior.
         /// </summary>
-        [CliCommand("set_parent",
-            "Reparent a GameObject under a new parent, or detach it to scene root when no parent is given.")]
+        [CliGroupCommand(Group,
+            "Reparent a GameObject under a new parent, or detach it to scene root when no parent is given.",
+            Tags = new[] { "gameobjects" })]
         public static AuthoringResult SetParent(
             [CliArg("target", "Handle of the GameObject to reparent.", Required = true)] ObjectRef target,
             [CliArg("parent", "Handle of the new parent. Omit (or empty) to move the object to the scene root.")] ObjectRef parent = null,
-            [CliArg("world_position_stays", "Keep the object's world position when reparenting. Default true.")] bool worldPositionStays = true)
+            [CliArg("world-position-stays", "Keep the object's world position when reparenting. Default true.")] bool worldPositionStays = true)
         {
             var go = ResolveGameObject(target, "target");
             Transform parentTransform = null;
@@ -234,7 +241,7 @@ namespace Unity.Pipeline.Editor.Commands.GameObjects
         }
 
         /// <summary>Set a GameObject's active self-state.</summary>
-        [CliCommand("set_active", "Set a GameObject's active self-state (activeSelf).")]
+        [CliGroupCommand(Group, "Set a GameObject's active self-state (activeSelf).", Tags = new[] { "gameobjects" })]
         public static AuthoringResult SetActive(
             [CliArg("target", "Handle of the GameObject.", Required = true)] ObjectRef target,
             [CliArg("active", "Desired active state.", Required = true)] bool active)
@@ -254,7 +261,7 @@ namespace Unity.Pipeline.Editor.Commands.GameObjects
         /// tag surfaces a clear error rather than silently creating one (tag creation is a project
         /// settings mutation outside this command's scope).
         /// </summary>
-        [CliCommand("set_tag", "Set a GameObject's tag (the tag must already exist in the project).")]
+        [CliGroupCommand(Group, "Set a GameObject's tag (the tag must already exist in the project).", Tags = new[] { "gameobjects" })]
         public static AuthoringResult SetTag(
             [CliArg("target", "Handle of the GameObject.", Required = true)] ObjectRef target,
             [CliArg("tag", "Tag to assign (must exist in the Tag Manager).", Required = true)] string tag)
@@ -276,7 +283,7 @@ namespace Unity.Pipeline.Editor.Commands.GameObjects
         /// Set a GameObject's layer by name or numeric index. A name is resolved via
         /// <see cref="LayerMask.NameToLayer"/>; an out-of-range index or unknown name is rejected.
         /// </summary>
-        [CliCommand("set_layer", "Set a GameObject's layer by name or numeric index (0-31).")]
+        [CliGroupCommand(Group, "Set a GameObject's layer by name or numeric index (0-31).", Tags = new[] { "gameobjects" })]
         public static AuthoringResult SetLayer(
             [CliArg("target", "Handle of the GameObject.", Required = true)] ObjectRef target,
             [CliArg("layer", "Layer name (e.g. 'UI') or numeric index 0-31.", Required = true)] string layer)
@@ -294,8 +301,8 @@ namespace Unity.Pipeline.Editor.Commands.GameObjects
         }
 
         /// <summary>Rename a GameObject.</summary>
-        [CliCommand("rename_gameobject", "Rename a GameObject.")]
-        public static AuthoringResult RenameGameObject(
+        [CliGroupCommand(Group, "Rename a GameObject.", Tags = new[] { "gameobjects" })]
+        public static AuthoringResult Rename(
             [CliArg("target", "Handle of the GameObject.", Required = true)] ObjectRef target,
             [CliArg("name", "New name.", Required = true)] string name)
         {
@@ -317,8 +324,8 @@ namespace Unity.Pipeline.Editor.Commands.GameObjects
         /// deletion is reversible. The result describes the object's identity captured *before*
         /// destruction (the live object is gone afterwards).
         /// </summary>
-        [CliCommand("delete_gameobject", "Delete a GameObject from the scene (reversible via Undo).")]
-        public static AuthoringResult DeleteGameObject(
+        [CliGroupCommand(Group, "Delete a GameObject from the scene (reversible via Undo).", Tags = new[] { "gameobjects" })]
+        public static AuthoringResult Delete(
             [CliArg("target", "Handle of the GameObject to delete.", Required = true)] ObjectRef target)
         {
             var go = ResolveGameObject(target, "target");
@@ -367,7 +374,7 @@ namespace Unity.Pipeline.Editor.Commands.GameObjects
         /// <summary>
         /// Create a single GameObject (empty or a primitive), apply an optional name, register it for
         /// Undo, and parent it under <paramref name="parentTransform"/> when given. Shared by the
-        /// single <see cref="CreateGameObject"/> and the batch <see cref="CreateGameObjects"/> so both
+        /// single <see cref="Create"/> and the batch <see cref="CreateMany"/> so both
         /// build objects identically. MUST be called inside an <see cref="AuthoringUndoScope"/>.
         /// </summary>
         private static GameObject CreateOne(string primitive, string name, Transform parentTransform)

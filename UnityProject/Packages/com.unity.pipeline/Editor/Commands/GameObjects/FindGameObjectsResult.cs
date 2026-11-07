@@ -12,7 +12,7 @@ namespace Unity.Pipeline.Editor.Commands.GameObjects
     /// <see cref="AuthoringResult"/> identity returned by the single-object commands, so a result can
     /// be fed straight back as an <see cref="ObjectRef"/> in a follow-up call.
     /// </summary>
-    public sealed class FindGameObjectsResult
+    sealed class FindGameObjectsResult
     {
         /// <summary>Number of GameObjects that matched the query.</summary>
         [JsonProperty("count")]

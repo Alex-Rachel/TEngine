@@ -3,7 +3,7 @@ using System;
 namespace Unity.Pipeline.Editor.Commands.PackageManager
 {
     /// <summary>Where an added package comes from, derived from its identifier string (CLI-203).</summary>
-    public enum PackageSourceKind
+    enum PackageSourceKind
     {
         /// <summary>Could not be classified (e.g. empty input).</summary>
         Unknown,
@@ -20,7 +20,7 @@ namespace Unity.Pipeline.Editor.Commands.PackageManager
 
     /// <summary>A parsed UPM <c>package_add</c> identifier — the normalized string handed to
     /// <c>Client.Add</c> plus the pieces extracted for plan/audit text.</summary>
-    public sealed class ParsedPackageId
+    sealed class ParsedPackageId
     {
         /// <summary>How the package will be resolved by UPM.</summary>
         public PackageSourceKind Kind { get; set; }
@@ -44,7 +44,7 @@ namespace Unity.Pipeline.Editor.Commands.PackageManager
     /// unit-testable without a live editor; the command layer feeds the result to
     /// <c>UnityEditor.PackageManager.Client.Add</c>.
     /// </summary>
-    public static class PackageIdentifier
+    static class PackageIdentifier
     {
         /// <summary>Classify an identifier without parsing out its parts.</summary>
         public static PackageSourceKind Classify(string identifier)

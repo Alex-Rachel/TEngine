@@ -20,22 +20,25 @@ namespace Unity.Pipeline.Editor.Commands.Animation
     ///
     /// Like the animation-clip commands, paths/handles are sandbox-confined via
     /// <see cref="ProjectPaths"/> / <see cref="ObjectResolver"/>, and every command supports
-    /// <c>dry_run</c>. Some AnimatorController API calls register Undo internally, but sub-object edits
+    /// <c>dry-run</c>. Some AnimatorController API calls register Undo internally, but sub-object edits
     /// are not reliably undoable, so changes are persisted with <see cref="EditorUtility.SetDirty"/> +
     /// <see cref="AssetDatabase.SaveAssets"/>.
     ///
     /// Out of scope (v1): BlendTree authoring (assigning an EXISTING BlendTree as a state motion is
     /// allowed), StateMachineBehaviours, sub-state machines, and humanoid/avatar configuration.
     /// </summary>
-    public static class AnimatorControllerCommands
+    static class AnimatorControllerCommands
     {
-        [CliCommand("create_animator_controller",
+        const string Group = "animation.animator";
+
+        [CliGroupCommand(Group,
             "Create an .controller AnimatorController asset (with a default Base Layer) under the authoring root.",
-            MainThreadRequired = true)]
-        public static AuthoringResult CreateAnimatorController(
+            MainThreadRequired = true,
+            Tags = new[] { "animation/animator" })]
+        public static AuthoringResult CreateController(
             [CliArg("path", "Asset path ending in .controller, relative to the authoring root. The Assets/ prefix is optional.", Required = true)] string path,
             [CliArg("confirm", "Required (true) only when overwriting an existing asset at the path.")] bool confirm = false,
-            [CliArg("dry_run", "If true, validate inputs and report what would be created without writing anything.")] bool dryRun = false)
+            [CliArg("dry-run", "If true, validate inputs and report what would be created without writing anything.")] bool dryRun = false)
         {
             var normalized = ProjectPaths.Resolve(path, out var error);
             if (normalized == null)
@@ -67,15 +70,16 @@ namespace Unity.Pipeline.Editor.Commands.Animation
             return result;
         }
 
-        [CliCommand("add_animator_parameter",
+        [CliGroupCommand(Group,
             "Add a parameter (Float | Int | Bool | Trigger) to an AnimatorController. A duplicate name returns code 'duplicate_parameter'.",
-            MainThreadRequired = true)]
-        public static object AddAnimatorParameter(
+            MainThreadRequired = true,
+            Tags = new[] { "animation/animator" })]
+        public static object AddParameter(
             [CliArg("controller", "Reference to the AnimatorController to edit (path / guid / globalId).", Required = true)] ObjectRef controller,
             [CliArg("name", "Parameter name.", Required = true)] string name,
             [CliArg("type", "Parameter type: Float | Int | Bool | Trigger.", Required = true)] string type = null,
-            [CliArg("defaultValue", "Default value for Float/Int/Bool (ignored for Trigger).")] JToken defaultValue = null,
-            [CliArg("dry_run", "If true, validate inputs without writing the parameter.")] bool dryRun = false)
+            [CliArg("default-value", "Default value for Float/Int/Bool (ignored for Trigger).")] JToken defaultValue = null,
+            [CliArg("dry-run", "If true, validate inputs without writing the parameter.")] bool dryRun = false)
         {
             var (ctrl, ctrlPath) = ResolveController(controller);
             if (string.IsNullOrWhiteSpace(name))
@@ -86,7 +90,7 @@ namespace Unity.Pipeline.Editor.Commands.Animation
             if (ctrl.parameters.Any(p => p.name == name))
                 return ErrorResult.PackageStyle("duplicate_parameter", $"A parameter named '{name}' already exists on '{ctrlPath}'.");
 
-            // Resolve (and validate) the default value up front so dry_run also fails on a bad value.
+            // Resolve (and validate) the default value up front so dry-run also fails on a bad value.
             float defFloat = 0f;
             int defInt = 0;
             bool defBool = false;
@@ -133,22 +137,23 @@ namespace Unity.Pipeline.Editor.Commands.Animation
             return result;
         }
 
-        [CliCommand("add_animator_layer",
+        [CliGroupCommand(Group,
             "Add a layer to an AnimatorController.",
-            MainThreadRequired = true)]
-        public static object AddAnimatorLayer(
+            MainThreadRequired = true,
+            Tags = new[] { "animation/animator" })]
+        public static object AddLayer(
             [CliArg("controller", "Reference to the AnimatorController to edit (path / guid / globalId).", Required = true)] ObjectRef controller,
             [CliArg("name", "Layer name.", Required = true)] string name,
             [CliArg("weight", "Layer weight (default 1).")] float weight = 1f,
-            [CliArg("blendingMode", "Blending mode: Override | Additive (default Override).")] string blendingMode = "Override",
-            [CliArg("dry_run", "If true, validate inputs without writing the layer.")] bool dryRun = false)
+            [CliArg("blending-mode", "Blending mode: Override | Additive (default Override).")] string blendingMode = "Override",
+            [CliArg("dry-run", "If true, validate inputs without writing the layer.")] bool dryRun = false)
         {
             var (ctrl, ctrlPath) = ResolveController(controller);
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("name is required.");
 
             if (!Enum.TryParse<AnimatorLayerBlendingMode>(blendingMode, ignoreCase: true, out var mode))
-                throw new ArgumentException($"Unknown blendingMode '{blendingMode}'. Use Override | Additive.");
+                throw new ArgumentException($"Unknown blending-mode '{blendingMode}'. Use Override | Additive.");
 
             var index = ctrl.layers.Length;
             var result = new AddLayerResult
@@ -175,18 +180,19 @@ namespace Unity.Pipeline.Editor.Commands.Animation
             return result;
         }
 
-        [CliCommand("add_animator_state",
+        [CliGroupCommand(Group,
             "Add a state to a layer, optionally with a motion (AnimationClip or BlendTree) and as the layer default. " +
             "A layer name with no match returns code 'layer_not_found'.",
-            MainThreadRequired = true)]
-        public static object AddAnimatorState(
+            MainThreadRequired = true,
+            Tags = new[] { "animation/animator" })]
+        public static object AddState(
             [CliArg("controller", "Reference to the AnimatorController to edit (path / guid / globalId).", Required = true)] ObjectRef controller,
             [CliArg("layer", "Layer index (int) or name (string). Default 0 (Base Layer).")] JToken layer = null,
             [CliArg("name", "State name.", Required = true)] string name = null,
             [CliArg("motion", "Optional AnimationClip or BlendTree asset to assign as the state's motion.")] ObjectRef motion = null,
-            [CliArg("isDefault", "If true, set this state as the layer's default state.")] bool isDefault = false,
+            [CliArg("is-default", "If true, set this state as the layer's default state.")] bool isDefault = false,
             [CliArg("position", "Optional [x, y] node position in the graph (cosmetic).")] JArray position = null,
-            [CliArg("dry_run", "If true, validate inputs without writing the state.")] bool dryRun = false)
+            [CliArg("dry-run", "If true, validate inputs without writing the state.")] bool dryRun = false)
         {
             var (ctrl, ctrlPath) = ResolveController(controller);
             if (string.IsNullOrWhiteSpace(name))
@@ -251,33 +257,34 @@ namespace Unity.Pipeline.Editor.Commands.Animation
             return result;
         }
 
-        [CliCommand("add_animator_transition",
+        [CliGroupCommand(Group,
             "Add a transition between two states (or from AnyState/Entry, to Exit) on a layer, with optional conditions. " +
             "Validates that the states exist and each condition's parameter exists and its mode matches the parameter type.",
-            MainThreadRequired = true)]
-        public static object AddAnimatorTransition(
+            MainThreadRequired = true,
+            Tags = new[] { "animation/animator" })]
+        public static object AddTransition(
             [CliArg("controller", "Reference to the AnimatorController to edit (path / guid / globalId).", Required = true)] ObjectRef controller,
             [CliArg("layer", "Layer index (int) or name (string). Default 0 (Base Layer).")] JToken layer = null,
-            [CliArg("fromState", "Source state name, or the special \"AnyState\" / \"Entry\".", Required = true)] string fromState = null,
-            [CliArg("toState", "Destination state name, or the special \"Exit\".", Required = true)] string toState = null,
+            [CliArg("from-state", "Source state name, or the special \"AnyState\" / \"Entry\".", Required = true)] string fromState = null,
+            [CliArg("to-state", "Destination state name, or the special \"Exit\".", Required = true)] string toState = null,
             [CliArg("conditions", "Optional conditions: [{ parameter, mode: \"If\"|\"IfNot\"|\"Greater\"|\"Less\"|\"Equals\"|\"NotEqual\", threshold? }].")] JArray conditions = null,
-            [CliArg("hasExitTime", "If true, the transition uses exit time (default false).")] bool hasExitTime = false,
-            [CliArg("exitTime", "Normalized exit time (0..1) when hasExitTime is set.")] float exitTime = 0f,
+            [CliArg("has-exit-time", "If true, the transition uses exit time (default false).")] bool hasExitTime = false,
+            [CliArg("exit-time", "Normalized exit time (0..1) when has-exit-time is set.")] float exitTime = 0f,
             [CliArg("duration", "Transition duration in seconds (default 0.25).")] float duration = 0.25f,
-            [CliArg("hasFixedDuration", "If true, duration is in seconds; otherwise normalized (default true).")] bool hasFixedDuration = true,
-            [CliArg("dry_run", "If true, validate everything (states, parameters, mode/type) without writing the transition.")] bool dryRun = false)
+            [CliArg("has-fixed-duration", "If true, duration is in seconds; otherwise normalized (default true).")] bool hasFixedDuration = true,
+            [CliArg("dry-run", "If true, validate everything (states, parameters, mode/type) without writing the transition.")] bool dryRun = false)
         {
             var (ctrl, ctrlPath) = ResolveController(controller);
             if (string.IsNullOrWhiteSpace(fromState))
-                throw new ArgumentException("fromState is required.");
+                throw new ArgumentException("from-state is required.");
             if (string.IsNullOrWhiteSpace(toState))
-                throw new ArgumentException("toState is required.");
+                throw new ArgumentException("to-state is required.");
 
             // exitTime is normalized (0..1) and only meaningful with hasExitTime; duration must be
             // non-negative. Reject out-of-range values up front (writing nothing) rather than letting
             // Unity clamp them unpredictably.
             if (hasExitTime && (exitTime < 0f || exitTime > 1f))
-                throw new ArgumentException($"exitTime must be in [0, 1] when hasExitTime is set (got {exitTime}).");
+                throw new ArgumentException($"exit-time must be in [0, 1] when has-exit-time is set (got {exitTime}).");
             if (duration < 0f)
                 throw new ArgumentException($"duration must be >= 0 (got {duration}).");
 
@@ -377,10 +384,11 @@ namespace Unity.Pipeline.Editor.Commands.Animation
             return result;
         }
 
-        [CliCommand("get_animator_controller",
+        [CliGroupCommand(Group,
             "Read an AnimatorController's full structure: parameters, layers, states (with motion / default), and transitions (with conditions).",
-            MainThreadRequired = true)]
-        public static AnimatorControllerInfo GetAnimatorController(
+            MainThreadRequired = true,
+            Tags = new[] { "animation/animator" })]
+        public static AnimatorControllerInfo GetController(
             [CliArg("controller", "Reference to the AnimatorController to read (path / guid / globalId).", Required = true)] ObjectRef controller)
         {
             var (ctrl, ctrlPath) = ResolveController(controller);
@@ -623,7 +631,7 @@ namespace Unity.Pipeline.Editor.Commands.Animation
                 }
             }
 
-            error = $"No layer named '{name}' on the controller. Add it first with add_animator_layer.";
+            error = $"No layer named '{name}' on the controller. Add it first with {CommandNames.AnimationAnimatorAddLayer}.";
             return false;
         }
 
@@ -712,7 +720,7 @@ namespace Unity.Pipeline.Editor.Commands.Animation
 
     /// <summary>A structured, non-throwing error envelope ({ error, code }) returned at HTTP 200.</summary>
     [Serializable]
-    public class ErrorResult
+    class ErrorResult
     {
         [JsonProperty("error")]
         public string Error { get; set; }
@@ -724,7 +732,7 @@ namespace Unity.Pipeline.Editor.Commands.Animation
     }
 
     [Serializable]
-    public class ParameterInfo
+    class ParameterInfo
     {
         [JsonProperty("name")]
         public string Name { get; set; }
@@ -737,14 +745,14 @@ namespace Unity.Pipeline.Editor.Commands.Animation
     }
 
     [Serializable]
-    public class AddParameterResult : AuthoringResult
+    class AddParameterResult : AuthoringResult
     {
         [JsonProperty("parameter")]
         public ParameterInfo Parameter { get; set; }
     }
 
     [Serializable]
-    public class LayerSummary
+    class LayerSummary
     {
         [JsonProperty("name")]
         public string Name { get; set; }
@@ -757,14 +765,14 @@ namespace Unity.Pipeline.Editor.Commands.Animation
     }
 
     [Serializable]
-    public class AddLayerResult : AuthoringResult
+    class AddLayerResult : AuthoringResult
     {
         [JsonProperty("layer")]
         public LayerSummary Layer { get; set; }
     }
 
     [Serializable]
-    public class StateSummary
+    class StateSummary
     {
         [JsonProperty("name")]
         public string Name { get; set; }
@@ -780,14 +788,14 @@ namespace Unity.Pipeline.Editor.Commands.Animation
     }
 
     [Serializable]
-    public class AddStateResult : AuthoringResult
+    class AddStateResult : AuthoringResult
     {
         [JsonProperty("state")]
         public StateSummary State { get; set; }
     }
 
     [Serializable]
-    public class TransitionSummary
+    class TransitionSummary
     {
         [JsonProperty("from")]
         public string From { get; set; }
@@ -800,14 +808,14 @@ namespace Unity.Pipeline.Editor.Commands.Animation
     }
 
     [Serializable]
-    public class AddTransitionResult : AuthoringResult
+    class AddTransitionResult : AuthoringResult
     {
         [JsonProperty("transition")]
         public TransitionSummary Transition { get; set; }
     }
 
     [Serializable]
-    public class AnimatorControllerInfo
+    class AnimatorControllerInfo
     {
         [JsonProperty("assetPath")]
         public string AssetPath { get; set; }
@@ -820,7 +828,7 @@ namespace Unity.Pipeline.Editor.Commands.Animation
     }
 
     [Serializable]
-    public class LayerInfo
+    class LayerInfo
     {
         [JsonProperty("name")]
         public string Name { get; set; }
@@ -839,7 +847,7 @@ namespace Unity.Pipeline.Editor.Commands.Animation
     }
 
     [Serializable]
-    public class StateInfo
+    class StateInfo
     {
         [JsonProperty("name")]
         public string Name { get; set; }
@@ -852,7 +860,7 @@ namespace Unity.Pipeline.Editor.Commands.Animation
     }
 
     [Serializable]
-    public class TransitionInfo
+    class TransitionInfo
     {
         [JsonProperty("from")]
         public string From { get; set; }
@@ -871,7 +879,7 @@ namespace Unity.Pipeline.Editor.Commands.Animation
     }
 
     [Serializable]
-    public class ConditionInfo
+    class ConditionInfo
     {
         [JsonProperty("parameter")]
         public string Parameter { get; set; }

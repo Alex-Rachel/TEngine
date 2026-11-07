@@ -1,38 +1,38 @@
 # Safety & mutations
 
 Mutating commands — asset writes, project-settings changes, package/build changes —
-share two conventions so command authors and clients know what to expect: a `confirm`/`dry_run` gate
+share two conventions so command authors and clients know what to expect: a `confirm`/`dry-run` gate
 on destructive or overwriting operations, and Undo grouping via `AuthoringUndoScope`. Commands that
 resolve caller-supplied asset paths confine them with `ProjectPaths` (see
 [Creating authoring commands](authoring-commands.md)). The helpers live in `Editor/Authoring/`.
 
-### The confirm / dry_run convention
+### The confirm / dry-run convention
 
-Destructive or overwriting commands expose two boolean `[CliArg]`s — `confirm` and `dry_run` — and
+Destructive or overwriting commands expose two boolean `[CliArg]`s — `confirm` and `dry-run` — and
 gate their own mutation on them. There is no central dispatcher; each command applies the same simple
 rules inline:
 
-- **`dry_run == true`** → validate and describe the intended change, mutate nothing, return a preview.
+- **`dry-run == true`** → validate and describe the intended change, mutate nothing, return a preview.
   This wins even if `confirm` is also true.
 - **`confirm == false`** (and not a dry run) → refuse without mutating. Return the failure the way the
   command reports its other errors — `throw new ArgumentException(...)` for the throwing style (e.g.
-  `delete_asset`, `clear_baked_lighting`), or a structured error object for commands that return
-  structured results (e.g. `build`, which returns `{ success = false, status = "error", message = "…" }`).
+  `asset delete`, `lighting clear_bake`), or a structured error object for commands that return
+  structured results (e.g. `build run`, which returns `{ success = false, status = "error", message = "…" }`).
 - **otherwise** (`confirm == true`, not a dry run) → perform the mutation. Group *scene/object*
   mutations in an `AuthoringUndoScope` (see below). Asset/settings/package writes are **not** part of
   Unity's Undo, so they run directly — say so in the command description ("Not undoable via Ctrl+Z.").
 
 ```csharp
-[CliCommand("clear_baked_lighting", "Clear baked lightmap data for the open scene(s). Destructive: requires confirm=true (use dry_run to preview). Not undoable via Ctrl+Z.")]
-public static object ClearBakedLighting(
+[CliGroupCommand(Group, "Clear baked lightmap data for the open scene(s). Destructive: requires confirm=true (use dry-run to preview). Not undoable via Ctrl+Z.")]
+public static object ClearBake(
     [CliArg("confirm", "Apply the clear. Without it the call is refused.")] bool confirm = false,
-    [CliArg("dry_run", "Preview what would be cleared without clearing it.")] bool dryRun = false)
+    [CliArg("dry-run", "Preview what would be cleared without clearing it.")] bool dryRun = false)
 {
     // …resolve the open scene(s)…
     if (dryRun)
         return new { status = "dry_run", wouldClear = true };
     if (!confirm)
-        throw new ArgumentException("Refusing to clear baked lighting. Pass confirm=true to apply, or dry_run=true to preview.");
+        throw new ArgumentException("Refusing to clear baked lighting. Pass confirm=true to apply, or dry-run=true to preview.");
 
     // Clearing baked GI is not part of Unity's Undo — no AuthoringUndoScope.
     Lightmapping.Clear();
@@ -41,8 +41,8 @@ public static object ClearBakedLighting(
 }
 ```
 
-Purely additive, non-destructive commands (e.g. `create_folder`, `add_animator_parameter`)
-do not take `confirm`/`dry_run`; they just perform the mutation directly.
+Purely additive, non-destructive commands (e.g. `asset create_folder`, `animation.animator add_parameter`)
+do not take `confirm`/`dry-run`; they just perform the mutation directly.
 
 ### Undo grouping
 
@@ -74,14 +74,14 @@ if (normalized == null)
 ```
 
 See [Creating authoring commands](authoring-commands.md) for the full path-handling rules and the
-`set_authoring_root` / `get_authoring_root` commands that adjust the root.
+`authoring set_root` / `authoring get_root` commands that adjust the root.
 
 ### For command authors
 
 To make a mutating command safe:
 
-1. If the operation is destructive or overwrites existing content, add `confirm` and `dry_run` boolean
-   `[CliArg]`s and gate on them inline (preview on `dry_run`, refuse on `!confirm`).
+1. If the operation is destructive or overwrites existing content, add `confirm` and `dry-run` boolean
+   `[CliArg]`s and gate on them inline (preview on `dry-run`, refuse on `!confirm`).
 2. Group scene/object mutations in `using (new AuthoringUndoScope("<operation>"))` and register Undo
    operations inside it where the mutation is undoable.
 3. Resolve any caller-supplied asset path through `ProjectPaths.Resolve` before touching the filesystem

@@ -1,245 +1,197 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
+#if UNITY_EDITOR || UNITY_STANDALONE
+using UnityPipeline.Microsoft.CodeAnalysis;
+using UnityPipeline.Microsoft.CodeAnalysis.CSharp;
+#endif
 using Unity.Pipeline.Models;
+using Unity.Pipeline.Telemetry;
 using UnityEngine;
 
 namespace Unity.Pipeline.Compilation
 {
     /// <summary>
     /// C# code evaluation service using shared Roslyn compilation infrastructure.
-    /// Wraps user code in Execute() method, compiles, and executes with result serialization.
+    /// Compiles a snippet as a C# script, runs it, awaits it, and serializes its result.
     /// Supports both Editor and Runtime compilation for desktop development builds.
     /// </summary>
-    public static class EvalCodeCompiler
+    static class EvalCodeCompiler
     {
 #if UNITY_EDITOR || (UNITY_STANDALONE && DEBUG)
 
-        // Fixed lines in the generated source before user code begins
-        private const int BaseCodeLineOffset = 11;
+        // The snippet follows a two-line preamble: the Object alias line, then `#line 1` so stack
+        // traces count the snippet's own lines. Diagnostics report raw lines, so subtracting one
+        // less than the preamble makes the snippet's first line `line: 1`.
+        const string k_ObjectAlias = "using Object = UnityEngine.Object;";
+        const int k_DiagnosticLineOffset = 1;
+        const string k_DocumentPath = "eval.cs";
+
+        // A newly imported namespace can bring new unresolved names to light; stop after this many.
+        const int k_MaxAutoImportRounds = 3;
+
+        static readonly CSharpParseOptions k_ScriptParseOptions = new CSharpParseOptions(kind: SourceCodeKind.Script);
 
         /// <summary>
-        /// Compile and execute code on Unity's main thread using Roslyn.
-        /// Eval is a MainThreadRequired command, so the server marshals the caller to the main
-        /// thread before invoking this; compilation + execution run synchronously here.
+        /// Compile and run <paramref name="code"/> on the calling thread, which must be Unity's main
+        /// thread. Awaits in the snippet resume on Unity's synchronization context, so this awaits
+        /// the script's task without blocking: the editor keeps pumping while it runs.
         /// </summary>
-        public static EvalResponse CompileAndExecuteOnMainThread(string code, int timeoutMs, System.Diagnostics.Stopwatch stopwatch)
+        /// <param name="code">The C# script to evaluate.</param>
+        /// <param name="stopwatch">Running stopwatch used to report execution time in the response.</param>
+        /// <param name="dryRun">Compile only: report diagnostics; nothing is loaded or run.</param>
+        /// <param name="autoImport">On unresolved names, import the namespace declaring each one and compile again.</param>
+        /// <param name="internals">Compile under <see cref="InternalsAccessName"/>, so Unity's internal APIs are callable. Editor only.</param>
+        /// <param name="details">Receives what the eval records for analytics; null to record nothing.</param>
+        /// <returns>The evaluation result.</returns>
+        public static async Task<EvalResponse> CompileAndExecuteAsync(string code, Stopwatch stopwatch, bool dryRun = false, bool autoImport = false, bool internals = false,
+            EvalAnalyticsDetails details = null)
         {
-            if (stopwatch == null)
+            stopwatch ??= Stopwatch.StartNew();
+
+            var assemblyName = $"PipelineEval_{Guid.NewGuid():N}";
+            if (internals)
             {
-                stopwatch = System.Diagnostics.Stopwatch.StartNew();
-            }
-
-            try
-            {
-                // Compile on current thread
-                var compilationResult = CompileCodeToAssembly(code, timeoutMs, stopwatch);
-
-                if (!compilationResult.Success)
-                {
-                    stopwatch.Stop();
-                    return EvalResponse.EvalFailure(
-                        "Compilation Failed",
-                        "Code compilation failed",
-                        stopwatch.ElapsedMilliseconds,
-                        compilationResult.Diagnostics);
-                }
-
-                // Execute on current thread
-                var executionResult = ExecuteCompiledAssembly(compilationResult.Assembly);
-
-                stopwatch.Stop();
-
-                if (executionResult.Success)
-                {
-                    return EvalResponse.EvalSuccess(
-                        executionResult.ReturnValue,
-                        executionResult.Output,
-                        stopwatch.ElapsedMilliseconds);
-                }
-                else
+                assemblyName = InternalsAccessName.Get();
+                if (assemblyName == null)
                 {
                     return EvalResponse.EvalFailure(
-                        executionResult.Error,
-                        executionResult.ErrorDetails,
+                        EvalResponse.InternalErrorCode,
+                        "Internals Unavailable",
+                        "No assembly name that Unity's core modules grant internal access to is free to use",
                         stopwatch.ElapsedMilliseconds);
                 }
             }
-            catch (Exception ex)
+
+            var request = BuildRequest(code, assemblyName, Application.isEditor, dryRun);
+            var compilation = RoslynCompilationService.Compile(request);
+
+            List<string> addedUsings = null;
+            for (var round = 0; autoImport && !compilation.Success && round < k_MaxAutoImportRounds; round++)
             {
-                stopwatch.Stop();
+                var resolution = EvalAutoImport.Resolve(compilation.Diagnostics, includeNonPublic: internals);
+                if (resolution.Ambiguous || resolution.Namespaces.Count == 0)
+                    break;
+
+                (addedUsings ??= new List<string>()).AddRange(resolution.Namespaces);
+                request.ScriptUsings = request.ScriptUsings.Concat(resolution.Namespaces).ToArray();
+                compilation = RoslynCompilationService.Compile(request);
+            }
+
+            details?.RecordCompilation(compilation);
+
+            var response = await Run(compilation, dryRun, stopwatch, details);
+            response.AddedUsings = addedUsings;
+            return response;
+        }
+
+        static async Task<EvalResponse> Run(CompilationResult compilation, bool dryRun, Stopwatch stopwatch, EvalAnalyticsDetails details)
+        {
+            if (!compilation.Success)
+            {
                 return EvalResponse.EvalFailure(
-                    "Execution Failed",
-                    ex.ToString(),
-                    stopwatch.ElapsedMilliseconds);
+                    EvalResponse.CompilationErrorCode,
+                    "Compilation Failed",
+                    SummarizeErrors(compilation.Diagnostics),
+                    stopwatch.ElapsedMilliseconds,
+                    compilation.Diagnostics);
             }
-        }
 
-        /// <summary>
-        /// Compile C# code to assembly using shared RoslynCompilationService.
-        /// Thread-safe and can run on background thread.
-        /// </summary>
-        private static CompilationResult CompileCodeToAssembly(string userCode, int timeoutMs, System.Diagnostics.Stopwatch stopwatch)
-        {
-            var id = Guid.NewGuid().ToString("N").Substring(0, 8);
-
-            // Generate wrapper code
-            var sourceCode = BuildSourceCode(id, userCode, Application.isEditor);
-
-            // Use shared compilation service
-            var request = new CompilationRequest
+            if (dryRun)
             {
-                SourceCode = sourceCode,
-                AssemblyName = $"PipelineEval_{id}",
-                LineNumberOffset = BaseCodeLineOffset // Adjust diagnostics for wrapper code
-            };
-
-            var result = RoslynCompilationService.Compile(request);
-
-            if (result.Success)
-            {
-                // Add execution context for eval-specific needs
-                return new CompilationResult
-                {
-                    Success = true,
-                    Assembly = result.Assembly,
-                    ExecutionContext = new ExecutionContext
-                    {
-                        AssemblyId = id,
-                        TypeName = $"PipelineEvaluation.PipelineEval_{id}",
-                        MethodName = "Execute"
-                    },
-                    Diagnostics = result.Diagnostics
-                };
+                var compiled = EvalResponse.EvalSuccess(null, null, stopwatch.ElapsedMilliseconds, compilation.Diagnostics);
+                compiled.Message = "Compiled successfully (dry run; nothing was loaded or executed).";
+                return compiled;
             }
-            else
+
+            if (compilation.ScriptEntryPoint == null)
             {
-                return new CompilationResult
-                {
-                    Success = false,
-                    Diagnostics = result.Diagnostics
-                };
+                return EvalResponse.EvalFailure(
+                    EvalResponse.InternalErrorCode,
+                    "Assembly Load Error",
+                    "Could not find the compiled script's entry point",
+                    stopwatch.ElapsedMilliseconds,
+                    compilation.Diagnostics);
             }
-        }
 
-        /// <summary>
-        /// Generate C# source code wrapper for user code with conditional editor support.
-        /// </summary>
-        private static string BuildSourceCode(string id, string userCode, bool isEditorContext)
-        {
-            var editorUsing = isEditorContext ? "using UnityEditor;" : "";
+            // Captured before the script's first await, after which CommandContext.Current is gone;
+            // waits in the script observe it through the ambient token.
+            PipelineCancellation.AmbientToken = Commands.CommandContext.Current?.CancellationToken ?? CancellationToken.None;
 
-            return $@"using System;
-using System.Collections.Generic;
-using System.Linq;
-using UnityEngine;
-{editorUsing}
-
-namespace PipelineEvaluation
-{{
-    public static class PipelineEval_{id}
-    {{
-        public static object Execute()
-        {{
-            {userCode}
-            return null;
-        }}
-    }}
-}}";
-        }
-
-
-        /// <summary>
-        /// Execute compiled assembly and return result.
-        /// Must run on Unity's main thread for safe Unity API access.
-        /// </summary>
-        private static ExecutionResult ExecuteCompiledAssembly(Assembly assembly)
-        {
+            object value;
             try
             {
-                var executionContext = GetExecutionContextFromAssembly(assembly);
-
-                var type = assembly.GetType(executionContext.TypeName);
-                var method = type?.GetMethod(executionContext.MethodName, BindingFlags.Public | BindingFlags.Static);
-
-                if (type == null)
-                {
-                    return new ExecutionResult
-                    {
-                        Success = false,
-                        Error = "Assembly Load Error",
-                        ErrorDetails = $"Could not find type {executionContext.TypeName} in compiled assembly"
-                    };
-                }
-
-                if (method == null)
-                {
-                    return new ExecutionResult
-                    {
-                        Success = false,
-                        Error = "Method Not Found",
-                        ErrorDetails = $"Could not find method {executionContext.MethodName} in compiled type"
-                    };
-                }
-
-                var result = method.Invoke(null, null);
-
-                return new ExecutionResult
-                {
-                    Success = true,
-                    ReturnValue = SerializeResult(result)
-                };
-            }
-            catch (TargetInvocationException tie) when (tie.InnerException != null)
-            {
-                return new ExecutionResult
-                {
-                    Success = false,
-                    Error = "Runtime Error",
-                    ErrorDetails = tie.InnerException.Message,
-                    StackTrace = tie.InnerException.StackTrace
-                };
+                var task = (Task<object>)compilation.ScriptEntryPoint.Invoke(null, new object[] { new object[2] });
+                value = await task;
             }
             catch (Exception ex)
             {
-                return new ExecutionResult
-                {
-                    Success = false,
-                    Error = "Execution Error",
-                    ErrorDetails = ex.Message,
-                    StackTrace = ex.StackTrace
-                };
+                var inner = (ex as TargetInvocationException)?.InnerException ?? ex;
+                details?.RecordException(inner, compilation.Assembly);
+                return EvalResponse.EvalFailure(
+                    EvalResponse.RuntimeExceptionCode,
+                    "Runtime Error",
+                    $"{inner.GetType().Name}: {inner.Message}\n{inner.StackTrace}",
+                    stopwatch.ElapsedMilliseconds,
+                    compilation.Diagnostics);
             }
+
+            return EvalResponse.EvalSuccess(
+                SerializeResult(value),
+                null,
+                stopwatch.ElapsedMilliseconds,
+                compilation.Diagnostics);
         }
 
         /// <summary>
-        /// Get execution context from compiled assembly.
+        /// One line per compile error, for clients that show only the reply's error details.
         /// </summary>
-        private static ExecutionContext GetExecutionContextFromAssembly(Assembly assembly)
+        internal static string SummarizeErrors(List<DiagnosticInfo> diagnostics)
         {
-            // Find PipelineEvaluation types
-            var evalTypes = assembly.GetTypes()
-                .Where(t => t.Namespace == "PipelineEvaluation" && t.Name.StartsWith("PipelineEval_"))
-                .ToList();
+            var errors = diagnostics
+                .Where(d => d.Severity == "error")
+                .Select(d => $"\n  line {d.Line}, col {d.Column}: error {d.Id}: {d.Message}");
+            return "Code compilation failed:" + string.Concat(errors);
+        }
 
-            if (evalTypes.Any())
+        static CompilationRequest BuildRequest(string userCode, string assemblyName, bool isEditorContext, bool dryRun)
+        {
+            var usings = new List<string>
             {
-                var evalType = evalTypes.First();
-                return new ExecutionContext
-                {
-                    TypeName = evalType.FullName,
-                    MethodName = "Execute"
-                };
-            }
+                "System",
+                "System.Collections.Generic",
+                "System.Linq",
+                "System.Threading.Tasks",
+                "UnityEngine",
+                "Unity.Pipeline.Scripting"
+            };
+            if (isEditorContext)
+                usings.Add("UnityEditor");
 
-            // Fallback
-            return new ExecutionContext
+            // A snippet declaring its own Object alias keeps it; the preamble line stays so line
+            // numbers do not shift.
+            var aliasLine = DeclaresObjectAlias(userCode) ? string.Empty : k_ObjectAlias;
+
+            return new CompilationRequest
             {
-                TypeName = "PipelineEvaluation.PipelineEval_Unknown",
-                MethodName = "Execute"
+                SourceCode = $"{aliasLine}\n#line 1\n{userCode}",
+                AssemblyName = assemblyName,
+                LineNumberOffset = k_DiagnosticLineOffset,
+                // In-memory assemblies can't be unloaded, so a dry run never loads one.
+                SkipLoad = dryRun,
+                EmitDebugInformation = !dryRun,
+                DocumentPath = k_DocumentPath,
+                ScriptUsings = usings.ToArray()
             };
         }
+
+        static bool DeclaresObjectAlias(string userCode) =>
+            CSharpSyntaxTree.ParseText(userCode, k_ScriptParseOptions).GetCompilationUnitRoot().Usings
+                .Any(u => u.Alias?.Name.Identifier.ValueText == "Object");
 
         /// <summary>
         /// Serialize result for JSON response.
@@ -277,50 +229,25 @@ namespace PipelineEvaluation
             }
         }
 
-        /// <summary>
-        /// Result from compilation process.
-        /// </summary>
-        private class CompilationResult
-        {
-            public bool Success { get; set; }
-            public Assembly Assembly { get; set; }
-            public ExecutionContext ExecutionContext { get; set; }
-            public List<DiagnosticInfo> Diagnostics { get; set; } = new List<DiagnosticInfo>();
-        }
-
-        /// <summary>
-        /// Result from code execution.
-        /// </summary>
-        private class ExecutionResult
-        {
-            public bool Success { get; set; }
-            public object ReturnValue { get; set; }
-            public string Output { get; set; }
-            public string Error { get; set; }
-            public string ErrorDetails { get; set; }
-            public string StackTrace { get; set; }
-        }
-
-        /// <summary>
-        /// Execution context for compiled assembly.
-        /// </summary>
-        private class ExecutionContext
-        {
-            public string AssemblyId { get; set; }
-            public string TypeName { get; set; }
-            public string MethodName { get; set; }
-        }
-
 #else
         /// <summary>
         /// Runtime compilation not supported on this platform.
         /// Desktop development builds only (Windows/Mac/Linux).
         /// </summary>
-        public static EvalResponse CompileAndExecuteOnMainThread(string code, int timeoutMs, System.Diagnostics.Stopwatch stopwatch)
+        /// <param name="code">Unused on this build.</param>
+        /// <param name="stopwatch">Unused on this build.</param>
+        /// <param name="dryRun">Unused on this build.</param>
+        /// <param name="autoImport">Unused on this build.</param>
+        /// <param name="internals">Unused on this build.</param>
+        /// <param name="details">Unused on this build.</param>
+        /// <returns>A failure result explaining runtime compilation isn't supported on this build.</returns>
+        public static Task<EvalResponse> CompileAndExecuteAsync(string code, System.Diagnostics.Stopwatch stopwatch, bool dryRun = false, bool autoImport = false, bool internals = false,
+            EvalAnalyticsDetails details = null)
         {
-            return EvalResponse.EvalFailure(
+            return Task.FromResult(EvalResponse.EvalFailure(
+                EvalResponse.UnsupportedPlatformCode,
                 "Platform Not Supported",
-                "Runtime code compilation only supported on Desktop development builds");
+                "Runtime code compilation only supported on Desktop development builds"));
         }
 #endif
     }

@@ -12,7 +12,7 @@ namespace Unity.Pipeline.Editor.Commands.Build
     /// platform's build support is actually installed in this editor.
     /// </summary>
     [Serializable]
-    public class BuildTargetInfo
+    class BuildTargetInfo
     {
         /// <summary><c>BuildTarget</c> enum name, e.g. "StandaloneWindows64".</summary>
         [JsonProperty("name")] public string Name { get; set; }
@@ -29,7 +29,7 @@ namespace Unity.Pipeline.Editor.Commands.Build
 
     /// <summary>One scene in the Build Settings scene list, projected for <c>get_build_settings</c>.</summary>
     [Serializable]
-    public class BuildSceneEntry
+    class BuildSceneEntry
     {
         [JsonProperty("path")] public string Path { get; set; }
         [JsonProperty("guid")] public string Guid { get; set; }
@@ -43,18 +43,18 @@ namespace Unity.Pipeline.Editor.Commands.Build
     /// <c>remove_scene_from_build</c> (CLI-189); this only reports the list.
     /// </summary>
     [Serializable]
-    public class BuildSettingsResult
+    class BuildSettingsResult
     {
-        [JsonProperty("activeBuildTarget")] public string ActiveBuildTarget { get; set; }
-        [JsonProperty("activeBuildTargetGroup")] public string ActiveBuildTargetGroup { get; set; }
-        [JsonProperty("developmentBuild")] public bool DevelopmentBuild { get; set; }
-        [JsonProperty("allowDebugging")] public bool AllowDebugging { get; set; }
-        [JsonProperty("connectWithProfiler")] public bool ConnectWithProfiler { get; set; }
-        [JsonProperty("buildScriptsOnly")] public bool BuildScriptsOnly { get; set; }
-        [JsonProperty("symlinkSources")] public bool SymlinkSources { get; set; }
+        [JsonProperty("active-build-target")] public string ActiveBuildTarget { get; set; }
+        [JsonProperty("active-build-target-group")] public string ActiveBuildTargetGroup { get; set; }
+        [JsonProperty("development-build")] public bool DevelopmentBuild { get; set; }
+        [JsonProperty("allow-debugging")] public bool AllowDebugging { get; set; }
+        [JsonProperty("connect-with-profiler")] public bool ConnectWithProfiler { get; set; }
+        [JsonProperty("build-scripts-only")] public bool BuildScriptsOnly { get; set; }
+        [JsonProperty("symlink-sources")] public bool SymlinkSources { get; set; }
 
         /// <summary>"OptimizeSpeed" | "OptimizeSize" for the active build target.</summary>
-        [JsonProperty("il2CppCodeGeneration")] public string Il2CppCodeGeneration { get; set; }
+        [JsonProperty("il2cpp-code-generation")] public string Il2CppCodeGeneration { get; set; }
 
         [JsonProperty("scenes")] public List<BuildSceneEntry> Scenes { get; set; }
     }
@@ -64,24 +64,24 @@ namespace Unity.Pipeline.Editor.Commands.Build
     /// only the ones the caller supplies are changed. Note that <see cref="AllowDebugging"/> and
     /// <see cref="ConnectWithProfiler"/> only take effect when <see cref="DevelopmentBuild"/> is also on.
     /// </summary>
-    public class SetBuildSettingsInput : IStructuredCommandInput
+    class SetBuildSettingsInput : IStructuredCommandInput
     {
-        [CliArg("developmentBuild", "Build a Development Player (enables the debugger/profiler).")]
+        [CliArg("development-build", "Build a Development Player (enables the debugger/profiler).")]
         public bool? DevelopmentBuild { get; set; }
 
-        [CliArg("allowDebugging", "Allow script debugging (only effective with developmentBuild=true).")]
+        [CliArg("allow-debugging", "Allow script debugging (only effective with development-build=true).")]
         public bool? AllowDebugging { get; set; }
 
-        [CliArg("connectWithProfiler", "Auto-connect the Profiler (only effective with developmentBuild=true).")]
+        [CliArg("connect-with-profiler", "Auto-connect the Profiler (only effective with development-build=true).")]
         public bool? ConnectWithProfiler { get; set; }
 
-        [CliArg("buildScriptsOnly", "Build only the scripts (skip data) for faster iteration.")]
+        [CliArg("build-scripts-only", "Build only the scripts (skip data) for faster iteration.")]
         public bool? BuildScriptsOnly { get; set; }
 
-        [CliArg("symlinkSources", "Symlink runtime/plugin sources instead of copying (where supported).")]
+        [CliArg("symlink-sources", "Symlink runtime/plugin sources instead of copying (where supported).")]
         public bool? SymlinkSources { get; set; }
 
-        [CliArg("il2CppCodeGeneration", "IL2CPP code generation for the active target: OptimizeSpeed | OptimizeSize.")]
+        [CliArg("il2cpp-code-generation", "IL2CPP code generation for the active target: OptimizeSpeed | OptimizeSize.")]
         public string Il2CppCodeGeneration { get; set; }
     }
 
@@ -92,7 +92,7 @@ namespace Unity.Pipeline.Editor.Commands.Build
     /// write, without changing anything.
     /// </summary>
     [Serializable]
-    public class SetBuildSettingsResult
+    class SetBuildSettingsResult
     {
         [JsonProperty("success")] public bool Success { get; set; }
         [JsonProperty("dryRun")] public bool DryRun { get; set; }
@@ -111,7 +111,7 @@ namespace Unity.Pipeline.Editor.Commands.Build
 
     /// <summary>One Build Profile asset, projected for <c>list_build_profiles</c> (Unity 6 only).</summary>
     [Serializable]
-    public class BuildProfileInfo
+    class BuildProfileInfo
     {
         [JsonProperty("name")] public string Name { get; set; }
         [JsonProperty("guid")] public string Guid { get; set; }
@@ -122,9 +122,90 @@ namespace Unity.Pipeline.Editor.Commands.Build
         [JsonProperty("isActive")] public bool IsActive { get; set; }
     }
 
+    /// <summary>
+    /// One platform a Build Profile can target, projected for <c>list_build_platforms</c> (AUTHAPI-82).
+    /// Platforms are not one-to-one with <c>BuildTarget</c>: Meta Quest, Android XR and Android all report
+    /// <c>BuildTarget.Android</c>, with the first two flagged <see cref="IsDerived"/>. Pass <see cref="Id"/>
+    /// (or an exact <see cref="DisplayName"/>) to <c>create_build_profile</c> to select one unambiguously.
+    /// </summary>
+    [Serializable]
+    class BuildPlatformInfo
+    {
+        /// <summary>Display name as the Build Profile window shows it, e.g. "Meta Quest".</summary>
+        [JsonProperty("displayName")] public string DisplayName { get; set; }
+
+        /// <summary>Platform GUID, e.g. "80657fe557de4d17822398b3a01b8c9e" for Meta Quest.</summary>
+        [JsonProperty("id")] public string Id { get; set; }
+
+        /// <summary>The underlying <c>BuildTarget</c> name (best-effort; may be empty if unreadable).</summary>
+        [JsonProperty("buildTarget")] public string BuildTarget { get; set; }
+
+        /// <summary>"Player" | "Server" for standalone desktop platforms; "Default" elsewhere.</summary>
+        [JsonProperty("subtarget")] public string Subtarget { get; set; }
+
+        /// <summary>Whether the platform's build support module is installed in this editor.</summary>
+        [JsonProperty("isInstalled")] public bool IsInstalled { get; set; }
+
+        /// <summary>Whether this platform is derived from a base platform (e.g. Meta Quest from Android).</summary>
+        [JsonProperty("isDerived")] public bool IsDerived { get; set; }
+    }
+
+    /// <summary>
+    /// Result of <c>create_build_profile</c> (AUTHAPI-82). A dry run reports the <see cref="AssetPath"/> and
+    /// <see cref="Platform"/> it validated without writing anything, so <see cref="Profile"/> is only present
+    /// once the asset exists.
+    /// </summary>
+    [Serializable]
+    class CreateBuildProfileResult
+    {
+        [JsonProperty("success")] public bool Success { get; set; }
+        [JsonProperty("dryRun")] public bool DryRun { get; set; }
+
+        /// <summary>Project-relative path the profile was (or would be) created at.</summary>
+        [JsonProperty("assetPath")] public string AssetPath { get; set; }
+
+        /// <summary>The resolved target platform.</summary>
+        [JsonProperty("platform")] public BuildPlatformInfo Platform { get; set; }
+
+        /// <summary>The created profile asset; omitted on a dry run.</summary>
+        [JsonProperty("profile", NullValueHandling = NullValueHandling.Ignore)] public BuildProfileInfo Profile { get; set; }
+
+        /// <summary>Whether the new profile was made the active Build Profile.</summary>
+        [JsonProperty("activated")] public bool Activated { get; set; }
+
+        [JsonProperty("message")] public string Message { get; set; }
+    }
+
+    /// <summary>
+    /// Result of <c>edit_build_profile</c> (AUTHAPI-82), shaped like <see cref="SetBuildSettingsResult"/>:
+    /// the settings that changed (<see cref="Applied"/>, new values) versus the supplied settings already at
+    /// the requested value (<see cref="Skipped"/>, current values). A dry run reports the same
+    /// <see cref="Applied"/> set it <em>would</em> write, without changing anything.
+    /// </summary>
+    [Serializable]
+    class EditBuildProfileResult
+    {
+        [JsonProperty("success")] public bool Success { get; set; }
+        [JsonProperty("dryRun")] public bool DryRun { get; set; }
+
+        /// <summary>Project-relative path of the edited profile.</summary>
+        [JsonProperty("assetPath")] public string AssetPath { get; set; }
+
+        /// <summary>The profile after the edit (before it, on a dry run).</summary>
+        [JsonProperty("profile")] public BuildProfileInfo Profile { get; set; }
+
+        /// <summary>Setting name → new value, for each setting that changed (or would change on a dry run).</summary>
+        [JsonProperty("applied")] public Dictionary<string, object> Applied { get; set; } = new Dictionary<string, object>();
+
+        /// <summary>Setting name → current value, for supplied settings that already matched (no-ops).</summary>
+        [JsonProperty("skipped")] public Dictionary<string, object> Skipped { get; set; } = new Dictionary<string, object>();
+
+        [JsonProperty("message")] public string Message { get; set; }
+    }
+
     /// <summary>One output file produced by the build (a row of <c>BuildReport.GetFiles()</c>).</summary>
     [Serializable]
-    public class BuildFileEntry
+    class BuildFileEntry
     {
         [JsonProperty("path")] public string Path { get; set; }
 
@@ -136,7 +217,7 @@ namespace Unity.Pipeline.Editor.Commands.Build
 
     /// <summary>One asset packed into a build bundle/file (a row of a <c>PackedAssets</c> entry).</summary>
     [Serializable]
-    public class PackedAssetContent
+    class PackedAssetContent
     {
         [JsonProperty("assetPath")] public string AssetPath { get; set; }
         [JsonProperty("type")] public string Type { get; set; }
@@ -146,7 +227,7 @@ namespace Unity.Pipeline.Editor.Commands.Build
 
     /// <summary>A packed bundle/file with its per-asset size breakdown (requires DetailedBuildReport).</summary>
     [Serializable]
-    public class PackedAssetEntry
+    class PackedAssetEntry
     {
         [JsonProperty("bundlePath")] public string BundlePath { get; set; }
         [JsonProperty("overheadBytes")] public long OverheadBytes { get; set; }
@@ -155,7 +236,7 @@ namespace Unity.Pipeline.Editor.Commands.Build
 
     /// <summary>One message emitted during a build step.</summary>
     [Serializable]
-    public class BuildStepMessageEntry
+    class BuildStepMessageEntry
     {
         /// <summary>"Log" | "Warning" | "Error" (mapped from <c>LogType</c>).</summary>
         [JsonProperty("type")] public string Type { get; set; }
@@ -164,7 +245,7 @@ namespace Unity.Pipeline.Editor.Commands.Build
 
     /// <summary>One step of the build (a row of <c>BuildReport.steps</c>).</summary>
     [Serializable]
-    public class BuildStepEntry
+    class BuildStepEntry
     {
         [JsonProperty("name")] public string Name { get; set; }
         [JsonProperty("durationMs")] public long DurationMs { get; set; }
@@ -174,7 +255,7 @@ namespace Unity.Pipeline.Editor.Commands.Build
 
     /// <summary>A build error/warning surfaced in <c>build_status</c>, with best-effort source file.</summary>
     [Serializable]
-    public class BuildIssue
+    class BuildIssue
     {
         [JsonProperty("message")] public string Message { get; set; }
 
@@ -197,11 +278,11 @@ namespace Unity.Pipeline.Editor.Commands.Build
     /// Full <c>build_status</c> result for a finished build (CLI-204) — a JSON-friendly projection of
     /// <c>UnityEditor.Build.Reporting.BuildReport</c>. Optional collections are omitted when null
     /// (<see cref="NullValueHandling"/>), so a failed build can carry errors/steps without empty
-    /// file/asset arrays. Transient states (queued/building/idle/dry_run) are reported as small,
+    /// file/asset arrays. Transient states (queued/building/idle/dry-run) are reported as small,
     /// purpose-built payloads, not this type.
     /// </summary>
     [Serializable]
-    public class BuildReportResult
+    class BuildReportResult
     {
         [JsonProperty("status")] public string Status { get; set; }
         [JsonProperty("buildId")] public string BuildId { get; set; }
@@ -234,7 +315,7 @@ namespace Unity.Pipeline.Editor.Commands.Build
     /// source location from a raw build-step message and is exercised directly by the test suite.
     /// </summary>
     [Serializable]
-    public class BuildMessage
+    class BuildMessage
     {
         [JsonProperty("severity")] public string Severity { get; set; }
         [JsonProperty("file")] public string File { get; set; }

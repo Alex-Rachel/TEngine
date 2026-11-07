@@ -1,9 +1,19 @@
 using System;
 using System.IO;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Unity.Pipeline.Commands;
 using UnityEditor;
 using UnityEngine;
+#if UNITY_6000_5_OR_NEWER
+using Unity.Scripting.LifecycleManagement;
+#endif
+
+// Every occlusion API this file drives -- StaticOcclusionCulling -- is [Obsolete] from 6000.7
+// (superseded by GPU Occlusion Culling, which has no equivalent bake-and-poll API yet). It all
+// still functions, and this type exists for no other purpose, so the deprecation warning is
+// suppressed for the whole type rather than at each of its fourteen call sites.
+#pragma warning disable CS0618
 
 namespace Unity.Pipeline.Editor.Commands.Baking
 {
@@ -18,8 +28,12 @@ namespace Unity.Pipeline.Editor.Commands.Baking
     /// static fields and reconciled against a Temp/ status file across domain reloads.
     /// </summary>
     [InitializeOnLoad]
-    public static class OcclusionBakeCommands
+#if UNITY_6000_5_OR_NEWER
+    [NoAutoStaticsCleanup]
+#endif
+    static class OcclusionBakeCommands
     {
+        const string Group = "occlusion";
         const string StatusFile = "Temp/pipeline_occlusion_bake_status.json";
 
         // Sentinel for "argument omitted" on the float bake parameters. float.NaN is not a
@@ -40,13 +54,13 @@ namespace Unity.Pipeline.Editor.Commands.Baking
 
         #region bake_occlusion_culling
 
-        [CliCommand("bake_occlusion_culling", "Trigger an async occlusion-culling bake of the open scene(s) via StaticOcclusionCulling.GenerateInBackground(). Returns immediately; poll occlusion_bake_status until completed.")]
-        public static object BakeOcclusionCulling(
-            [CliArg("smallest_occluder", "Smallest object that will occlude others (meters). Defaults to Unity's current value.")] float smallestOccluder = Unset,
-            [CliArg("smallest_hole", "Smallest gap geometry can have that the view can see through (meters). Defaults to Unity's current value.")] float smallestHole = Unset,
-            [CliArg("backface_threshold", "Backface threshold (1-100); lower trims more backfaces. Defaults to Unity's current value.")] float backfaceThreshold = Unset,
+        [CliGroupCommand(Group, "Trigger an async occlusion-culling bake of the open scene(s) via StaticOcclusionCulling.GenerateInBackground(). Returns immediately; poll " + CommandNames.OcclusionBakeStatus + " until completed.", Tags = new[] { "baking/occlusion" })]
+        public static object Bake(
+            [CliArg("smallest-occluder", "Smallest object that will occlude others (meters). Defaults to Unity's current value.")] float smallestOccluder = Unset,
+            [CliArg("smallest-hole", "Smallest gap geometry can have that the view can see through (meters). Defaults to Unity's current value.")] float smallestHole = Unset,
+            [CliArg("backface-threshold", "Backface threshold (1-100); lower trims more backfaces. Defaults to Unity's current value.")] float backfaceThreshold = Unset,
             [CliArg("confirm", "Accepted for parity (a bake overwrites existing occlusion data); not required.")] bool confirm = false,
-            [CliArg("dry_run", "If true, validate there is an open scene and report the parameters that would be used without baking.")] bool dryRun = false)
+            [CliArg("dry-run", "If true, validate there is an open scene and report the parameters that would be used without baking.")] bool dryRun = false)
         {
             if (!BakeSceneGuard.HasBakeableScene())
                 return BakeSceneGuard.NoSceneResult();
@@ -54,18 +68,18 @@ namespace Unity.Pipeline.Editor.Commands.Baking
             OnUpdate(); // reconcile any stale tracking flag first.
 
             if (StaticOcclusionCulling.isRunning)
-                return new { code = "bake_in_progress", message = "An occlusion bake is already running. Poll occlusion_bake_status." };
+                return new { code = "bake_in_progress", message = "An occlusion bake is already running. Poll " + CommandNames.OcclusionBakeStatus + "." };
 
             // Validate explicitly provided values before resolving. An omitted arg is the Unset
             // sentinel (float.MinValue); NaN is never <= Unset, so a NaN arg is treated as provided
-            // and rejected here. smallest_occluder / smallest_hole must be positive; backface_threshold
+            // and rejected here. smallest-occluder / smallest-hole must be positive; backface-threshold
             // is documented as 1-100.
             if (!IsOmitted(smallestOccluder) && !(smallestOccluder > 0f))
-                throw new ArgumentException($"smallest_occluder must be greater than 0 (got {smallestOccluder}).");
+                throw new ArgumentException($"smallest-occluder must be greater than 0 (got {smallestOccluder}).");
             if (!IsOmitted(smallestHole) && !(smallestHole > 0f))
-                throw new ArgumentException($"smallest_hole must be greater than 0 (got {smallestHole}).");
+                throw new ArgumentException($"smallest-hole must be greater than 0 (got {smallestHole}).");
             if (!IsOmitted(backfaceThreshold) && !(backfaceThreshold >= 1f && backfaceThreshold <= 100f))
-                throw new ArgumentException($"backface_threshold must be between 1 and 100 (got {backfaceThreshold}).");
+                throw new ArgumentException($"backface-threshold must be between 1 and 100 (got {backfaceThreshold}).");
 
             // Resolve effective parameters: an omitted arg (the Unset sentinel) keeps Unity's current value.
             var occluder = IsOmitted(smallestOccluder) ? StaticOcclusionCulling.smallestOccluder : smallestOccluder;
@@ -106,16 +120,14 @@ namespace Unity.Pipeline.Editor.Commands.Baking
             return new { status = "baking", bakeId };
         }
 
-        [CliCommand("occlusion_bake_status", "Get the status of the last occlusion bake: idle | baking | completed.", MainThreadRequired = false)]
-        public static string OcclusionBakeStatus()
+        [CliGroupCommand(Group, "Get the status of the last occlusion bake: idle | baking | completed.", MainThreadRequired = false, Tags = new[] { "baking/occlusion" })]
+        public static JToken BakeStatus()
         {
-            if (File.Exists(StatusFile))
-                return File.ReadAllText(StatusFile);
-            return "{\"status\":\"idle\"}";
+            return StatusFileReader.ReadOrIdle(StatusFile);
         }
 
-        [CliCommand("cancel_occlusion_bake", "Cancel an in-progress occlusion bake (StaticOcclusionCulling.Cancel()).")]
-        public static object CancelOcclusionBake()
+        [CliGroupCommand(Group, "Cancel an in-progress occlusion bake (StaticOcclusionCulling.Cancel()).", Tags = new[] { "baking/occlusion" })]
+        public static object CancelBake()
         {
             var wasRunning = StaticOcclusionCulling.isRunning;
             if (wasRunning)
@@ -140,10 +152,10 @@ namespace Unity.Pipeline.Editor.Commands.Baking
             return new { cancelled = wasRunning };
         }
 
-        [CliCommand("clear_occlusion_culling", "Clear baked occlusion-culling data for the open scene(s). Destructive: requires confirm=true.")]
-        public static object ClearOcclusionCulling(
+        [CliGroupCommand(Group, "Clear baked occlusion-culling data for the open scene(s). Destructive: requires confirm=true.", Tags = new[] { "baking/occlusion" })]
+        public static object ClearBake(
             [CliArg("confirm", "Must be true to actually clear (destructive, not undoable via Unity's Undo).")] bool confirm = false,
-            [CliArg("dry_run", "If true, report what would be cleared without clearing.")] bool dryRun = false)
+            [CliArg("dry-run", "If true, report what would be cleared without clearing.")] bool dryRun = false)
         {
             if (!confirm)
                 throw new ArgumentException("Refusing to clear occlusion culling data. Pass confirm=true (destructive, not undoable via Unity's Undo).");
@@ -234,7 +246,7 @@ namespace Unity.Pipeline.Editor.Commands.Baking
 
     /// <summary>Status/result payload for <c>bake_occlusion_culling</c> / <c>occlusion_bake_status</c>.</summary>
     [Serializable]
-    public class OcclusionBakeStatus
+    class OcclusionBakeStatus
     {
         [JsonProperty("status")]
         public string Status { get; set; }
@@ -257,9 +269,11 @@ namespace Unity.Pipeline.Editor.Commands.Baking
 
     /// <summary>Post-bake occlusion statistics (umbra data size in bytes).</summary>
     [Serializable]
-    public class OcclusionBakeStats
+    class OcclusionBakeStats
     {
         [JsonProperty("umbraDataSizeBytes")]
         public long UmbraDataSizeBytes { get; set; }
     }
 }
+
+#pragma warning restore CS0618
