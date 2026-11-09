@@ -31,8 +31,12 @@ python .codex/scripts/workflow.py verify --profile full
 ```
 
 `docs` 不连接 Editor；`code` 包含 docs 检查及完整解决方案构建；`unity` 包含 Editor 编译、指定资源和明确测试集；
-`full` 组合全部并运行隔离的真实 Luban 普通/分片导出、当前配置源生成校验、浏览器图片/字体/多分辨率回归。
+`full` 组合全部并运行隔离的真实 Luban 普通/整表懒加载导出、当前配置源生成校验、浏览器图片/字体/多分辨率回归。
 C# / 资源变更交付需同时取得 .NET 与相关 Unity 验证证据。纯文档或纯 Python 修改不必形式化触发 Unity。
 Editor 断开、忙、多实例或选中零用例时，必需验证返回阻塞/失败，不能降级声称验收通过。
+
+Unity 自动化以 `Packages/com.unity.pipeline` 为执行基础。命令使用实时发现的 `<group> <name>` 与参数 schema；
+服务 ready 不等于 Editor 空闲，状态观察与新操作分别判断。具体规程只在项目 unity-cli 技能维护。
+当前场景资产校验不遍历场景内部，不能替代场景内容验收；Luban lazyload 当前是整表懒加载，不代表分片能力。
 
 Pipeline 描述文件含鉴权信息，禁止读出到日志、提交或分享。不得连接本机其他工程代替本项目验证。

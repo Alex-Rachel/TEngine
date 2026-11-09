@@ -1,51 +1,53 @@
-# TEngine 集成与分片
+# TEngine 集成与导出
 
 权威输入：[luban.conf](../../../../../Configs/GameConfig/luban.conf)、
 [加载器模板](../../../../../Configs/GameConfig/CustomTemplate/ConfigSystem.cs)、
-[分片说明](../../../../../Configs/GameConfig/CustomTemplate/SHARDED_TABLES.md)。
+[懒加载模板](../../../../../Configs/GameConfig/CustomTemplate/CustomTemplate_Client_LazyLoad/cs-bin/tables.sbn)。
 路径从 Unity 项目出发为 `../Configs/GameConfig`。
 
 | 模式 | 现有脚本 | 产物 |
 |---|---|---|
-| lazyload | gen_code_bin_to_project_lazyload.bat/.sh | cs-bin + bin-sharded + dataExporter=sharded，自定义懒加载模板 |
+| lazyload | gen_code_bin_to_project_lazyload.bat/.sh | cs-bin + bin，Tables 属性首次访问时加载整表 |
 | standard | gen_code_bin_to_project.bat/.sh | cs-bin + bin，标准 Tables |
 
 两者都写 `Assets/GameScripts/HotFix/GameProto` 与 `Assets/AssetRaw/Configs/bytes`。
-工作流固定脚本 cwd，Windows 用参数数组调用 `cmd.exe /d /c`，设置 AI_MODE 并保留失败返回码。
-不要把 Git Bash 的 `cmd //c` 示例搬进 PowerShell。
-已有工具通过 `LUBAN_DLL` 显式指定，生产入口绑定仓库工具；隔离回归使用同一二进制，不重新构建。
+生产导出会复制加载器模板并更新生成目录，必须预览写入范围后取得覆盖授权。
+普通源数据修改沿用用户已明确的目标和输入；只有范围不清、删除或兼容性选择未定时补充确认。
+
+## 校验与生产写入
+
+从 Unity 项目执行：
 
 ```powershell
 python .codex/scripts/workflow.py luban validate
+python .codex/scripts/workflow.py luban test
 python .codex/scripts/workflow.py luban preview --mode lazyload
-# 展示预览，收到真实确认后才执行：
+```
+
+`validate` 按默认 lazyload 模式对当前配置源在 runs 隔离目录生成，`test` 使用最小 fixture；二者都不写生产产物。
+当前脚本按 `../../Tools/Luban/Luban.dll` 寻址，会重设 `LUBAN_DLL`，仅传环境变量不能替代该目录。
+隔离运行器须复制当前本地 `Tools/Luban` 工具快照，保持 `Configs/GameConfig`、`Tools/Luban`、
+`UnityProject/Assets` 的相对结构；不得重新构建、下载或升级工具。执行目录和返回码以实际报告为准。
+Windows 使用受控脚本名及参数数组调用 `cmd.exe /d /c`，不要套用 Git Bash 的 `cmd //c`。
+
+审查 preview 的具体输入与目标，取得真实确认后，使用其返回的计划路径执行：
+
+```powershell
 python .codex/scripts/workflow.py approve --plan <preview.json> --by <reviewer> --reason <confirmation> --high-risk
 python .codex/scripts/workflow.py luban apply --plan <preview.json> --approval <approval.json>
-python .codex/scripts/workflow.py luban test
 ```
 
-## 分片契约
+尖括号表示实际输出或确认记录，不能原样执行。只要求查表或隔离校验的任务在对应阶段结束。
+apply 后检查生成文件、模板复制、与本次隔离结果的差异，再验证 .NET 编译和相关 Unity 加载行为。
 
-tags 支持：
+## 分片能力边界
 
-```text
-partition=field#partition_field=levelId
-partition=range#partition_field=id#partition_size=1000
-partition=count#partition_field=id#partition_size=1000
-```
+当前项目脚本和懒加载模板未实现分片导出及分片缓存 API。不要调用不存在的
+`LoadTbXPartition`、`ReleaseTbXPartition` 或 `ClearPartitions`，也不要把懒加载解释为按分片加载。
+[fixture](../examples/regression/Defines/tables.xml) 中的 `partition=field/range/count` 标签
+保留了待实现需求；标签存在或生成器接受输入，不证明生成了分片、路由索引或释放接口。
 
-分片字段为导出的非空 int/long，禁止负值。range/count 的 map 主键必须就是分片字段。
-field 可用于按关卡聚合的 list 表，示例复合索引 `levelId+waveId`。
-range 从 key 计算分片；count 排序后分组，插入早期 key 可使后续分片重排，另有路由 index。
-field 表不能作为生成 ref 的目标，因为仅凭行 key 无法推导分片。
-
-生成 API 以实际表名为准：field 通过 `LoadTbXPartition(key)` 显式取表；
-range/count 通过 accessor 保留 key 查询，再用对应 `ReleaseTbXPartition`。
-`ClearPartitions` 清除分片与路由索引托管缓存，不清普通懒加载表，也不自动释放 YooAsset 句柄。
-当前 ConfigSystem 模板仍持有 TextAsset 加载引用；释放策略需由加载器集成实现并测试，不改生成代码掩盖问题。
-
-## 兼容性
-
-cs-bin 按生成代码布局读行。新增字段也不能无条件宣称兼容旧客户端。
-代码、数据、分片策略、模板与路由索引要作为同版本产物验证；普通/分片切换属于显式决策。
-回归使用 [最小可执行 fixture](../examples/regression/luban.conf)，覆盖普通表、field/range/count，而非缺文件的演示目录。
+任务确实要求分片时，先核实本地生成器、exporter、模板和运行时集成，再单独界定实施与兼容性验收。
+不能以现有普通 bin 产物宣称分片通过，也不能为完成验证临时切换生产模式。
+cs-bin 按生成代码布局读行；新增字段也不能无条件宣称兼容旧客户端。
+代码、bytes 和模板必须作为同版本产物验证。当前加载器的资源归属限制见 [运行时配置](runtime.md)。

@@ -61,7 +61,7 @@ def luban_preview(run, mode):
         inputs=[script, *(run.context.repo / "Tools/Luban").glob("*.dll")],
         preview={"script": str(script), "mode": mode, "validation": validation,
                  "writes": ["Assets/GameScripts/HotFix/GameProto", "Assets/AssetRaw/Configs/bytes"],
-                 "notes": "Uses the existing script and preserves its sharded exporter selection."},
+                 "notes": "Uses the existing script and its actual exporter/template selection; lazyload does not imply sharding."},
     )
 
 def export_manifest(assets):
@@ -82,6 +82,17 @@ def validate_export(actual, expected):
     return {"verifiedFiles": len(expected)}
 
 
+def snapshot_luban_tool(run, isolated):
+    source = run.context.repo / "Tools/Luban"
+    if not (source / "Luban.dll").is_file():
+        blocked("Project Luban tool is missing; isolated validation never installs or rebuilds it.")
+    # Export scripts resolve Tools/Luban from their repository, overriding LUBAN_DLL.
+    # Copy the installed runtime, dependencies and templates into the isolated layout.
+    destination = Path(isolated) / "Tools/Luban"
+    shutil.copytree(source, destination)
+    return destination
+
+
 def fresh_luban_export(run, script, env):
     # An empty output tree proves freshness even when Luban intentionally avoids rewriting unchanged files.
     isolated = run.path / "fresh export"
@@ -90,6 +101,7 @@ def fresh_luban_export(run, script, env):
     assets = isolated / "UnityProject/Assets"
     (assets / "GameScripts/HotFix/GameProto/GameConfig").mkdir(parents=True)
     (assets / "AssetRaw/Configs/bytes").mkdir(parents=True)
+    snapshot_luban_tool(run, isolated)
     args = ["cmd.exe", "/d", "/c", script.name] if os.name == "nt" else ["bash", script.name]
     require_success(run.execute(args, cwd=config, timeout=300, env=env), "Fresh isolated Luban export")
     return export_manifest(assets)

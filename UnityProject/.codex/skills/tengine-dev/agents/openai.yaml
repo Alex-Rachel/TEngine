@@ -1,6 +1,6 @@
 interface:
-  display_name: "TEngine Development"
-  short_description: "Source-grounded TEngine framework development and review"
-  default_prompt: "Use $tengine-dev to implement this TEngine change and verify the relevant APIs."
+  display_name: "TEngine 开发"
+  short_description: "依据当前源码实现 TEngine 模块、界面事件、资源生命周期与热更验证"
+  default_prompt: "使用 $tengine-dev 完成这项 TEngine 改动，核对真实 API、生命周期与必要的 Pipeline 验证。"
 policy:
   allow_implicit_invocation: true

@@ -7,9 +7,9 @@ import sys
 
 from workflow_lib import checks, domains, regression
 from workflow_lib.core import (
-    Context, Run, WorkflowError, approve, blocked, project_lock, read_json, render_report,
+    Context, Run, WorkflowError, approve, blocked, project_lock, read_json, redact, render_report,
 )
-from workflow_lib.unity import Unity
+from workflow_lib.unity import Unity, canonical_command
 
 
 def parser():
@@ -34,6 +34,8 @@ def parser():
     unity = commands.add_parser("unity", help="Audited project-bound Unity operations.")
     sub = unity.add_subparsers(dest="action", required=True)
     sub.add_parser("list")
+    describe = sub.add_parser("describe", help="Read the exact registered command parameters and schema.")
+    describe.add_argument("name", help="Canonical command name, e.g. 'scene get_hierarchy'.")
     for action in ("query", "preview"):
         command = sub.add_parser(action)
         command.add_argument("name")
@@ -86,14 +88,16 @@ def dispatch(run, args):
         unity = Unity(run)
         with project_lock(run.context):
             if args.action == "list":
-                run.step("registered-commands", unity.discover)
+                run.step("registered-commands", lambda: unity.discover(require_ready=False))
+            elif args.action == "describe":
+                run.step("command-schema", lambda: unity.describe(args.name))
             elif args.action == "runtime-status":
                 run.step("runtime-status", lambda: runtime_status(unity, args.runtime_path))
             elif args.action == "apply":
                 run.step("unity-mutation", lambda: unity.apply(read_json(args.plan), args.approval))
             else:
                 params = read_json(args.params_file) if args.params_file else {}
-                if args.action == "preview" and args.name == "tengine_bake_ugui":
+                if args.action == "preview" and canonical_command(args.name) == "global tengine_bake_ugui":
                     run.step("unity-preview", lambda: domains.ui_preview(
                         run, params["json_path"], params["config_path"], params["output_path"], params.get("legacy_text", False)))
                 else:
@@ -128,13 +132,16 @@ def dispatch(run, args):
 def runtime_status(unity, path):
     from workflow_lib.unity import decode_response
     path = path.resolve()
-    value = decode_response(unity.raw(["command", "--runtime-path", str(path), "runtime_status"]))
+    value = decode_response(unity.raw(["command", "--runtime-path", str(path), "runtime", "status"]))
     if not isinstance(value, dict):
-        blocked("Runtime status has no verifiable working directory.")
-    actual = value.get("workingDirectory") or value.get("WorkingDirectory")
-    if not actual or Path(actual).resolve() != path:
-        blocked("Runtime working directory differs from the explicitly requested Player.")
-    return value
+        blocked("Runtime status has no verifiable Player identity.")
+    version = value.get("unityVersion", value.get("UnityVersion"))
+    platform = value.get("platform", value.get("Platform"))
+    playing = value.get("isPlaying", value.get("IsPlaying"))
+    if not version or not platform or not isinstance(playing, bool):
+        blocked("Runtime result does not match the Player status contract.")
+    return {"selectionSource": "CLI --runtime-path", "requestedRuntimePath": str(path),
+            "runtime": value}
 
 
 def main(argv=None):
@@ -166,7 +173,7 @@ def main(argv=None):
         run.data["steps"].append({"name": "unexpected-error", "status": "failed", "message": f"{type(exc).__name__}: {exc}", "required": True})
     code = run.finish()
     print(f"{run.data['status']}: {run.path / 'report.md'}")
-    for step in run.data["steps"]:
+    for step in redact(run.data)["steps"]:
         print(f"  {step['name']}: {step['status']}")
         if step.get("message"):
             print("    " + step["message"])

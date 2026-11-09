@@ -6,7 +6,7 @@ from pathlib import Path
 import shutil
 
 from .core import WorkflowError, blocked, file_hash, require_success, write_json
-from .domains import dependencies, export_script, load_module
+from .domains import dependencies, export_script, load_module, snapshot_luban_tool
 
 
 def browser(run):
@@ -78,14 +78,15 @@ def luban(run):
         output = repo / "UnityProject/Assets"
         (output / "GameScripts/HotFix/GameProto/GameConfig").mkdir(parents=True)
         (output / "AssetRaw/Configs/bytes").mkdir(parents=True)
+        snapshot_luban_tool(run, repo)
         env = {**os.environ, "AI_MODE": "1", "LUBAN_DLL": str(dll)}
         args = ["cmd.exe", "/d", "/c", script.name] if os.name == "nt" else ["bash", script.name]
         require_success(run.execute(args, cwd=config, env=env, timeout=180), f"Isolated {mode} export")
         binaries = sorted((output / "AssetRaw/Configs/bytes").glob("*.bytes"))
         names = {path.stem.lower() for path in binaries}
-        expected = ({"tbnormal", "tbrange", "tbcount", "tbfield"} if mode == "standard" else
-                    {"tbnormal", "tbrange__p_0", "tbrange__p_1", "tbrange__p_2",
-                     "tbcount__p_0000", "tbcount__p_0001", "tbcount__index", "tbfield__p_1", "tbfield__p_2"})
+        # Both current scripts select bin. Partition tags in the fixture do not
+        # establish a sharded exporter or partition-aware runtime API.
+        expected = {"tbnormal", "tbrange", "tbcount", "tbfield"}
         if names != expected or any(path.stat().st_size == 0 for path in binaries):
             raise WorkflowError(f"{mode} unexpected binary outputs: {sorted(names)}")
         code = output / "GameScripts/HotFix/GameProto"
@@ -95,7 +96,8 @@ def luban(run):
         tables = code / "GameConfig/Tables.cs"
         if not tables.is_file():
             raise WorkflowError("Tables.cs missing.")
-        if mode == "lazyload" and "ClearPartitions" not in tables.read_text(encoding="utf-8-sig"):
-            raise WorkflowError("Sharded cache API missing from generated Tables.")
-        results.append({"mode": mode, "binaries": sorted(names), "output": str(output)})
+        if mode == "lazyload" and "SetDefaultLoader" not in tables.read_text(encoding="utf-8-sig"):
+            raise WorkflowError("Table-lazy-loading API missing from generated Tables.")
+        results.append({"mode": mode, "binaries": sorted(names), "output": str(output),
+                        "scope": "Standard binary export and table-level lazy loading; sharding is not implemented."})
     return results

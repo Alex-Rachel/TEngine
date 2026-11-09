@@ -1,6 +1,6 @@
 interface:
-  display_name: "Unity CLI"
-  short_description: "Project-bound Unity operations, tests and verification"
-  default_prompt: "Use $unity-cli to inspect this Unity project and collect verified results."
+  display_name: "Unity Pipeline"
+  short_description: "通过本项目 Pipeline 查询 Editor、操作资源并验证编译测试与运行证据"
+  default_prompt: "使用 $unity-cli 发现本工程 Pipeline 能力，完成所需查询、预览或验证并交付实际证据。"
 policy:
   allow_implicit_invocation: true

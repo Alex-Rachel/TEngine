@@ -1,10 +1,26 @@
 # 刷新、取消与资源释放
 
-`UIWindow` 是普通 C# 对象，不是 `UnityEngine.Object`。`this == null` 无法检测窗口对应 GameObject 的销毁。
-`UserData` 是第一个参数，`UserDatas` 是参数数组；先做类型匹配，不盲目强转。
+本页处理业务持有的普通 Asset。API 和图片扩展的边界见 [资源 API](resource-api.md)。
+先回答：谁发起、何时取消、谁接收成功结果、未接收结果由谁归还。
 
-下面是窗口内片段。版本号阻止旧请求写回；finally 释放未转移的资源。
-`Render` 是业务实现，需使用真实资源地址替换示例位置。
+## 取消与接收边界
+
+[ResourceModule](../../../../Assets/TEngine/Runtime/Module/ResourceModule/ResourceModule.cs) 的
+`LoadAssetAsync`/`LoadGameObjectAsync` 缓存命中分支没有完整检查业务 token；
+`TryWaitingLoading` 不接收业务 token。传入 token 不能保证不再获得资源。
+某些取消分支释放句柄并返回 null，其他异常沿调用链传播。
+
+因此 await 后同时检查结果、取消和请求身份；在 finally 中归还所有未转移的成功结果。
+GameObject 结果过期时销毁实例，让 AssetsReference 归还源资源，不能对实例再调用 UnloadAsset。
+不要仅捕获 `OperationCanceledException`，也不要在取消后直接丢弃返回值。
+
+`UIWindow` 是普通 C# 对象，`this == null` 无法检测面板销毁。
+`UserData` 为首项参数，先做类型匹配。仅在调用 ResourceModule 前检查宿主不够，完成时还可能已经关闭或刷新。
+
+## 窗口刷新示例
+
+下面是嵌入窗口的片段，版本号阻止旧请求写回；finally 释放未转移资源。
+`Render` 是业务方法，地址来自已核对的收集规则。
 
 ```csharp
 private TextAsset _asset;
@@ -58,9 +74,11 @@ protected override void OnDestroy()
 ```
 
 需要 `System`、`System.Threading`、`Cysharp.Threading.Tasks`、`UnityEngine`、`TEngine`。
-如果隐藏就应取消，在 `OnSetVisible(false)` 定义单独策略；不要把隐藏等同销毁。
+片段选择保留上次成功资源，直到新资源成功接收或窗口销毁；业务需要清空时应显式调整此策略。
+需要隐藏即取消时，在 `OnSetVisible(false)` 明确实现；Hide 也可能立即 Close，见 [窗口生命周期](ui-lifecycle.md)。
 只需读取的数据可在 try/finally 内直接消费，不必长期持有。
 并发批量加载中某项失败时，也要回收已经成功的其他项。
 音频交给 Audio 模块持有，不要先额外 LoadAsset 再调用 Audio.Play 导致双重加载。
 
-回归至少包括连续刷新、慢请求覆盖快请求、失败、隐藏、销毁与加载完成同帧。
+依据本次影响选择连续刷新、慢请求覆盖快请求、取消、失败、隐藏或销毁与完成同帧的回归。
+观察实际节点内容和引用归还，不能只证明调用了 Cancel 或 UnloadAsset。验证入口见 [verification.md](verification.md)。
