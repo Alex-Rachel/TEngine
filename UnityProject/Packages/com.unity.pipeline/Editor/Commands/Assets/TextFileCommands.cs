@@ -17,15 +17,17 @@ namespace Unity.Pipeline.Editor.Commands.Assets
     /// into the AssetDatabase so Unity picks up the change.
     ///
     /// NOTE: writing is potentially destructive (it can overwrite an existing file), so overwriting an
-    /// existing file requires an explicit <c>confirm</c> argument; <c>dry_run</c> is supported.
+    /// existing file requires an explicit <c>confirm</c> argument; <c>dry-run</c> is supported.
     /// Filesystem writes are not part of Unity's Undo system.
     /// </summary>
-    public static class TextFileCommands
+    static class TextFileCommands
     {
-        [CliCommand("read_text_file", "Read a UTF-8 text file under the authoring root and return its contents.", MainThreadRequired = true)]
-        public static ReadTextFileResult ReadTextFile(
+        const string Group = "asset";
+
+        [CliGroupCommand(Group, "Read a UTF-8 text file under the authoring root and return its contents.", MainThreadRequired = true, Tags = new[] { "assets/text" })]
+        public static ReadTextFileResult ReadText(
             [CliArg("path", "Text file path relative to the authoring root. The Assets/ prefix is optional.", Required = true)] string path,
-            [CliArg("max_bytes", "Reject files larger than this many bytes (default 1048576 = 1 MiB) to avoid huge payloads.")] int maxBytes = 1024 * 1024)
+            [CliArg("max-bytes", "Reject files larger than this many bytes (default 1048576 = 1 MiB) to avoid huge payloads.")] int maxBytes = 1024 * 1024)
         {
             var normalized = ProjectPaths.Resolve(path, out var error);
             if (normalized == null)
@@ -37,7 +39,7 @@ namespace Unity.Pipeline.Editor.Commands.Assets
 
             var length = new FileInfo(absolute).Length;
             if (length > maxBytes)
-                throw new ArgumentException($"File '{normalized}' is {length} bytes, which exceeds max_bytes={maxBytes}.");
+                throw new ArgumentException($"File '{normalized}' is {length} bytes, which exceeds max-bytes={maxBytes}.");
 
             return new ReadTextFileResult
             {
@@ -47,12 +49,12 @@ namespace Unity.Pipeline.Editor.Commands.Assets
             };
         }
 
-        [CliCommand("write_text_file", "Write UTF-8 text to a file under the authoring root, then import it. Overwriting an existing file requires confirm=true.")]
-        public static AuthoringResult WriteTextFile(
+        [CliGroupCommand(Group, "Write UTF-8 text to a file under the authoring root, then import it. Overwriting an existing file requires confirm=true.", Tags = new[] { "assets/text" })]
+        public static AuthoringResult WriteText(
             [CliArg("path", "Text file path relative to the authoring root, including extension. The Assets/ prefix is optional.", Required = true)] string path,
             [CliArg("contents", "The full text content to write (replaces the file).", Required = true)] string contents,
             [CliArg("confirm", "Required (true) only when overwriting an existing file at the path.")] bool confirm = false,
-            [CliArg("dry_run", "If true, validate inputs and report what would be written without writing anything.")] bool dryRun = false)
+            [CliArg("dry-run", "If true, validate inputs and report what would be written without writing anything.")] bool dryRun = false)
         {
             var normalized = ProjectPaths.Resolve(path, out var error);
             if (normalized == null)
@@ -112,7 +114,7 @@ namespace Unity.Pipeline.Editor.Commands.Assets
 
     /// <summary>Result of <c>read_text_file</c>: the file contents plus its identity and size.</summary>
     [Serializable]
-    public class ReadTextFileResult
+    class ReadTextFileResult
     {
         [JsonProperty("assetPath")]
         public string AssetPath { get; set; }

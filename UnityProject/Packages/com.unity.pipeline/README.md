@@ -38,28 +38,30 @@ Then open the project in the Unity Editor. The package automatically starts its 
 
 ## Connect to a running Editor
 
-Run `unity command` with no command name to connect to a Unity instance and list its available commands:
+Run `unity command` with no group or command name to connect to a Unity instance and list its command groups:
 
 ```bash
-# Auto-discover a Unity instance from the current directory
+# Auto-discover a Unity instance from the current directory and list its command groups
 unity command
 
 # Connect to a specific project
 unity command --project-path /path/to/your/unity/project
 ```
 
+Commands are organized in groups. Run one with `unity command <group> <name>`, for example `unity command editor status`, and list a group's commands with `unity command <group>`. For a list of command groups, refer to [Command reference](Documentation~/command-reference.md).
+
 Click [here](Documentation~/connectivity.md) for more details on Connectivity troubleshooting.
 
 ## Connect to a running Player (Runtime)
 
-To target a running development Player instead of the Editor, use `--runtime` (by process name) or `--runtime-path` (by the location of the runtime port file). These options go **after** `command` and **before** the command name.
+To target a running development Player instead of the Editor, use `--runtime` (by process name) or `--runtime-path` (by the location of the runtime port file). These options go **after** `command` and **before** the group.
 
 ```bash
 # By Player process/executable name
-unity command --runtime MyGame.exe runtime_status
+unity command --runtime MyGame.exe runtime status
 
 # By the path where the runtime port file is located
-unity command --runtime-path <path> runtime_status
+unity command --runtime-path <path> runtime status
 ```
 
 `--runtime-path` points to where the `.unity-pipeline-runtime-port` file lives:
@@ -67,24 +69,24 @@ unity command --runtime-path <path> runtime_status
 - **Windows** — the port file sits next to the Player executable:
 
   ```bash
-  unity command --runtime-path "C:\Builds\MyGame" runtime_status
+  unity command --runtime-path "C:\Builds\MyGame" runtime status
   ```
 
 - **macOS** — pass the path to the `.app` bundle:
 
   ```bash
-  unity command --runtime-path "/Users/me/Builds/MyGame.app" runtime_status
+  unity command --runtime-path "/Users/me/Builds/MyGame.app" runtime status
   ```
 
 Click [here](Documentation~/connectivity.md) for more details on Connectivity troubleshooting.
 
 ## Documentation
 
-For the full command reference, connectivity details, runtime setup, and hot-reload guides, see the [Pipeline documentation](Documentation~/index.md).
+For the full command reference, connectivity details, runtime setup, and method-reload guides, see the [Pipeline documentation](Documentation~/index.md).
 
 ## License
 
-com.unity.package is licensed under the Unity Companion License. See [LICENSE.md](LICENSE.md) for more legal information.
+com.unity.pipeline is made available under the [Unity Terms of Service](https://unity.com/legal/terms-of-service). See [LICENSE.md](LICENSE.md) for more legal information.
 
 ## Contributions to this repository
 

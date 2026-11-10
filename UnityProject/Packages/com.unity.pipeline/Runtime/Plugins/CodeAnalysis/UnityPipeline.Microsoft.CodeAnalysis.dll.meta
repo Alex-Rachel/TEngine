@@ -1,0 +1,63 @@
+fileFormatVersion: 2
+guid: ff3508870465d8e4b83e5a2c71492756
+PluginImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  iconMap: {}
+  executionOrder: {}
+  defineConstraints:
+  - UNITY_EDITOR || ENABLE_RUNTIME_PIPELINE_DEV || ENABLE_RUNTIME_PIPELINE
+  - UNITY_EDITOR || UNITY_INCLUDE_INSTRUMENTATION || ENABLE_PROFILER || ENABLE_RUNTIME_PIPELINE
+  - UNITY_EDITOR || ENABLE_RUNTIME_PIPELINE_DEV || !UNITY_INCLUDE_INSTRUMENTATION
+  - UNITY_EDITOR || ENABLE_RUNTIME_PIPELINE_DEV || !ENABLE_PROFILER
+  isPreloaded: 0
+  isOverridable: 1
+  isExplicitlyReferenced: 0
+  validateReferences: 1
+  platformData:
+  - first:
+      Any:
+    second:
+      enabled: 0
+      settings: {}
+  - first:
+      Editor: Editor
+    second:
+      enabled: 1
+      settings:
+        CPU: AnyCPU
+        DefaultValueInitialized: true
+        OS: AnyOS
+  - first:
+      Standalone: Linux64
+    second:
+      enabled: 1
+      settings:
+        CPU: AnyCPU
+  - first:
+      Standalone: OSXUniversal
+    second:
+      enabled: 1
+      settings:
+        CPU: AnyCPU
+  - first:
+      Standalone: Win
+    second:
+      enabled: 1
+      settings:
+        CPU: AnyCPU
+  - first:
+      Standalone: Win64
+    second:
+      enabled: 1
+      settings:
+        CPU: AnyCPU
+  - first:
+      Windows Store Apps: WindowsStoreApps
+    second:
+      enabled: 0
+      settings:
+        CPU: AnyCPU
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

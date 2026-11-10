@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -19,7 +20,7 @@ namespace Unity.Pipeline.Models
     /// Registered on the class itself via <c>[JsonConverter(typeof(ObjectRefConverter))]</c> so it applies
     /// everywhere an <see cref="ObjectRef"/> is (de)serialized — no server or command changes required.
     /// </summary>
-    public class ObjectRefConverter : JsonConverter<ObjectRef>
+    class ObjectRefConverter : JsonConverter<ObjectRef>
     {
         private static readonly Regex s_GuidWithFileId = new Regex(@"^guid:([0-9a-fA-F]+):([0-9]+)$", RegexOptions.Compiled);
         private static readonly Regex s_GuidOnly = new Regex(@"^guid:([0-9a-fA-F]+)$", RegexOptions.Compiled);
@@ -27,6 +28,13 @@ namespace Unity.Pipeline.Models
         private static readonly Regex s_PlainInt = new Regex(@"^-?[0-9]+$", RegexOptions.Compiled);
         private static readonly Regex s_Hex32 = new Regex(@"^[0-9a-fA-F]{32}$", RegexOptions.Compiled);
 
+        /// <summary>Read an <see cref="ObjectRef"/> from a structured object, a canonical string, or a bare instance id.</summary>
+        /// <param name="reader">The JSON reader.</param>
+        /// <param name="objectType">The declared property type.</param>
+        /// <param name="existingValue">The existing value, if any.</param>
+        /// <param name="hasExistingValue">Whether <paramref name="existingValue"/> is valid.</param>
+        /// <param name="serializer">The active serializer.</param>
+        /// <returns>The parsed reference, or null for a JSON null.</returns>
         public override ObjectRef ReadJson(JsonReader reader, Type objectType, ObjectRef existingValue,
             bool hasExistingValue, JsonSerializer serializer)
         {
@@ -47,6 +55,10 @@ namespace Unity.Pipeline.Models
             }
         }
 
+        /// <summary>Write an <see cref="ObjectRef"/> as a structured JSON object.</summary>
+        /// <param name="writer">The JSON writer.</param>
+        /// <param name="value">The reference to write, or null.</param>
+        /// <param name="serializer">The active serializer.</param>
         public override void WriteJson(JsonWriter writer, ObjectRef value, JsonSerializer serializer)
         {
             if (value == null)
@@ -172,8 +184,15 @@ namespace Unity.Pipeline.Models
             if (s_Hex32.IsMatch(s))
                 return new ObjectRef { Guid = s };
 
-            // Starts with "/" or otherwise contains "/" (non-Assets paths handled above), and the
-            // bare-name fallback, all resolve as a scene hierarchy path.
+            // A relative string with a file extension (e.g. "Materials/Floor.mat", "Enemy.prefab") is
+            // most likely an authoring-root-relative asset path — route it to Path so the resolver can
+            // normalize it under the authoring root. A leading "/" always means a scene hierarchy path,
+            // and an extension-less string ("Player", "Root/Child") stays one. Dotted GameObject names
+            // ("Cube.001") land here too, but the resolver falls back to a hierarchy lookup for those.
+            if (!s.StartsWith("/", StringComparison.Ordinal) && Path.HasExtension(s))
+                return new ObjectRef { Path = s };
+
+            // Leading-"/" canonical paths and bare names resolve as a scene hierarchy path.
             return new ObjectRef { HierarchyPath = s };
         }
     }

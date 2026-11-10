@@ -13,7 +13,7 @@ namespace Unity.Pipeline.Editor.Commands.Observability
     /// an averaged measurement — treat them as a snapshot.
     /// </summary>
     [Serializable]
-    public class RenderStats
+    class RenderStats
     {
         /// <summary>Draw calls issued for the last rendered frame.</summary>
         [JsonProperty("drawCalls")]
@@ -41,7 +41,7 @@ namespace Unity.Pipeline.Editor.Commands.Observability
     /// available at runtime regardless of whether the Profiler window is open.
     /// </summary>
     [Serializable]
-    public class MemoryStats
+    class MemoryStats
     {
         /// <summary>Total memory currently allocated by Unity (bytes).</summary>
         [JsonProperty("totalAllocatedBytes")]
@@ -66,7 +66,7 @@ namespace Unity.Pipeline.Editor.Commands.Observability
     /// timing fields are left at zero.
     /// </summary>
     [Serializable]
-    public class FrameTimingStats
+    class FrameTimingStats
     {
         /// <summary>True when a frame timing was captured and the milliseconds fields are meaningful.</summary>
         [JsonProperty("available")]
@@ -90,7 +90,7 @@ namespace Unity.Pipeline.Editor.Commands.Observability
     /// process memory, and the latest frame timing.
     /// </summary>
     [Serializable]
-    public class PerformanceStats
+    class PerformanceStats
     {
         /// <summary>Render counters for the last rendered Editor frame.</summary>
         [JsonProperty("render")]
@@ -109,10 +109,12 @@ namespace Unity.Pipeline.Editor.Commands.Observability
     /// Read-only telemetry command (CLI-198) that snapshots render, memory, and frame-timing stats so
     /// an agent can reason about Editor performance without opening the Profiler or Stats overlay.
     /// </summary>
-    public static class PerformanceCommands
+    static class PerformanceCommands
     {
-        [CliCommand("get_performance_stats", "Read render, memory, and frame-timing stats (structured, read-only).")]
-        public static PerformanceStats GetPerformanceStats()
+        const string Group = "diagnostics";
+
+        [CliGroupCommand(Group, "Read render, memory, and frame-timing stats (structured, read-only).", Tags = new[] { "observability/performance" })]
+        public static PerformanceStats GetPerformance()
         {
             return new PerformanceStats
             {

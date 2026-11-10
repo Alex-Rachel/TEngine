@@ -20,7 +20,7 @@ namespace Unity.Pipeline.Console
     /// persisted via <see cref="Save"/>/<see cref="Load"/>. The seq is the cursor a "--follow"
     /// client uses to fetch only newer entries.
     /// </summary>
-    public class ConsoleLogBuffer
+    class ConsoleLogBuffer
     {
         /// <summary>Maximum number of entries retained. Older entries are evicted first.</summary>
         public const int Capacity = 2000;
@@ -37,6 +37,7 @@ namespace Unity.Pipeline.Console
         readonly object m_Lock = new object();
         readonly Queue<StoredEntry> m_Entries = new Queue<StoredEntry>();
         long m_LastSeq;
+        string m_Session = Guid.NewGuid().ToString("N");
 
         struct StoredEntry
         {
@@ -45,10 +46,40 @@ namespace Unity.Pipeline.Console
         }
 
         /// <summary>
+        /// Identifies the capture session that <see cref="ConsoleLogEntry.Seq"/> values belong to.
+        /// Sequence numbers restart from zero with the process, so a cursor only names the same
+        /// entries within one session. In the Editor this is adopted from SessionState, which has
+        /// exactly the lifetime of one editor launch; in a player the constructor's value stands.
+        /// </summary>
+        public string Session
+        {
+            get { lock (m_Lock) { return m_Session; } }
+        }
+
+        /// <summary>Adopt an externally owned session identifier. See the Editor bootstrap.</summary>
+        /// <param name="session">The identifier to report as <see cref="Session"/>.</param>
+        public void SetSession(string session)
+        {
+            if (string.IsNullOrEmpty(session))
+                return;
+
+            lock (m_Lock)
+                m_Session = session;
+        }
+
+        /// <summary>
         /// Capture a console entry. Assigns the next sequence number and evicts the oldest entry if
         /// the buffer is full. Safe to call from any thread.
         /// </summary>
-        public void Add(LogType type, string message, string stackTrace, DateTime timestampUtc)
+        /// <param name="type">Unity log type; mapped to a severity via <see cref="SeverityFromLogType"/>.</param>
+        /// <param name="message">The log message.</param>
+        /// <param name="stackTrace">The stack trace, if any.</param>
+        /// <param name="timestampUtc">UTC time the entry was captured.</param>
+        /// <param name="seeded">
+        /// True when the entry was read from the Editor console's own store rather than captured
+        /// live, which makes <paramref name="timestampUtc"/> the read time.
+        /// </param>
+        public void Add(LogType type, string message, string stackTrace, DateTime timestampUtc, bool seeded = false)
         {
             var severity = SeverityFromLogType(type);
             lock (m_Lock)
@@ -65,8 +96,10 @@ namespace Unity.Pipeline.Console
                         Seq = m_LastSeq,
                         TimestampUtc = timestampUtc,
                         Level = LevelName(severity),
+                        LogType = type.ToString(),
                         Message = message ?? string.Empty,
-                        StackTrace = stackTrace ?? string.Empty
+                        StackTrace = stackTrace ?? string.Empty,
+                        Seeded = seeded
                     }
                 });
             }
@@ -84,13 +117,31 @@ namespace Unity.Pipeline.Console
         /// limit" (up to <see cref="Capacity"/>).
         /// </param>
         /// <param name="minSeverity">Minimum severity to include (see the Severity* constants).</param>
-        public ConsoleLogResponse Query(long since, int tail, int minSeverity)
+        /// <param name="sinceSession">
+        /// The <see cref="Session"/> that issued <paramref name="since"/>. When it names a different
+        /// session the cursor is refused; omit it and the cursor is taken at face value.
+        /// </param>
+        /// <returns>The matching entries plus cursor/drop metadata for the <c>console</c> command.</returns>
+        public ConsoleLogResponse Query(long since, int tail, int minSeverity, string sinceSession = null)
         {
             lock (m_Lock)
             {
+                // A cursor issued in another session, or one past the counter, cannot be honored:
+                // sequence numbers restart from zero with the process, so such a cursor filters out
+                // every entry held and reads as "nothing new". Ignore it, return the tail, and say so.
+                var reset = since > m_LastSeq
+                    || (!string.IsNullOrEmpty(sinceSession) && sinceSession != m_Session);
+                if (reset)
+                    since = -1;
+
+                var counts = new ConsoleLevelCounts();
                 var matches = new List<ConsoleLogEntry>();
                 foreach (var stored in m_Entries)
                 {
+                    // Counted before the level filter and the tail trim, so the counts describe
+                    // what the buffer holds rather than what this call returned.
+                    Tally(counts, stored.Severity);
+
                     if (stored.Severity < minSeverity)
                         continue;
                     if (since >= 0 && stored.Entry.Seq <= since)
@@ -106,8 +157,35 @@ namespace Unity.Pipeline.Console
                 {
                     Entries = matches.ToArray(),
                     Cursor = m_LastSeq,
+                    Session = m_Session,
                     Returned = matches.Count,
-                    Dropped = ComputeDropped(since)
+                    Dropped = reset || ComputeDropped(since),
+                    Reset = reset,
+                    Counts = counts
+                };
+            }
+        }
+
+        /// <summary>
+        /// The buffer's counters without its entries: retained counts per severity, the cursor, and
+        /// the session that issued it. Backs <c>console_status</c>, which clients poll in a loop, so
+        /// it deliberately avoids materializing the entry list.
+        /// </summary>
+        /// <returns>A response with an empty <see cref="ConsoleLogResponse.Entries"/>.</returns>
+        public ConsoleLogResponse Stats()
+        {
+            lock (m_Lock)
+            {
+                var counts = new ConsoleLevelCounts();
+                foreach (var stored in m_Entries)
+                    Tally(counts, stored.Severity);
+
+                return new ConsoleLogResponse
+                {
+                    Entries = Array.Empty<ConsoleLogEntry>(),
+                    Cursor = m_LastSeq,
+                    Session = m_Session,
+                    Counts = counts
                 };
             }
         }
@@ -154,6 +232,20 @@ namespace Unity.Pipeline.Console
             get { lock (m_Lock) { return m_LastSeq; } }
         }
 
+        /// <summary>
+        /// Raise the sequence counter to <paramref name="seq"/> if it is behind. Never lowers it, so
+        /// a cursor already handed to a client can never be issued again for different entries.
+        /// </summary>
+        /// <param name="seq">The floor the counter must be at or above.</param>
+        public void RaiseLastSeq(long seq)
+        {
+            lock (m_Lock)
+            {
+                if (seq > m_LastSeq)
+                    m_LastSeq = seq;
+            }
+        }
+
         #region Persistence
 
         [Serializable]
@@ -167,6 +259,7 @@ namespace Unity.Pipeline.Console
         /// Persist the buffer (entries + sequence counter) to <paramref name="path"/> so it survives
         /// a domain reload. Failures are swallowed (logging is best-effort, never fatal).
         /// </summary>
+        /// <param name="path">File to write the snapshot to.</param>
         public void Save(string path)
         {
             try
@@ -193,9 +286,11 @@ namespace Unity.Pipeline.Console
         }
 
         /// <summary>
-        /// Restore a buffer previously written by <see cref="Save"/>. Missing or unreadable files
-        /// leave the buffer empty. Returns true if a snapshot was loaded.
+        /// Merge a buffer previously written by <see cref="Save"/> into this one. Missing or
+        /// unreadable files leave the buffer untouched. Returns true if a snapshot was loaded.
         /// </summary>
+        /// <param name="path">File previously written by <see cref="Save"/>.</param>
+        /// <returns>True if a snapshot was found and loaded.</returns>
         public bool Load(string path)
         {
             try
@@ -209,13 +304,16 @@ namespace Unity.Pipeline.Console
 
                 lock (m_Lock)
                 {
-                    m_Entries.Clear();
-                    long lastRestoredSeq = 0;
+                    // Merge rather than replace. Where [NoAutoStaticsCleanup] keeps this buffer alive
+                    // across a domain reload, entries logged since the snapshot are already here, and
+                    // a snapshot entry whose seq the counter has already issued is one of those.
+                    // Anything with a higher seq was never seen in memory, so it is newer than
+                    // everything held and appends in order.
                     if (snapshot.Entries != null)
                     {
                         foreach (var entry in snapshot.Entries)
                         {
-                            if (entry == null)
+                            if (entry == null || entry.Seq <= m_LastSeq)
                                 continue;
                             if (m_Entries.Count >= Capacity)
                                 m_Entries.Dequeue();
@@ -225,14 +323,14 @@ namespace Unity.Pipeline.Console
                                 Severity = SeverityFromLevelName(entry.Level),
                                 Entry = entry
                             });
-                            lastRestoredSeq = entry.Seq;
+                            m_LastSeq = entry.Seq;
                         }
                     }
 
-                    // Keep the counter ahead of any restored entry so seq stays monotonic.
-                    m_LastSeq = snapshot.LastSeq;
-                    if (m_Entries.Count > 0)
-                        m_LastSeq = Math.Max(m_LastSeq, lastRestoredSeq);
+                    // Keep the counter ahead of the snapshot even when it held no entries, and never
+                    // lower it: a cursor already handed out must not be issued a second time.
+                    if (snapshot.LastSeq > m_LastSeq)
+                        m_LastSeq = snapshot.LastSeq;
                 }
 
                 return true;
@@ -249,6 +347,8 @@ namespace Unity.Pipeline.Console
         #region Severity mapping
 
         /// <summary>Map a Unity <see cref="LogType"/> to an ordered severity.</summary>
+        /// <param name="type">The Unity log type.</param>
+        /// <returns>One of the Severity* constants.</returns>
         public static int SeverityFromLogType(LogType type)
         {
             switch (type)
@@ -269,6 +369,8 @@ namespace Unity.Pipeline.Console
         /// severity. Unknown values fall back to <see cref="SeverityLog"/> (everything), matching the
         /// lenient behavior of the existing log command.
         /// </summary>
+        /// <param name="level">Level name to parse (case-insensitive).</param>
+        /// <returns>One of the Severity* constants.</returns>
         public static int SeverityFromLevelName(string level)
         {
             switch ((level ?? string.Empty).Trim().ToLowerInvariant())
@@ -285,7 +387,28 @@ namespace Unity.Pipeline.Console
             }
         }
 
+        /// <summary>Add one entry of <paramref name="severity"/> to <paramref name="counts"/>.</summary>
+        /// <param name="counts">The tally to add to.</param>
+        /// <param name="severity">One of the Severity* constants.</param>
+        static void Tally(ConsoleLevelCounts counts, int severity)
+        {
+            switch (severity)
+            {
+                case SeverityError:
+                    counts.Error++;
+                    break;
+                case SeverityWarn:
+                    counts.Warn++;
+                    break;
+                default:
+                    counts.Log++;
+                    break;
+            }
+        }
+
         /// <summary>The canonical level name for a severity.</summary>
+        /// <param name="severity">One of the Severity* constants.</param>
+        /// <returns>The matching Level* constant.</returns>
         public static string LevelName(int severity)
         {
             switch (severity)

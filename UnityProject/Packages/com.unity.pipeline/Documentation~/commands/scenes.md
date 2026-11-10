@@ -2,7 +2,7 @@
 
 Commands for creating, opening, saving and inspecting scenes, controlling the active scene, snapshotting a scene's hierarchy, and managing the Build Settings scene list. Mutating scene operations are blocked while the editor is entering or in play mode (they fail with a recoverable error before touching any state); read-only commands are safe in play mode.
 
-### `create_scene`
+### `scene create`
 Create a new scene and save it to the given path under the authoring root.
 
 | Parameter | Required | Default | Description |
@@ -14,7 +14,7 @@ Create a new scene and save it to the given path under the authoring root.
 **Returns:** `AuthoringResult`
 **Notes:** Blocked during Play mode.
 
-### `open_scene`
+### `scene open`
 Open an existing scene from the given path.
 
 | Parameter | Required | Default | Description |
@@ -25,7 +25,7 @@ Open an existing scene from the given path.
 **Returns:** `AuthoringResult`
 **Notes:** Blocked during Play mode.
 
-### `save_scene`
+### `scene save`
 Save an open scene. Saves the active scene when no path is given.
 
 | Parameter | Required | Default | Description |
@@ -35,7 +35,7 @@ Save an open scene. Saves the active scene when no path is given.
 **Returns:** `AuthoringResult`
 **Notes:** Blocked during Play mode.
 
-### `save_all`
+### `editor save_all`
 Save all open scenes that have unsaved changes.
 
 No parameters.
@@ -43,14 +43,14 @@ No parameters.
 **Returns:** `object`
 **Notes:** Blocked during Play mode.
 
-### `list_open_scenes`
+### `scene list_open`
 List all currently open scenes with their load/active/dirty state.
 
 No parameters.
 
 **Returns:** `object`
 
-### `set_active_scene`
+### `scene set_active`
 Set which open scene is the active scene (new objects are created in the active scene).
 
 | Parameter | Required | Default | Description |
@@ -60,7 +60,7 @@ Set which open scene is the active scene (new objects are created in the active 
 **Returns:** `AuthoringResult`
 **Notes:** Blocked during Play mode.
 
-### `get_scene_hierarchy`
+### `scene get_hierarchy`
 Return the GameObject tree of an open scene (or the active scene). Each node carries instanceId + hierarchyPath usable by GameObject commands.
 
 | Parameter | Required | Default | Description |
@@ -69,7 +69,7 @@ Return the GameObject tree of an open scene (or the active scene). Each node car
 
 **Returns:** `SceneHierarchy`
 
-### `add_scene_to_build`
+### `scene add_to_build`
 Add a scene to the Build Settings scene list (idempotent). Optionally enable it.
 
 | Parameter | Required | Default | Description |
@@ -80,7 +80,7 @@ Add a scene to the Build Settings scene list (idempotent). Optionally enable it.
 **Returns:** `object`
 **Notes:** Blocked during Play mode.
 
-### `remove_scene_from_build`
+### `scene remove_from_build`
 Remove a scene from the Build Settings scene list (idempotent).
 
 | Parameter | Required | Default | Description |

@@ -1,9 +1,13 @@
 using System;
 using System.IO;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Unity.Pipeline.Commands;
 using UnityEditor;
 using UnityEngine;
+#if UNITY_6000_5_OR_NEWER
+using Unity.Scripting.LifecycleManagement;
+#endif
 
 namespace Unity.Pipeline.Editor.Commands.Build
 {
@@ -21,8 +25,12 @@ namespace Unity.Pipeline.Editor.Commands.Build
     /// so it keeps answering while the switch holds the main thread.
     /// </summary>
     [InitializeOnLoad]
-    public static class SwitchBuildTargetCommand
+#if UNITY_6000_5_OR_NEWER
+    [NoAutoStaticsCleanup]
+#endif
+    static class SwitchBuildTargetCommand
     {
+        const string Group = "build.target";
         const string StatusFile = "Temp/pipeline_switch_target_status.json";
 
         static readonly object s_Lock = new object();
@@ -37,15 +45,17 @@ namespace Unity.Pipeline.Editor.Commands.Build
             RecoverInterruptedOperation();
         }
 
-        [CliCommand("switch_build_target",
+        [CliGroupCommand(Group,
             "Switch the active build target (destructive, long-running: triggers a full reimport + domain " +
-            "reload). Requires confirm=true. Returns immediately; poll switch_build_target_status.",
-            MainThreadRequired = false)]
-        public static object SwitchBuildTarget(
-            [CliArg("target", "BuildTarget name to switch to (must be installed; see list_build_targets).", Required = true)] string target = "",
-            [CliArg("confirm", "Apply the switch. Without it the call is refused.")] bool confirm = false)
+            "reload). Requires confirm=true. Returns immediately; poll " + CommandNames.BuildTargetSwitchStatus + ".",
+            MainThreadRequired = false,
+            Tags = new[] { "build/targets" })]
+        public static object Switch(
+            [CliArg("target", "BuildTarget name to switch to (must be installed; see " + CommandNames.BuildTargetList + ").", Required = true)] string target = "",
+            [CliArg("confirm", "Apply the switch. Without it the call is refused.")] bool confirm = false,
+            [CliArg("timeout", "Seconds to wait for the switch to be validated and queued (poll " + CommandNames.BuildTargetSwitchStatus + ").")] double timeoutInSeconds = 60)
         {
-            return RunOnMain<object>(() => ValidateAndQueue(target, confirm));
+            return RunOnMain<object>(() => ValidateAndQueue(target, confirm), PipelineTimeout.FromSeconds(timeoutInSeconds));
         }
 
         static object ValidateAndQueue(string targetArg, bool confirm)
@@ -54,11 +64,11 @@ namespace Unity.Pipeline.Editor.Commands.Build
                 return new { status = "error", success = false, message = "A 'target' is required." };
 
             if (!TryParseTarget(targetArg, out var target))
-                return new { status = "error", success = false, message = $"Unknown BuildTarget '{targetArg}'. Use a name from list_build_targets." };
+                return new { status = "error", success = false, message = $"Unknown BuildTarget '{targetArg}'. Use a name from {CommandNames.BuildTargetList}." };
 
             var group = BuildPipeline.GetBuildTargetGroup(target);
             if (!BuildPipeline.IsBuildTargetSupported(group, target))
-                return new { status = "error", success = false, message = $"Build target '{target}' is not installed (isInstalled=false in list_build_targets)." };
+                return new { status = "error", success = false, message = $"Build target '{target}' is not installed (isInstalled=false in {CommandNames.BuildTargetList})." };
 
             var from = EditorUserBuildSettings.activeBuildTarget;
             if (target == from)
@@ -67,7 +77,7 @@ namespace Unity.Pipeline.Editor.Commands.Build
             lock (s_Lock)
             {
                 if (s_Pending || s_Switching)
-                    return new { status = "busy", success = false, message = "A target switch is already queued or in progress. Poll switch_build_target_status." };
+                    return new { status = "busy", success = false, message = "A target switch is already queued or in progress. Poll " + CommandNames.BuildTargetSwitchStatus + "." };
             }
 
             // Confirm gate. The queue below only sets pending state; the switch runs on the next tick.
@@ -96,14 +106,13 @@ namespace Unity.Pipeline.Editor.Commands.Build
             return new { status = "switching", fromTarget = from.ToString(), toTarget = target.ToString() };
         }
 
-        [CliCommand("switch_build_target_status",
+        [CliGroupCommand(Group,
             "Status of the last target switch: idle | switching | completed (with success + activeBuildTarget).",
-            MainThreadRequired = false)]
-        public static string SwitchBuildTargetStatus()
+            MainThreadRequired = false,
+            Tags = new[] { "build/targets" })]
+        public static JToken SwitchStatus()
         {
-            if (File.Exists(StatusFile))
-                return File.ReadAllText(StatusFile);
-            return "{\"status\":\"idle\"}";
+            return StatusFileReader.ReadOrIdle(StatusFile);
         }
 
         /// <summary>Main-thread pump: performs the queued switch. Blocks the main thread until it returns.</summary>
@@ -194,7 +203,7 @@ namespace Unity.Pipeline.Editor.Commands.Build
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"[pipeline] switch_build_target status recovery failed: {ex.Message}");
+                Debug.LogWarning($"[pipeline] {CommandNames.BuildTargetSwitch} status recovery failed: {ex.Message}");
             }
         }
 
@@ -214,11 +223,11 @@ namespace Unity.Pipeline.Editor.Commands.Build
             }
         }
 
-        static T RunOnMain<T>(Func<T> fn)
+        static T RunOnMain<T>(Func<T> fn, TimeSpan timeout)
         {
             var dispatcher = PipelineServerStartup.Server?.Dispatcher;
             if (dispatcher != null && dispatcher.IsInitialized && !dispatcher.IsMainThread())
-                return dispatcher.Invoke(fn);
+                return dispatcher.Invoke(fn, PipelineTimeout.StopBefore(timeout));
             return fn();
         }
 

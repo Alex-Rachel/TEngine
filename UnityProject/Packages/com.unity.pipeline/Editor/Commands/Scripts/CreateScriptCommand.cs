@@ -25,8 +25,10 @@ namespace Unity.Pipeline.Editor.Commands.Scripts
     /// identity. It does not trigger a recompile itself — the agent owns that step so it can batch
     /// multiple authoring writes before paying the domain-reload cost once.
     /// </summary>
-    public static class CreateScriptCommand
+    static class CreateScriptCommand
     {
+        const string Group = "script";
+
         /// <summary>
         /// Default class body (the Start/Update stubs) written inside the generated class, matching
         /// Unity's own new-MonoBehaviour template so the output reads like a hand-authored script.
@@ -42,14 +44,15 @@ namespace Unity.Pipeline.Editor.Commands.Scripts
             "    {\n\n" +
             "    }\n";
 
-        [CliCommand("create_script",
+        [CliGroupCommand(Group,
             "Create a new C# script (default base class MonoBehaviour) from a template under the authoring root. " +
-            "NOTE: the type does not exist until a recompile completes — to attach it, call recompile, poll recompile_status, then attach_script.")]
-        public static AuthoringResult CreateScript(
+            "NOTE: the type does not exist until a recompile completes — to attach it, call " + CommandNames.ScriptRecompile + ", poll " + CommandNames.ScriptRecompileStatus + ", then " + CommandNames.ScriptAttach + ".",
+            Tags = new[] { "scripts" })]
+        public static AuthoringResult Create(
             [CliArg("name", "Class/file name without extension, e.g. PlayerController. Must be a valid C# identifier.", Required = true)] string name,
             [CliArg("path", "Folder (relative to the authoring root; the Assets/ prefix is optional) to write the .cs into. Defaults to the authoring root.")] string path = null,
             [CliArg("namespace", "Optional namespace to wrap the class in. Omit for the global namespace.")] string @namespace = null,
-            [CliArg("base_class", "Base class to derive from. Defaults to MonoBehaviour.")] string baseClass = "MonoBehaviour",
+            [CliArg("base-class", "Base class to derive from. Defaults to MonoBehaviour.")] string baseClass = "MonoBehaviour",
             [CliArg("overwrite", "Overwrite the file if it already exists. Defaults to false (an existing file is an error).")] bool overwrite = false)
         {
             if (string.IsNullOrWhiteSpace(name))
@@ -82,7 +85,7 @@ namespace Unity.Pipeline.Editor.Commands.Scripts
 
             if (!AssetDatabase.IsValidFolder(folder))
                 throw new ArgumentException(
-                    $"Destination folder '{folder}' does not exist. Create it first with create_folder.");
+                    $"Destination folder '{folder}' does not exist. Create it first with {CommandNames.AssetCreateFolder}.");
 
             var assetPath = $"{folder}/{className}.cs";
             if (File.Exists(ToAbsolute(assetPath)) && !overwrite)

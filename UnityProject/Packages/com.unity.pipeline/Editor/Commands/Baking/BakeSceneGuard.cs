@@ -1,4 +1,5 @@
 using System.Linq;
+using Unity.Pipeline.Commands;
 using UnityEngine.SceneManagement;
 
 namespace Unity.Pipeline.Editor.Commands.Baking
@@ -18,7 +19,7 @@ namespace Unity.Pipeline.Editor.Commands.Baking
             return new
             {
                 code = "no_scene",
-                message = "No open, saved scene to bake. Open a scene first (open_scene) and ensure it is saved to disk."
+                message = "No open, saved scene to bake. Open a scene first (" + CommandNames.SceneOpen + ") and ensure it is saved to disk."
             };
         }
 

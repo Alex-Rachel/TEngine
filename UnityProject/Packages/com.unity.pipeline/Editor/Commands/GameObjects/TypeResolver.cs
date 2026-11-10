@@ -14,7 +14,7 @@ namespace Unity.Pipeline.Editor.Commands.GameObjects
     /// full-name match, then a short-name match. Only <see cref="Component"/> subclasses are accepted
     /// so the result is always valid for AddComponent/GetComponent.
     /// </summary>
-    public static class TypeResolver
+    static class TypeResolver
     {
         /// <summary>
         /// Resolve a component type by name, or return null if no unambiguous <see cref="Component"/>

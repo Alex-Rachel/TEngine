@@ -13,7 +13,7 @@ namespace Unity.Pipeline.Editor.Commands.PackageManager
     /// <see cref="TryRead"/> resolves the project path and is main-thread only (it reads
     /// <see cref="Application.dataPath"/>).
     /// </summary>
-    public static class PackageManifest
+    static class PackageManifest
     {
         /// <summary>Project-relative path to the UPM manifest.</summary>
         public const string RelativePath = "Packages/manifest.json";

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Unity.Pipeline;
 using Unity.Pipeline.Commands;
 using Unity.Pipeline.Runtime.Telemetry;
 using UnityEngine;
@@ -11,10 +12,12 @@ namespace Unity.Pipeline.Runtime.Commands
     /// Runtime status information for Unity Player builds.
     /// Provides Player-appropriate status without Editor-specific APIs.
     /// </summary>
-    public static class RuntimeStatusCommand
+    static class RuntimeStatusCommand
     {
-        [CliCommand("runtime_status", "Get comprehensive runtime application status", MainThreadRequired = true, RuntimeOnly = true)]
-        public static RuntimeStatusResponse GetRuntimeStatus()
+        const string Group = "runtime";
+
+        [CliGroupCommand(Group, "Get comprehensive runtime application status", MainThreadRequired = true, Tags = new[] { "runtime" })]
+        public static RuntimeStatusResponse Status()
         {
             try
             {
@@ -27,7 +30,7 @@ namespace Unity.Pipeline.Runtime.Commands
                     Version = Application.version,
 
                     // Runtime state
-                    IsPlaying = true, // Always true in Player builds
+                    IsPlaying = Application.isPlaying,
                     TargetFrameRate = Application.targetFrameRate,
                     TimeScale = Time.timeScale,
                     RealTimeSinceStartup = Time.realtimeSinceStartup,
@@ -39,6 +42,11 @@ namespace Unity.Pipeline.Runtime.Commands
 
                     // Live performance telemetry (fps, frame time, memory, profiler counters)
                     Performance = BuildPerformanceTelemetry(),
+
+                    // The driver's actual state and in-effect config — not just what Project
+                    // Settings currently says, which can differ (live JSON in the Editor vs. the
+                    // snapshot frozen into the Player at build time).
+                    PipelineDriver = BuildDriverStatus(),
 
                     // Timestamp
                     Timestamp = DateTime.UtcNow
@@ -52,9 +60,33 @@ namespace Unity.Pipeline.Runtime.Commands
         }
 
         /// <summary>
+        /// Null when no driver was ever bootstrapped (e.g. the Pipeline is not built into this
+        /// build), otherwise the driver's actual running state and the config values presently
+        /// governing it.
+        /// maxWorkItemsPerFrame is read via CurrentMaxWorkItemsPerFrame rather than the config
+        /// directly, since that field alone can be tuned live after the driver started.
+        /// </summary>
+        private static RuntimePipelineDriverStatus BuildDriverStatus()
+        {
+            var driver = RuntimePipelineBootstrap.Instance;
+            if (driver == null)
+                return null;
+
+            var config = driver.Config;
+            return new RuntimePipelineDriverStatus
+            {
+                IsServerRunning = driver.IsServerRunning,
+                ActualPort = driver.ActualPort,
+                EnableAuditLogging = config != null && config.enableAuditLogging,
+                AutoStart = config != null && config.autoStart,
+                MaxWorkItemsPerFrame = driver.CurrentMaxWorkItemsPerFrame
+            };
+        }
+
+        /// <summary>
         /// Assemble the live performance section from two independent sources:
         /// the per-frame <see cref="FrameStatsSampler"/> (fps / frame time / profiler counters), which only
-        /// exists while a <see cref="RuntimePipelineManager"/> is feeding it, and the Profiler memory APIs,
+        /// exists while a <see cref="RuntimePipelineDriver"/> is feeding it, and the Profiler memory APIs,
         /// which can be read on demand at any time. Frame-stat fields stay at their defaults (and
         /// <see cref="RuntimePerformanceTelemetry.FrameStatsAvailable"/> stays false) when no sampler is
         /// running — e.g. in EditMode tests — so a missing sampler degrades gracefully rather than throwing.
@@ -100,7 +132,7 @@ namespace Unity.Pipeline.Runtime.Commands
     /// Response model for runtime status information.
     /// </summary>
     [Serializable]
-    public class RuntimeStatusResponse
+    class RuntimeStatusResponse
     {
         // Application Information
         public string UnityVersion { get; set; }
@@ -109,7 +141,7 @@ namespace Unity.Pipeline.Runtime.Commands
         public string Version { get; set; }
         
         // Runtime State
-        public bool IsPlaying { get; set; } // Always true for Player builds
+        public bool IsPlaying { get; set; }
         public int TargetFrameRate { get; set; }
         public float TimeScale { get; set; }
         public float RealTimeSinceStartup { get; set; }
@@ -122,8 +154,30 @@ namespace Unity.Pipeline.Runtime.Commands
         // Live performance telemetry
         public RuntimePerformanceTelemetry Performance { get; set; }
 
+        // The runtime Pipeline driver's actual state, or null if none was ever bootstrapped.
+        public RuntimePipelineDriverStatus PipelineDriver { get; set; }
+
         // Metadata
         public DateTime Timestamp { get; set; }
+    }
+
+    /// <summary>
+    /// The runtime Pipeline driver's actual state: whether its server is running, the port it's
+    /// actually on, and the config values presently governing it. Distinct from what Project
+    /// Settings > Pipeline > Runtime currently shows — that's live-editable in the Editor, while a
+    /// running driver is working from whatever it was initialized with (a Player's is additionally
+    /// frozen at build time). This is the authoritative "what's actually happening right now" view.
+    /// </summary>
+    [Serializable]
+    class RuntimePipelineDriverStatus
+    {
+        public bool IsServerRunning { get; set; }
+        public int ActualPort { get; set; }
+        public bool EnableAuditLogging { get; set; }
+        public bool AutoStart { get; set; }
+
+        /// <summary>The value actually governing the dispatcher right now — see RuntimePipelineDriver.CurrentMaxWorkItemsPerFrame.</summary>
+        public int MaxWorkItemsPerFrame { get; set; }
     }
 
     /// <summary>
@@ -132,9 +186,9 @@ namespace Unity.Pipeline.Runtime.Commands
     /// are populated from the per-frame <see cref="FrameStatsSampler"/>; memory fields are read on demand.
     /// </summary>
     [Serializable]
-    public class RuntimePerformanceTelemetry
+    class RuntimePerformanceTelemetry
     {
-        // Frame timing — sampled over a rolling window by the RuntimePipelineManager.
+        // Frame timing — sampled over a rolling window by the RuntimePipelineDriver.
         /// <summary>False when no sampler is running; the fps / frame-time fields below are then meaningless.</summary>
         public bool FrameStatsAvailable { get; set; }
         public int SampleWindow { get; set; }

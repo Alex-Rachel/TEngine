@@ -7,23 +7,30 @@ namespace Unity.Pipeline.Runtime.Commands
     /// Runtime application control commands for Unity Player builds.
     /// Provides basic application lifecycle and performance control.
     /// </summary>
-    public static class RuntimeApplicationCommand
+    static class RuntimeApplicationCommand
     {
-        [CliCommand("quit", "Gracefully quit the Unity application", MainThreadRequired = true, RuntimeOnly = true)]
-        public static string QuitApplication(
-            [CliArg("exitCode", "Exit code for the application")] int exitCode = 0)
+        const string Group = "runtime";
+
+        [CliGroupCommand(Group, "Gracefully quit the Unity application. In the Editor, behaves like editor quit.", MainThreadRequired = true, Tags = new[] { "runtime/application" })]
+        public static string Quit(
+            [CliArg("exit-code", "Exit code for the application")] int exitCode = 0)
         {
+#if UNITY_EDITOR
+            EditorQuit.Quit(save: false, discard: false, exitCode);
+            return $"Editor quit scheduled with exit code {exitCode}";
+#else
             // Schedule quit on next frame to allow HTTP response to be sent
             var quitObject = new GameObject("PipelineQuitScheduler");
             var quitScheduler = quitObject.AddComponent<QuitScheduler>();
             quitScheduler.Initialize(exitCode);
 
             return $"Application quit scheduled with exit code {exitCode}";
+#endif
         }
 
-        [CliCommand("set_target_framerate", "Set the target frame rate for the application", MainThreadRequired = true, RuntimeOnly = true)]
+        [CliGroupCommand(Group, "Set the target frame rate for the application", MainThreadRequired = true, Tags = new[] { "runtime/application" })]
         public static string SetTargetFrameRate(
-            [CliArg("frameRate", "Target frame rate (-1 for platform default, 0 for unlimited)", Required = true)] int frameRate)
+            [CliArg("frame-rate", "Target frame rate (-1 for platform default, 0 for unlimited)", Required = true)] int frameRate)
         {
             var previousFrameRate = Application.targetFrameRate;
             Application.targetFrameRate = frameRate;
@@ -38,7 +45,7 @@ namespace Unity.Pipeline.Runtime.Commands
             return $"Target frame rate set to {frameRateDescription} (was {previousFrameRate})";
         }
 
-        [CliCommand("set_timescale", "Set the time scale for the application", MainThreadRequired = true, RuntimeOnly = true)]
+        [CliGroupCommand(Group, "Set the time scale for the application", MainThreadRequired = true, Tags = new[] { "runtime/application" })]
         public static string SetTimeScale(
             [CliArg("scale", "Time scale multiplier (0.0 to pause, 1.0 for normal speed)", Required = true)] float scale)
         {

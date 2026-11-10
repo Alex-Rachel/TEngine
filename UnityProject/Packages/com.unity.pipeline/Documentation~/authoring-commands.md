@@ -11,11 +11,11 @@ content authoring:
 - **Undo/redo** — grouping a command's scene mutations into a single, revertible step.
 
 Together these let one command's output feed the next command's input, so an agent can chain calls
-(`create_gameobject` → `add_component` → `set_component_properties` → `create_prefab`) without ever
+(`gameobject create` → `component add` → `component set_properties` → `prefab create`) without ever
 handling a raw Unity object itself. If you want to support a content type the package doesn't cover
 yet (materials, audio, lighting, terrain, …), this is the pattern to follow.
 
-Read [Creating commands](creating-commands.md) first — this page assumes you know how `[CliCommand]`,
+Read [Creating commands](creating-commands.md) first — this page assumes you know how `[CliGroupCommand]`,
 `[CliArg]`, `MainThreadRequired`, and the response envelope work.
 
 ## Authoring vs. management commands
@@ -28,7 +28,7 @@ GameObjects, components) and hand the agent back an object identity.
 project settings (`Editor/Commands/ProjectSettings/`), builds (`Build/`), and packages
 (`PackageManager/`). They are a **different category** and deliberately do
 **not** follow the full authoring contract. They share only the cross-cutting safety conventions
-(the `confirm`/`dry_run` gate and, where relevant, `ObjectResolver`/`ProjectPaths`) — see
+(the `confirm`/`dry-run` gate and, where relevant, `ObjectResolver`/`ProjectPaths`) — see
 [Safety & mutations](safety-and-mutations.md).
 
 | Concern | Authoring command | Management command |
@@ -36,7 +36,7 @@ project settings (`Editor/Commands/ProjectSettings/`), builds (`Build/`), and pa
 | Object input | `ObjectRef` → `ObjectResolver.TryResolve` | same, when it references an object (e.g. a scene in the build list) |
 | Path input | `ProjectPaths.Resolve` (confined to the authoring root) | as needed; may be unconfined by design (e.g. a build output path) |
 | Undo | scene/object mutations wrapped in `AuthoringUndoScope` + registered `Undo` APIs | **none** — settings / AssetDatabase / UPM writes don't participate in Undo, so no scope; note `Not undoable via Ctrl+Z.` in the description instead |
-| Destructive gate | `confirm`/`dry_run` where destructive | `confirm`/`dry_run` where destructive (same convention) |
+| Destructive gate | `confirm`/`dry-run` where destructive | `confirm`/`dry-run` where destructive (same convention) |
 | Return value | `AuthoringResult` via `ObjectResolver.Describe` | a domain model (e.g. `ProjectSettingsResponse`, `PackageMutationResponse`) or a plain result object |
 | Failure | **throw** (`ArgumentException` / `InvalidOperationException`) | throw, **or** return a structured `{ success = false, code, error }` object — consistent within the area |
 
@@ -56,22 +56,22 @@ conventions; the checklist below is for content-authoring commands.
 Authoring commands are Editor-only. Put them under `Editor/Commands/<Area>/` in the
 `Unity.Pipeline.Editor.Commands.<Area>` namespace (see `Editor/Commands/Authoring/AuthoringConfigCommands.cs`).
 
-## The authoring root (`set_authoring_root`)
+## The authoring root (`authoring set_root`)
 
 Agents pass **bare, relative paths** (`"Materials/Stone"`), not full project paths. `ProjectPaths`
 resolves those against a configurable **authoring root** and *confines* every write to it. The root
 defaults to `Assets` (full project access); an agent can narrow it to a sub-folder to sandbox itself:
 
 ```
-get_authoring_root                      → { "root": "Assets" }
-set_authoring_root --root Assets/AgentWork
+authoring get_root                      → { "root": "Assets" }
+authoring set_root --root Assets/AgentWork
 ```
 
 These are just thin commands over `ProjectPaths.AuthoringRoot` (`Editor/Commands/Authoring/AuthoringConfigCommands.cs`):
 
 ```csharp
-[CliCommand("set_authoring_root", "Set the base folder (under Assets/) that bare authoring paths resolve against and are confined to. Use 'Assets' for full project access.")]
-public static object SetAuthoringRoot(
+[CliGroupCommand(Group, "Set the base folder (under Assets/) that bare authoring paths resolve against and are confined to. Use 'Assets' for full project access.")]
+public static object SetRoot(
     [CliArg("root", "Project-relative folder under Assets/, e.g. Assets/AgentWork. Use 'Assets' to allow the whole project.", Required = true)] string root)
 {
     // Throws ArgumentException for invalid roots (outside Assets/ or containing ".."); the
@@ -120,7 +120,13 @@ public static Renderer ResolveRenderer(ObjectRef target)
 ```
 
 Resolve **outside** any undo scope / before mutating, so a bad handle fails before your command
-changes anything (see `create_gameobject`, which resolves its `parent` before entering the scope).
+changes anything (see `gameobject create`, which resolves its `parent` before entering the scope).
+
+When the handle is a plain string (the usual agent input), a value with a file extension and no
+leading `/` — e.g. `"Materials/Floor.mat"` — is taken as an asset path and normalized under the
+authoring root, so the `Assets/` prefix is optional (mirroring path-taking commands). A leading `/`
+or an extension-less value stays a `hierarchyPath`; a dotted scene name like `"Cube.001"` still
+resolves because the `path` branch falls back to a hierarchy lookup.
 
 ## Returning objects: `AuthoringResult`
 
@@ -194,7 +200,9 @@ namespace Unity.Pipeline.Editor.Commands.Rendering
     /// <summary>Authoring commands for materials (rendering).</summary>
     public static class MaterialCommands
     {
-        [CliCommand("create_material",
+        const string Group = "rendering";
+
+        [CliGroupCommand(Group,
             "Create a Material asset (default shader 'Standard') under the authoring root. " +
             "NOTE: asset creation is not undoable via Ctrl+Z.")]
         public static AuthoringResult CreateMaterial(
@@ -224,7 +232,7 @@ namespace Unity.Pipeline.Editor.Commands.Rendering
             return result;
         }
 
-        [CliCommand("set_material", "Assign a material asset to a Renderer on a scene GameObject.")]
+        [CliGroupCommand(Group, "Assign a material asset to a Renderer on a scene GameObject.")]
         public static AuthoringResult SetMaterial(
             [CliArg("target", "Handle of the GameObject (or Renderer) to modify.", Required = true)] ObjectRef target,
             [CliArg("material", "Handle of the material asset to assign (path/guid/globalId).", Required = true)] ObjectRef material)
@@ -264,7 +272,7 @@ namespace Unity.Pipeline.Editor.Commands.Rendering
             var parent = Path.GetDirectoryName(assetPath)?.Replace('\\', '/');
             if (string.IsNullOrEmpty(parent) || AssetDatabase.IsValidFolder(parent))
                 return;
-            // Create intermediate folders (see create_folder / CreateFolderRecursive).
+            // Create intermediate folders (see `asset create_folder` / CreateFolderRecursive).
             Directory.CreateDirectory(ProjectPaths.ProjectRoot + "/" + parent);
             AssetDatabase.Refresh();
         }
@@ -275,10 +283,10 @@ namespace Unity.Pipeline.Editor.Commands.Rendering
 An agent chains them by feeding the first result into the second:
 
 ```
-create_material --path Materials/Stone --shader Standard
+rendering create_material --path Materials/Stone --shader Standard
     → { "assetPath": "Assets/AgentWork/Materials/Stone.mat", "guid": "…", "type": "Material" }
 
-set_material --target '{"hierarchyPath":"/Ground"}' --material '{"path":"Assets/AgentWork/Materials/Stone.mat"}'
+rendering set_material --target '{"hierarchyPath":"/Ground"}' --material '{"path":"Assets/AgentWork/Materials/Stone.mat"}'
     → { "instanceId": …, "hierarchyPath": "/Ground", "type": "MeshRenderer" }
 ```
 
@@ -287,7 +295,7 @@ set_material --target '{"hierarchyPath":"/Ground"}' --material '{"path":"Assets/
 For *content-authoring* commands. Config/build/package commands follow the lighter
 [management-command conventions](#authoring-vs-management-commands) instead.
 
-- [ ] Editor-only, under `Editor/Commands/<Area>/`, `static` (any accessibility — `public`/`internal`/`private`), tagged `[CliCommand]`.
+- [ ] Editor-only, under `Editor/Commands/<Area>/`, `static` (any accessibility — `public`/`internal`/`private`), tagged `[CliGroupCommand]` with the class's `const string Group`; the method name, verb first, gives the command name.
 - [ ] Every path parameter resolved through `ProjectPaths.Resolve` (never concatenated).
 - [ ] Existing-object inputs taken as `ObjectRef`, resolved via `ObjectResolver.TryResolve`; resolve **before** mutating.
 - [ ] Scene/object mutations wrapped in an `AuthoringUndoScope` and registered with the matching `Undo` API.
@@ -301,9 +309,9 @@ New commands register automatically after the next recompile (see
 [Creating commands → Discovery](creating-commands.md#discovery)). Drive the live editor to verify:
 
 ```
-command recompile
-command recompile_status          # poll until done
-command create_material --path Materials/Stone
+command script recompile
+command script recompile_status          # poll until done
+command rendering create_material --path Materials/Stone
 ```
 
 ## See also

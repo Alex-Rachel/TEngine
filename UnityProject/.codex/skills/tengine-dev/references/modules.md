@@ -12,8 +12,20 @@ UI 属性为 `UIModule`，不是虚构的 IUIModule。启动层和 GameProto 按
 | 资源 | [资源 API](resource-api.md) |
 | UI | [UI 生命周期](ui-lifecycle.md) |
 
-`Timer.AddTimer(callback, time, ...)` 回调在前；持有 timerId，在所属生命周期结束时 RemoveTimer。
-场景加载的进度参数当前拼作 `progressCallBack`。不要用默认 SceneManager 加载替代 YooAsset 场景管理。
-FSM 的状态切换位置、数据约束取实际接口，不照搬其他框架的 public ChangeState 示例。
-MemoryPool 对象归还前重置、归还后不访问、不重复归还。
-GameModule.Shutdown/全局计时器清理只用于全局生命周期，不能做局部错误恢复。
+## 调用与归属
+
+- `Timer.AddTimer(callback, time, ...)` 回调在前；持有 timerId，在所属生命周期结束时 RemoveTimer。
+  默认 isLoop/isUnscaled 均为 false；隐藏时是否暂停由业务决定。
+- 场景加载进度参数当前拼作 `progressCallBack`。按 `ISceneModule` 核对激活、挂起和卸载语义，
+  不绕过 YooAsset 资源管理改用默认 SceneManager 加载。
+- Audio 模块已持有自己的资源，先查其接口、回调和停止机制，不在调用前重复加载同一 AudioClip。
+- FSM 的状态切换位置、数据约束取实际接口，不照搬其他框架的 public ChangeState 示例。
+- [MemoryPool](../../../../Assets/TEngine/Runtime/Core/MemoryPool/MemoryPool.cs) 归还时调用 IMemory.Clear；
+  类型在 Clear 内重置状态，交还后不再访问、不重复交还。
+
+`GameModule.Shutdown()` 当前仅清空静态模块缓存，不会自动关闭 UI、卸载资源、停止计时器或清理全局事件。
+真正的全局生命周期沿 [GameApp](../../../../Assets/GameScripts/HotFix/GameLogic/GameApp.cs)、
+[ModuleSystem](../../../../Assets/TEngine/Runtime/Core/ModuleSystem.cs) 和各模块实现核对。
+不要用 Shutdown、RemoveAllTimer 或全局清理恢复一个局部任务的错误。
+
+改动哪种模块就验证其实际行为和所有权；范围选择见 [verification.md](verification.md)。

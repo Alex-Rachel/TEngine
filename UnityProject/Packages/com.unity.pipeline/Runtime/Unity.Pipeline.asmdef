@@ -2,27 +2,34 @@
     "name": "Unity.Pipeline",
     "rootNamespace": "Unity.Pipeline",
     "references": [
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "Unity.Pipeline.Attributes",
+        "Unity.Pipeline.IlInterpreter"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": true,
     "precompiledReferences": [
-        "Microsoft.CodeAnalysis.dll",
-        "Microsoft.CodeAnalysis.CSharp.dll",
-        "System.Collections.Immutable.dll",
-        "System.Runtime.CompilerServices.Unsafe.dll",
-        "System.Reflection.Metadata.dll",
+        "UnityPipeline.Microsoft.CodeAnalysis.dll",
+        "UnityPipeline.Microsoft.CodeAnalysis.CSharp.dll",
+        "UnityPipeline.System.Collections.Immutable.dll",
+        "UnityPipeline.System.Runtime.CompilerServices.Unsafe.dll",
+        "UnityPipeline.System.Reflection.Metadata.dll",
         "Newtonsoft.Json.dll"
     ],
     "autoReferenced": true,
-    "defineConstraints": [],
+    "defineConstraints": [
+        "UNITY_EDITOR || ENABLE_RUNTIME_PIPELINE_DEV || ENABLE_RUNTIME_PIPELINE",
+        "UNITY_EDITOR || UNITY_INCLUDE_INSTRUMENTATION || ENABLE_PROFILER || ENABLE_RUNTIME_PIPELINE",
+        "UNITY_EDITOR || ENABLE_RUNTIME_PIPELINE_DEV || !UNITY_INCLUDE_INSTRUMENTATION",
+        "UNITY_EDITOR || ENABLE_RUNTIME_PIPELINE_DEV || !ENABLE_PROFILER"
+    ],
     "versionDefines": [
         {
-            "name": "com.unity.modules.unitywebrequest",
-            "expression": "1.0.0",
-            "define": "UNITY_2022_3_OR_NEWER"
+            "name": "com.unity.inputsystem",
+            "expression": "0.0.0",
+            "define": "PIPELINE_HAS_INPUT_SYSTEM_PACKAGE"
         }
     ],
     "noEngineReferences": false

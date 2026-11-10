@@ -10,7 +10,7 @@ namespace Unity.Pipeline.Editor.Commands.Materials
     /// keywords, and the full list of shader properties with their current values.
     /// </summary>
     [Serializable]
-    public class MaterialPropertiesResult
+    class MaterialPropertiesResult
     {
         [JsonProperty("assetPath")]
         public string AssetPath { get; set; }
@@ -32,7 +32,7 @@ namespace Unity.Pipeline.Editor.Commands.Materials
 
     /// <summary>A single shader property of a material with its current value.</summary>
     [Serializable]
-    public class MaterialPropertyValue
+    class MaterialPropertyValue
     {
         [JsonProperty("name")]
         public string Name { get; set; }
@@ -54,7 +54,7 @@ namespace Unity.Pipeline.Editor.Commands.Materials
 
     /// <summary>Inclusive min/max bounds of a Range shader property.</summary>
     [Serializable]
-    public class MaterialRange
+    class MaterialRange
     {
         [JsonProperty("min")]
         public float Min { get; set; }
@@ -69,7 +69,7 @@ namespace Unity.Pipeline.Editor.Commands.Materials
     /// reason), and the material's (possibly reassigned) shader name.
     /// </summary>
     [Serializable]
-    public class SetMaterialPropertiesResult : AuthoringResult
+    class SetMaterialPropertiesResult : AuthoringResult
     {
         /// <summary>Shader name after any reassignment.</summary>
         [JsonProperty("shader")]
@@ -89,7 +89,7 @@ namespace Unity.Pipeline.Editor.Commands.Materials
 
     /// <summary>A single discovered shader entry from <c>list_shaders</c>.</summary>
     [Serializable]
-    public class ShaderInfo
+    class ShaderInfo
     {
         [JsonProperty("name")]
         public string Name { get; set; }
@@ -108,7 +108,7 @@ namespace Unity.Pipeline.Editor.Commands.Materials
 
     /// <summary>Result of <c>get_shader_properties</c> (CLI-213): a shader's declared property list.</summary>
     [Serializable]
-    public class ShaderPropertiesResult
+    class ShaderPropertiesResult
     {
         [JsonProperty("shader")]
         public string Shader { get; set; }
@@ -119,7 +119,7 @@ namespace Unity.Pipeline.Editor.Commands.Materials
 
     /// <summary>A single declared shader property, introspected via <c>ShaderUtil</c>.</summary>
     [Serializable]
-    public class ShaderPropertyInfo
+    class ShaderPropertyInfo
     {
         [JsonProperty("name")]
         public string Name { get; set; }

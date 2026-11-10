@@ -193,7 +193,7 @@ def decode_output(value):
 
 def render_report(path, data=None):
     path = Path(path)
-    data = data or read_json(path / "report.json")
+    data = redact(data if data is not None else read_json(path / "report.json"))
     # An interrupted run stays blocked even if its completed steps passed.
     status = aggregate(data["steps"]) if data.get("finishedAt") else "blocked"
     lines = [f"# Workflow {data['runId']}", "", f"- Status: {status}",

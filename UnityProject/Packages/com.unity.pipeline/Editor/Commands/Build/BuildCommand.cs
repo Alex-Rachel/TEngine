@@ -10,6 +10,9 @@ using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
+#if UNITY_6000_5_OR_NEWER
+using Unity.Scripting.LifecycleManagement;
+#endif
 
 namespace Unity.Pipeline.Editor.Commands.Build
 {
@@ -32,8 +35,12 @@ namespace Unity.Pipeline.Editor.Commands.Build
     /// survives the domain reload a build can incur, so the last report is retained until the next build.
     /// </summary>
     [InitializeOnLoad]
-    public static class BuildCommand
+#if UNITY_6000_5_OR_NEWER
+    [NoAutoStaticsCleanup]
+#endif
+    static class BuildCommand
     {
+        const string Group = "build";
         const string StatusFile = "Temp/pipeline_build_status.json";
 
         // BuildOptions that callers may pass by name (the supported set from the ticket). Parsed
@@ -65,6 +72,14 @@ namespace Unity.Pipeline.Editor.Commands.Build
         static BuildTarget s_PendingTarget;
         static string s_PendingOutput;
         static BuildOptions s_PendingOptions;
+
+        /// <summary>
+        /// BuildOptions of the scripted build currently inside BuildPipeline.BuildPlayer, or null
+        /// when no `build` command is running. Build processors read it because a scripted build
+        /// with BuildOptions.Development is a development build even when the Build Settings
+        /// toggle (EditorUserBuildSettings.development) is off.
+        /// </summary>
+        internal static BuildOptions? ActiveScriptedBuildOptions { get; private set; }
         static string[] s_PendingScenes;
         static string s_PendingProfile;
         static string s_PendingBuildId;
@@ -74,24 +89,26 @@ namespace Unity.Pipeline.Editor.Commands.Build
             EditorApplication.update += OnUpdate;
         }
 
-        [CliCommand("build",
+        [CliGroupCommand(Group,
             "Trigger an async Player build and report the full BuildReport. Returns immediately (queued); " +
-            "poll build_status until status is 'completed'. DetailedBuildReport is included by default unless " +
-            "'options' is supplied. Use dry_run to validate without building.",
-            MainThreadRequired = false)]
-        public static object Build(
+            "poll " + CommandNames.BuildStatus + " until status is 'completed'. DetailedBuildReport is included by default unless " +
+            "'options' is supplied. Use dry-run to validate without building.",
+            MainThreadRequired = false,
+            Tags = new[] { "build" })]
+        public static object Run(
             [CliArg("target", "BuildTarget name (e.g. StandaloneWindows64). Defaults to the active target. Must be installed.")] string target = "",
-            [CliArg("outputPath", "Output path (absolute, or relative to the project root). Defaults to the last/auto path.")] string outputPath = "",
-            [CliArg("profileName", "Build Profile name to activate before building (Unity 6 only; ignored otherwise).")] string profileName = "",
+            [CliArg("output-path", "Output path (absolute, or relative to the project root). Defaults to the last/auto path.")] string outputPath = "",
+            [CliArg("profile-name", "Build Profile name to activate before building (Unity 6 only; ignored otherwise).")] string profileName = "",
             [CliArg("options", "BuildOptions names. Omit to get just DetailedBuildReport; supplying any disables that default.")] string[] options = null,
             [CliArg("scenes", "Scene asset paths to build (e.g. Assets/Scenes/Main.unity). Defaults to EditorBuildSettings.")] string[] scenes = null,
-            [CliArg("confirm", "Acknowledge and run the build; without it the call is refused. Use dry_run to validate only.")] bool confirm = false,
-            [CliArg("dry_run", "Validate target/outputPath/scenes without building.")] bool dryRun = false)
+            [CliArg("confirm", "Acknowledge and run the build; without it the call is refused. Use dry-run to validate only.")] bool confirm = false,
+            [CliArg("dry-run", "Validate target/output-path/scenes without building.")] bool dryRun = false,
+            [CliArg("timeout", "Seconds to wait for the build to be validated and queued (the build itself is polled via " + CommandNames.BuildStatus + ").")] double timeoutInSeconds = 60)
         {
             // Validation + queueing both touch Unity APIs, so run them on the main thread. When invoked
             // off-thread (the normal HTTP path) this marshals through the server dispatcher; in-process
             // (tests, no server) it runs inline.
-            return RunOnMain<object>(() => ValidateAndQueue(target, outputPath, profileName, options, scenes, confirm, dryRun));
+            return RunOnMain<object>(() => ValidateAndQueue(target, outputPath, profileName, options, scenes, confirm, dryRun), PipelineTimeout.FromSeconds(timeoutInSeconds));
         }
 
         static object ValidateAndQueue(string targetArg, string outputArg, string profileName,
@@ -100,7 +117,7 @@ namespace Unity.Pipeline.Editor.Commands.Build
             lock (s_Lock)
             {
                 if (!dryRun && (s_Building || s_Pending))
-                    return new { status = "busy", success = false, message = "A build is already queued or in progress. Poll build_status." };
+                    return new { status = "busy", success = false, message = "A build is already queued or in progress. Poll " + CommandNames.BuildStatus + "." };
             }
 
             var errors = new List<object>();
@@ -110,9 +127,9 @@ namespace Unity.Pipeline.Editor.Commands.Build
             if (!string.IsNullOrWhiteSpace(targetArg))
             {
                 if (!TryParseTarget(targetArg, out target))
-                    errors.Add(Invalid("target", $"Unknown BuildTarget '{targetArg}'. Use a name from list_build_targets."));
+                    errors.Add(Invalid("target", $"Unknown BuildTarget '{targetArg}'. Use a name from {CommandNames.BuildTargetList}."));
                 else if (!BuildPipeline.IsBuildTargetSupported(BuildPipeline.GetBuildTargetGroup(target), target))
-                    errors.Add(Invalid("target", $"Build target '{target}' is not installed (isInstalled=false in list_build_targets)."));
+                    errors.Add(Invalid("target", $"Build target '{target}' is not installed (isInstalled=false in {CommandNames.BuildTargetList})."));
             }
 
             // ---- options ----
@@ -158,11 +175,11 @@ namespace Unity.Pipeline.Editor.Commands.Build
             {
                 outputPath = ResolveOutput(outputArg, target);
                 if (!HasExistingAncestor(outputPath))
-                    errors.Add(Invalid("outputPath", $"No existing parent directory for '{outputPath}'."));
+                    errors.Add(Invalid("output-path", $"No existing parent directory for '{outputPath}'."));
             }
             catch (Exception ex)
             {
-                errors.Add(Invalid("outputPath", $"Output path is invalid: {ex.Message}"));
+                errors.Add(Invalid("output-path", $"Output path is invalid: {ex.Message}"));
             }
 
             if (dryRun)
@@ -186,7 +203,7 @@ namespace Unity.Pipeline.Editor.Commands.Build
                 {
                     status = "error",
                     success = false,
-                    message = "Refused: this triggers a player build. Pass confirm=true to build, or dry_run=true to validate without building."
+                    message = "Refused: this triggers a player build. Pass confirm=true to build, or dry-run=true to validate without building."
                 };
 
             var buildId = NewBuildId();
@@ -202,50 +219,42 @@ namespace Unity.Pipeline.Editor.Commands.Build
                 s_Pending = true;
             }
 
-            WriteStatusJson(new { status = "queued", buildId, message = "Build queued. Poll build_status until status is 'completed'." });
+            WriteStatusJson(new { status = "queued", buildId, message = "Build queued. Poll " + CommandNames.BuildStatus + " until status is 'completed'." });
 
             return new { status = "queued", buildId };
         }
 
-        [CliCommand("build_status",
+        [CliGroupCommand(Group,
             "Status of the current/most recent build: idle | queued | building | completed, with the full " +
             "BuildReport (files, packedAssets, buildSteps, errors, warnings) once completed. Retained until the next build.",
-            MainThreadRequired = false)]
-        public static string BuildStatus()
+            MainThreadRequired = false,
+            Tags = new[] { "build" })]
+        public static JToken Status()
         {
-            if (!File.Exists(StatusFile))
-                return "{\"status\":\"idle\"}";
+            var status = StatusFileReader.ReadOrIdle(StatusFile);
 
-            var text = File.ReadAllText(StatusFile);
-
-            // While building, recompute elapsedMs at read time so polling shows live progress.
-            try
+            // While building, recompute elapsedMs at read time so polling shows live progress. A file
+            // that is not a JSON object cannot carry a status, so it passes through untouched.
+            var doc = status as JObject;
+            if (doc != null && (string)doc["status"] == "building")
             {
-                var doc = JObject.Parse(text);
-                if ((string)doc["status"] == "building")
+                long elapsed = 0;
+                var startedStr = (string)doc["buildStartedAt"];
+                if (!string.IsNullOrEmpty(startedStr) &&
+                    DateTime.TryParse(startedStr, null, System.Globalization.DateTimeStyles.RoundtripKind, out var started))
                 {
-                    long elapsed = 0;
-                    var startedStr = (string)doc["buildStartedAt"];
-                    if (!string.IsNullOrEmpty(startedStr) &&
-                        DateTime.TryParse(startedStr, null, System.Globalization.DateTimeStyles.RoundtripKind, out var started))
-                    {
-                        elapsed = (long)Math.Max(0, (DateTime.UtcNow - started.ToUniversalTime()).TotalMilliseconds);
-                    }
-
-                    return JsonConvert.SerializeObject(new
-                    {
-                        status = "building",
-                        buildId = (string)doc["buildId"],
-                        elapsedMs = elapsed
-                    });
+                    elapsed = (long)Math.Max(0, (DateTime.UtcNow - started.ToUniversalTime()).TotalMilliseconds);
                 }
-            }
-            catch
-            {
-                // Malformed file — fall through and return it verbatim.
+
+                return new JObject
+                {
+                    ["status"] = "building",
+                    ["buildId"] = (string)doc["buildId"],
+                    ["elapsedMs"] = elapsed
+                };
             }
 
-            return text;
+            return status;
         }
 
         /// <summary>
@@ -323,7 +332,10 @@ namespace Unity.Pipeline.Editor.Commands.Build
                 options = options
             };
 
-            var report = BuildPipeline.BuildPlayer(buildOptions);
+            ActiveScriptedBuildOptions = options;
+            BuildReport report;
+            try { report = BuildPipeline.BuildPlayer(buildOptions); }
+            finally { ActiveScriptedBuildOptions = null; }
             WriteStatusJson(Project(buildId, report));
         }
 
@@ -489,7 +501,7 @@ namespace Unity.Pipeline.Editor.Commands.Build
             var projectRoot = ProjectPaths.ProjectRoot;
 
             if (!string.IsNullOrWhiteSpace(output))
-                return Path.IsPathRooted(output) ? output : Path.GetFullPath(Path.Combine(projectRoot, output));
+                return ProjectPaths.ResolveFile(output);
 
             var product = string.IsNullOrEmpty(PlayerSettings.productName) ? "Player" : PlayerSettings.productName;
             return Path.Combine(projectRoot, "Builds", target.ToString(), product + ExtensionFor(target));
@@ -537,15 +549,15 @@ namespace Unity.Pipeline.Editor.Commands.Build
                 var info = BuildProfiles.FindByName(profileName);
                 if (info == null)
                 {
-                    Debug.LogWarning($"[pipeline] build: profile '{profileName}' not found; building with current settings.");
+                    Debug.LogWarning($"[pipeline] {CommandNames.BuildRun}: profile '{profileName}' not found; building with current settings.");
                     return;
                 }
                 if (!BuildProfiles.TrySetActive(info))
-                    Debug.LogWarning($"[pipeline] build: could not activate profile '{profileName}'; building with current settings.");
+                    Debug.LogWarning($"[pipeline] {CommandNames.BuildRun}: could not activate profile '{profileName}'; building with current settings.");
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"[pipeline] build: profile activation failed ({ex.Message}); building with current settings.");
+                Debug.LogWarning($"[pipeline] {CommandNames.BuildRun}: profile activation failed ({ex.Message}); building with current settings.");
             }
         }
 
@@ -554,11 +566,11 @@ namespace Unity.Pipeline.Editor.Commands.Build
         /// through the live server's dispatcher; on the main thread (a direct in-process/test call, or no
         /// server running) it runs inline. Mirrors <see cref="PackageManager.PackageManagerCommand"/>.
         /// </summary>
-        static T RunOnMain<T>(Func<T> fn)
+        static T RunOnMain<T>(Func<T> fn, TimeSpan timeout)
         {
             var dispatcher = PipelineServerStartup.Server?.Dispatcher;
             if (dispatcher != null && dispatcher.IsInitialized && !dispatcher.IsMainThread())
-                return dispatcher.Invoke(fn);
+                return dispatcher.Invoke(fn, PipelineTimeout.StopBefore(timeout));
             return fn();
         }
 

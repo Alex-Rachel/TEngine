@@ -21,24 +21,27 @@ namespace Unity.Pipeline.Editor.Commands.Animation
     /// - an existing clip is addressed with an <see cref="ObjectRef"/> resolved by
     ///   <see cref="ObjectResolver"/> and re-confined to the authoring root,
     /// - destructive/overwriting operations require an explicit <c>confirm</c> argument and every
-    ///   command supports <c>dry_run</c>.
+    ///   command supports <c>dry-run</c>.
     ///
     /// NOTE: AnimationClip sub-object edits (curves, clip settings) are NOT covered by Unity's Undo,
     /// so changes are persisted with <see cref="EditorUtility.SetDirty"/> + <see cref="AssetDatabase.SaveAssets"/>
     /// rather than wrapped in an <see cref="AuthoringUndoScope"/>. Only float curves are supported in
     /// v1 (object-reference / PPtr curves are out of scope).
     /// </summary>
-    public static class AnimationClipCommands
+    static class AnimationClipCommands
     {
-        [CliCommand("create_animation_clip",
+        const string Group = "animation.clip";
+
+        [CliGroupCommand(Group,
             "Create an empty .anim AnimationClip asset under the authoring root, with an optional frame rate and loop flag.",
-            MainThreadRequired = true)]
-        public static AuthoringResult CreateAnimationClip(
+            MainThreadRequired = true,
+            Tags = new[] { "animation/clip" })]
+        public static AuthoringResult Create(
             [CliArg("path", "Asset path ending in .anim, relative to the authoring root. The Assets/ prefix is optional.", Required = true)] string path,
-            [CliArg("frameRate", "Sampling frame rate of the clip (default 60).")] float frameRate = 60f,
+            [CliArg("frame-rate", "Sampling frame rate of the clip (default 60).")] float frameRate = 60f,
             [CliArg("loop", "If true, set the clip's loop-time flag in its AnimationClipSettings (default false).")] bool loop = false,
             [CliArg("confirm", "Required (true) only when overwriting an existing asset at the path.")] bool confirm = false,
-            [CliArg("dry_run", "If true, validate inputs and report what would be created without writing anything.")] bool dryRun = false)
+            [CliArg("dry-run", "If true, validate inputs and report what would be created without writing anything.")] bool dryRun = false)
         {
             var normalized = ProjectPaths.Resolve(path, out var error);
             if (normalized == null)
@@ -48,7 +51,7 @@ namespace Unity.Pipeline.Editor.Commands.Animation
                 throw new ArgumentException($"Animation clip path '{normalized}' must end in .anim.");
 
             if (frameRate <= 0f)
-                throw new ArgumentException($"frameRate must be positive (got {frameRate}).");
+                throw new ArgumentException($"frame-rate must be positive (got {frameRate}).");
 
             var exists = AssetDatabase.LoadMainAssetAtPath(normalized) != null;
             if (exists && !confirm)
@@ -81,17 +84,18 @@ namespace Unity.Pipeline.Editor.Commands.Animation
             return result;
         }
 
-        [CliCommand("set_animation_curve",
+        [CliGroupCommand(Group,
             "Add or replace a single float curve binding on an AnimationClip (via AnimationUtility.SetEditorCurve). " +
             "Replacing an existing binding overwrites it rather than duplicating.",
-            MainThreadRequired = true)]
-        public static SetAnimationCurveResult SetAnimationCurve(
+            MainThreadRequired = true,
+            Tags = new[] { "animation/clip" })]
+        public static SetAnimationCurveResult SetCurve(
             [CliArg("clip", "Reference to the AnimationClip to edit (path / guid / globalId).", Required = true)] ObjectRef clip,
             [CliArg("path", "GameObject path relative to the animated root the property lives on. Empty string (default) targets the root.")] string path = "",
             [CliArg("type", "Component type the property lives on, e.g. \"Transform\", \"UnityEngine.Light\". Resolved via the component TypeResolver.", Required = true)] string type = null,
             [CliArg("property", "Curve property name, e.g. \"m_LocalPosition.x\", \"m_LocalScale.y\", \"localEulerAnglesRaw.z\".", Required = true)] string property = null,
             [CliArg("keys", "Keyframes: [{ time, value, inTangent?, outTangent?, weightedMode?: \"None\"|\"In\"|\"Out\"|\"Both\" }]. Omitted tangents default to 0 (flat); this is NOT Unity's Auto tangent mode.", Required = true)] JArray keys = null,
-            [CliArg("dry_run", "If true, validate type/property/keys without writing the curve.")] bool dryRun = false)
+            [CliArg("dry-run", "If true, validate type/property/keys without writing the curve.")] bool dryRun = false)
         {
             var (clipAsset, clipPath) = ResolveClip(clip);
             var componentType = ResolveCurveType(type);
@@ -129,12 +133,13 @@ namespace Unity.Pipeline.Editor.Commands.Animation
             return result;
         }
 
-        [CliCommand("get_animation_clip",
+        [CliGroupCommand(Group,
             "Read an AnimationClip's metadata and all float curve bindings (optionally with keyframes).",
-            MainThreadRequired = true)]
-        public static AnimationClipInfo GetAnimationClip(
+            MainThreadRequired = true,
+            Tags = new[] { "animation/clip" })]
+        public static AnimationClipInfo Get(
             [CliArg("clip", "Reference to the AnimationClip to read (path / guid / globalId).", Required = true)] ObjectRef clip,
-            [CliArg("includeKeys", "If true, include each binding's keyframes (default false).")] bool includeKeys = false)
+            [CliArg("include-keys", "If true, include each binding's keyframes (default false).")] bool includeKeys = false)
         {
             var (clipAsset, clipPath) = ResolveClip(clip);
 
@@ -181,16 +186,17 @@ namespace Unity.Pipeline.Editor.Commands.Animation
             return info;
         }
 
-        [CliCommand("remove_animation_curve",
+        [CliGroupCommand(Group,
             "Remove a float curve binding from an AnimationClip (SetEditorCurve(clip, binding, null)). Destructive: requires confirm=true.",
-            MainThreadRequired = true)]
-        public static SetAnimationCurveResult RemoveAnimationCurve(
+            MainThreadRequired = true,
+            Tags = new[] { "animation/clip" })]
+        public static SetAnimationCurveResult RemoveCurve(
             [CliArg("clip", "Reference to the AnimationClip to edit (path / guid / globalId).", Required = true)] ObjectRef clip,
             [CliArg("path", "GameObject path relative to the animated root the binding lives on. Empty string (default) targets the root.")] string path = "",
             [CliArg("type", "Component type of the binding to remove, e.g. \"Transform\". Resolved via the component TypeResolver.", Required = true)] string type = null,
             [CliArg("property", "Curve property name to remove, e.g. \"m_LocalPosition.x\".", Required = true)] string property = null,
             [CliArg("confirm", "Must be true to actually remove the binding (destructive guard).")] bool confirm = false,
-            [CliArg("dry_run", "If true, report the binding that would be removed without removing it.")] bool dryRun = false)
+            [CliArg("dry-run", "If true, report the binding that would be removed without removing it.")] bool dryRun = false)
         {
             var (clipAsset, clipPath) = ResolveClip(clip);
             var componentType = ResolveCurveType(type);
@@ -341,7 +347,7 @@ namespace Unity.Pipeline.Editor.Commands.Animation
     /// with the affected binding and its key count.
     /// </summary>
     [Serializable]
-    public class SetAnimationCurveResult : AuthoringResult
+    class SetAnimationCurveResult : AuthoringResult
     {
         [JsonProperty("binding")]
         public CurveBinding Binding { get; set; }
@@ -352,7 +358,7 @@ namespace Unity.Pipeline.Editor.Commands.Animation
 
     /// <summary>A curve binding's address: GameObject path, component type, and property name.</summary>
     [Serializable]
-    public class CurveBinding
+    class CurveBinding
     {
         [JsonProperty("path")]
         public string Path { get; set; }
@@ -366,7 +372,7 @@ namespace Unity.Pipeline.Editor.Commands.Animation
 
     /// <summary>Result of <c>get_animation_clip</c>: clip metadata and its curve bindings.</summary>
     [Serializable]
-    public class AnimationClipInfo
+    class AnimationClipInfo
     {
         [JsonProperty("assetPath")]
         public string AssetPath { get; set; }
@@ -386,7 +392,7 @@ namespace Unity.Pipeline.Editor.Commands.Animation
 
     /// <summary>A single curve binding in <see cref="AnimationClipInfo"/>, optionally with its keys.</summary>
     [Serializable]
-    public class CurveBindingInfo
+    class CurveBindingInfo
     {
         [JsonProperty("path")]
         public string Path { get; set; }
@@ -406,7 +412,7 @@ namespace Unity.Pipeline.Editor.Commands.Animation
 
     /// <summary>A single keyframe in a curve binding.</summary>
     [Serializable]
-    public class KeyframeInfo
+    class KeyframeInfo
     {
         [JsonProperty("time")]
         public float Time { get; set; }

@@ -13,7 +13,7 @@ namespace Unity.Pipeline.Editor.Commands.Assets
     /// Editor-only command and the foundation Runtime/Models are shared/frozen for parallel work.
     /// </summary>
     [System.Serializable]
-    public class FindAssetsResult
+    class FindAssetsResult
     {
         /// <summary>The AssetDatabase filter string that was executed (for diagnostics).</summary>
         [JsonProperty("filter")]

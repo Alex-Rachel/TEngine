@@ -13,7 +13,7 @@ namespace Unity.Pipeline.Editor.Commands.GameObjects
     /// the single-object <c>create_gameobject</c>, so any created object can be fed straight back as an
     /// <see cref="ObjectRef"/> in a follow-up call.
     /// </summary>
-    public sealed class CreateGameObjectsResult
+    sealed class CreateGameObjectsResult
     {
         /// <summary>Number of GameObjects created in the batch.</summary>
         [JsonProperty("count")]

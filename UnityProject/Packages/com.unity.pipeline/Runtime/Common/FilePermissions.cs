@@ -13,12 +13,13 @@ namespace Unity.Pipeline
     /// The managed ACL APIs (System.Security.AccessControl) are not part of Unity's runtime
     /// profile, so Windows is handled via icacls and Unix via libc chmod.
     /// </summary>
-    public static class FilePermissions
+    static class FilePermissions
     {
         /// <summary>
         /// Restrict the file at <paramref name="path"/> to the current user only.
         /// Failures are logged but never thrown, so they cannot block server startup.
         /// </summary>
+        /// <param name="path">The file to restrict.</param>
         public static void RestrictToCurrentUser(string path)
         {
             try

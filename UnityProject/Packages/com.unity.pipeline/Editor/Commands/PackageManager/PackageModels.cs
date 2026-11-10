@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using Unity.Pipeline.Commands;
 
 namespace Unity.Pipeline.Editor.Commands.PackageManager
 {
@@ -9,7 +10,7 @@ namespace Unity.Pipeline.Editor.Commands.PackageManager
     /// <c>UnityEditor.PackageManager.PackageInfo</c> (CLI-203).
     /// </summary>
     [Serializable]
-    public class PackageSummary
+    class PackageSummary
     {
         [JsonProperty("name")] public string Name { get; set; }
         [JsonProperty("version")] public string Version { get; set; }
@@ -35,7 +36,7 @@ namespace Unity.Pipeline.Editor.Commands.PackageManager
     /// path that the mutating commands do.
     /// </summary>
     [Serializable]
-    public class PackageListResponse
+    class PackageListResponse
     {
         [JsonProperty("success")] public bool Success { get; set; }
 
@@ -59,7 +60,7 @@ namespace Unity.Pipeline.Editor.Commands.PackageManager
     /// <see cref="PackageSummary.IsInstalled"/> so callers can tell which results are already installed.
     /// </summary>
     [Serializable]
-    public class PackageSearchResponse
+    class PackageSearchResponse
     {
         [JsonProperty("success")] public bool Success { get; set; }
 
@@ -81,7 +82,7 @@ namespace Unity.Pipeline.Editor.Commands.PackageManager
     /// synchronous reply was lost to the reload.
     /// </summary>
     [Serializable]
-    public class PackageStatus
+    class PackageStatus
     {
         /// <summary>idle | in_progress | completed | failed.</summary>
         [JsonProperty("status")] public string Status { get; set; }
@@ -115,13 +116,13 @@ namespace Unity.Pipeline.Editor.Commands.PackageManager
     /// Result of a mutating package command — <c>package_add</c> / <c>package_remove</c> /
     /// <c>package_resolve</c> (CLI-203). These are dual-mode: by default the call returns
     /// <c>in_progress</c> immediately (poll <c>package_status</c>); with <c>wait=true</c> it blocks and
-    /// this carries the final <c>completed</c>/<c>failed</c> outcome. It reports the <c>confirm</c>/<c>dry_run</c>
+    /// this carries the final <c>completed</c>/<c>failed</c> outcome. It reports the <c>confirm</c>/<c>dry-run</c>
     /// gate via <see cref="DryRun"/> / <see cref="Applied"/>. A successful add/remove
     /// leaves a recompile/domain reload in flight (<see cref="RequiresRecompile"/>) — poll
     /// <c>recompile_status</c> to wait for the editor to be ready.
     /// </summary>
     [Serializable]
-    public class PackageMutationResponse
+    class PackageMutationResponse
     {
         [JsonProperty("success")] public bool Success { get; set; }
 
@@ -131,7 +132,7 @@ namespace Unity.Pipeline.Editor.Commands.PackageManager
         /// <summary>The operation's subject (identifier/name), when applicable.</summary>
         [JsonProperty("argument")] public string Argument { get; set; }
 
-        /// <summary>in_progress | completed | dry_run | rejected | failed | busy.</summary>
+        /// <summary>in_progress | completed | dry-run | rejected | failed | busy.</summary>
         [JsonProperty("status")] public string Status { get; set; }
 
         /// <summary>True only when the operation actually mutated the project.</summary>
@@ -162,7 +163,7 @@ namespace Unity.Pipeline.Editor.Commands.PackageManager
                 Status = "in_progress",
                 Applied = true,
                 Plan = plan,
-                Message = $"{operation} started. Poll package_status until status is 'completed' or 'failed'."
+                Message = $"{operation} started. Poll {CommandNames.PackageStatus} until status is 'completed' or 'failed'."
             };
 
         public static PackageMutationResponse Busy(string operation) =>
@@ -171,7 +172,7 @@ namespace Unity.Pipeline.Editor.Commands.PackageManager
                 Success = false,
                 Operation = operation,
                 Status = "busy",
-                Message = "Another package operation is in progress. Poll package_status, then retry."
+                Message = "Another package operation is in progress. Poll " + CommandNames.PackageStatus + ", then retry."
             };
 
         public static PackageMutationResponse DryRunPreview(string operation, string argument, string plan, string message) =>

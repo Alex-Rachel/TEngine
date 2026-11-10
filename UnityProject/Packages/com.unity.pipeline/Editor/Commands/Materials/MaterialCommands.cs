@@ -29,11 +29,14 @@ namespace Unity.Pipeline.Editor.Commands.Materials
     /// Material CREATION already exists in <c>create_asset</c> (CLI-221); this command set is the
     /// read/write surface on top of an existing material.
     /// </summary>
-    public static class MaterialCommands
+    static class MaterialCommands
     {
-        [CliCommand("get_material_properties",
-            "Read a material's shader, render queue, enabled keywords, and all shader properties with their current values (Color as [r,g,b,a], Vector as [x,y,z,w], Texture as an object reference).")]
-        public static MaterialPropertiesResult GetMaterialProperties(
+        const string Group = "material";
+
+        [CliGroupCommand(Group,
+            "Read a material's shader, render queue, enabled keywords, and all shader properties with their current values (Color as [r,g,b,a], Vector as [x,y,z,w], Texture as an object reference).",
+            Tags = new[] { "materials" })]
+        public static MaterialPropertiesResult GetProperties(
             [CliArg("material", "Reference to the .mat asset (or a loaded material) to read (path / guid / globalId / instanceId).", Required = true)] ObjectRef material)
         {
             var mat = ResolveMaterial(material, out var assetPath);
@@ -42,7 +45,10 @@ namespace Unity.Pipeline.Editor.Commands.Materials
             {
                 AssetPath = assetPath,
                 Shader = mat.shader != null ? mat.shader.name : null,
-                RenderQueue = mat.renderQueue,
+                // rawRenderQueue is -1 when the material inherits from the shader and a positive
+                // integer when explicitly overridden — returning the raw value preserves the
+                // round-trip contract with set_material_properties renderQueue:-1 (inherit).
+                RenderQueue = GetRawRenderQueue(mat),
                 EnabledKeywords = GetEnabledKeywords(mat),
             };
 
@@ -81,21 +87,22 @@ namespace Unity.Pipeline.Editor.Commands.Materials
             return result;
         }
 
-        [CliCommand("set_material_properties",
-            "Set shader properties on a material (Float/Range/Int=number; Color=[r,g,b,a] or \"#RRGGBBAA\" hex; Vector=[x,y,z,w]; Texture=an object reference or null to clear), optionally reassign the shader, set the render queue, and toggle keywords. Unknown names / type mismatches are reported in unknown[].")]
-        public static SetMaterialPropertiesResult SetMaterialProperties(
+        [CliGroupCommand(Group,
+            "Set shader properties on a material (Float/Range/Int=number; Color=[r,g,b,a] or \"#RRGGBBAA\" hex; Vector=[x,y,z,w]; Texture=an object reference or null to clear), optionally reassign the shader, set the render queue, and toggle keywords. Unknown names / type mismatches are reported in unknown[].",
+            Tags = new[] { "materials" })]
+        public static SetMaterialPropertiesResult SetProperties(
             [CliArg("material", "Reference to the .mat asset (or a loaded material) to edit (path / guid / globalId / instanceId).", Required = true)] ObjectRef material,
             [CliArg("shader", "Reassign the material's shader by name (e.g. \"Standard\", \"Universal Render Pipeline/Lit\", or a Shader Graph shader name). Applied before properties so new property names resolve against the new shader.")] string shader = null,
             [CliArg("properties", "JSON object of shader property name -> value. Names must include the leading underscore (e.g. _BaseColor). Float/Range/Int=number; Color=[r,g,b,a] or hex string; Vector=[x,y,z,w]; Texture=an object reference {guid/path} or null.")] JObject properties = null,
-            [CliArg("renderQueue", "Explicit render queue, or -1 to inherit from the shader. Omit to leave unchanged.")] int? renderQueue = null,
-            [CliArg("enableKeywords", "Shader keywords to enable (e.g. _NORMALMAP, _EMISSION).")] string[] enableKeywords = null,
-            [CliArg("disableKeywords", "Shader keywords to disable.")] string[] disableKeywords = null,
+            [CliArg("render-queue", "Explicit render queue, or -1 to inherit from the shader. Omit to leave unchanged.")] int? renderQueue = null,
+            [CliArg("enable-keywords", "Shader keywords to enable (e.g. _NORMALMAP, _EMISSION).")] string[] enableKeywords = null,
+            [CliArg("disable-keywords", "Shader keywords to disable.")] string[] disableKeywords = null,
             [CliArg("confirm", "Reserved for parity; editing an existing material is non-destructive and undoable, so it is not required.")] bool confirm = false,
-            [CliArg("dry_run", "If true, validate the shader, resolve property names and texture refs, and report applied[]/unknown[] without writing anything.")] bool dryRun = false)
+            [CliArg("dry-run", "If true, validate the shader, resolve property names and texture refs, and report applied[]/unknown[] without writing anything.")] bool dryRun = false)
         {
             var mat = ResolveMaterial(material, out var assetPath);
 
-            // Resolve the (optional) replacement shader UP FRONT so dry_run validates it too, and a
+            // Resolve the (optional) replacement shader UP FRONT so dry-run validates it too, and a
             // shader_not_found writes nothing (acceptance #9). Shader.Find only finds compiled/included
             // shaders — surface that in the hint.
             Shader newShader = null;
@@ -104,18 +111,18 @@ namespace Unity.Pipeline.Editor.Commands.Materials
                 newShader = Shader.Find(shader);
                 if (newShader == null)
                     throw new ShaderNotFoundException(
-                        $"Shader '{shader}' not found. Shader.Find only resolves shaders that are compiled/included in the build (or referenced by a material/scene). Use list_shaders to discover valid names.");
+                        $"Shader '{shader}' not found. Shader.Find only resolves shaders that are compiled/included in the build (or referenced by a material/scene). Use {CommandNames.MaterialListShaders} to discover valid names.");
             }
 
             var result = new SetMaterialPropertiesResult();
 
-            // ---- dry_run: validate against the would-be shader, never mutate ----------------------
+            // ---- dry-run: validate against the would-be shader, never mutate ----------------------
             if (dryRun)
             {
                 var effectiveShader = newShader ?? mat.shader;
                 ValidateProperties(effectiveShader, properties, result);
                 if (renderQueue.HasValue)
-                    result.Applied.Add("renderQueue");
+                    result.Applied.Add("render-queue");
                 AddKeywordTokens(result.Applied, enableKeywords, disableKeywords);
 
                 GuardAtLeastOneApplied(result, shaderReassigned: newShader != null);
@@ -172,7 +179,7 @@ namespace Unity.Pipeline.Editor.Commands.Materials
                 if (renderQueue.HasValue)
                 {
                     mat.renderQueue = renderQueue.Value;
-                    result.Applied.Add("renderQueue");
+                    result.Applied.Add("render-queue");
                 }
 
                 ApplyKeywords(mat, enableKeywords, disableKeywords, result.Applied);
@@ -220,9 +227,19 @@ namespace Unity.Pipeline.Editor.Commands.Materials
 
         /// <summary>
         /// Read the material's enabled keyword set. Uses <see cref="Material.enabledKeywords"/>
-        /// (LocalKeyword[]) which is the supported API on the package's min Unity version (Unity 6 /
-        /// 6000.0); the legacy <c>shaderKeywords</c> string[] is deprecated.
+        /// (LocalKeyword[]) which is the supported API on the package's min Unity version (Unity
+        /// 2022.3); the legacy <c>shaderKeywords</c> string[] is deprecated.
         /// </summary>
+        private static int GetRawRenderQueue(Material mat)
+        {
+#if UNITY_6000_0_OR_NEWER
+            return mat.rawRenderQueue;
+#else
+            // Unity 2022 exposes only the effective queue through Material.renderQueue.
+            return new SerializedObject(mat).FindProperty("m_CustomRenderQueue").intValue;
+#endif
+        }
+
         private static List<string> GetEnabledKeywords(Material mat)
         {
             var keywords = new List<string>();
@@ -272,7 +289,7 @@ namespace Unity.Pipeline.Editor.Commands.Materials
         }
 
         /// <summary>
-        /// dry_run validation: classify each supplied property as applicable (name resolves AND value
+        /// dry-run validation: classify each supplied property as applicable (name resolves AND value
         /// shape matches the declared type) or unknown, WITHOUT mutating the material.
         /// </summary>
         private static void ValidateProperties(Shader shader, JObject properties, SetMaterialPropertiesResult result)
@@ -294,7 +311,7 @@ namespace Unity.Pipeline.Editor.Commands.Materials
                 }
 
                 // Validate the value shape against the type by attempting a conversion on a throwaway
-                // material instance — never the caller's material (dry_run must leave no trace).
+                // material instance — never the caller's material (dry-run must leave no trace).
                 Material probe = null;
                 try
                 {
@@ -384,7 +401,7 @@ namespace Unity.Pipeline.Editor.Commands.Materials
     /// stable <c>shader_not_found</c> code (also prefixed onto the message, since the server propagates
     /// only the exception message over the wire) so a client can distinguish it from other failures.
     /// </summary>
-    public sealed class ShaderNotFoundException : Exception
+    sealed class ShaderNotFoundException : Exception
     {
         public const string CodeValue = "shader_not_found";
 

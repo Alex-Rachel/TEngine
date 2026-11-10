@@ -198,6 +198,11 @@ def verify(run, profile, query, filter_type, timeout, assets):
                 return
             if assets:
                 run.step("asset-validation", lambda: unity.query("tengine_validate_assets", {"paths": assets}))
+                if any(Path(asset).suffix.lower() == ".unity" for asset in assets):
+                    run.skip("scene-contents-validation",
+                             "tengine_validate_assets checks scene assets/importers, but does not inspect scene "
+                             "contents. Scene serialization and missing-reference acceptance need separate evidence.",
+                             required=True)
             else:
                 run.skip("asset-validation", "No asset targets supplied; no claim about uninspected assets.")
             for mode in ("editor", "playmode"):

@@ -4,41 +4,58 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import re
 import time
 
 from .core import WorkflowError, blocked, consume_approval, digest, make_plan
 
 
+PROJECT_ALIASES = {
+    "tengine_bake_ugui": "global tengine_bake_ugui",
+    "tengine_validate_assets": "global tengine_validate_assets",
+}
+
+
+def canonical_command(command):
+    return PROJECT_ALIASES.get(command, command)
+
+
 READ_ONLY = frozenset({
-    "editor_status", "list_open_scenes", "get_scene_hierarchy", "get_build_settings",
-    "list_build_targets", "list_build_profiles", "list_tests", "test_status", "recompile_status",
-    "get_player_settings", "get_audio_settings", "get_graphics_settings", "get_input_settings",
-    "get_physics_settings", "get_quality_settings", "get_tags_layers", "get_time_settings",
-    "get_console_logs", "get_performance_stats", "get_authoring_root", "get_selection",
-    "find_assets", "find_gameobjects", "get_component_properties", "get_serialized_fields",
-    "get_import_settings", "get_material_properties", "list_shaders", "get_shader_properties",
-    "get_animation_clip", "get_animator_controller", "get_timeline", "get_lighting_settings",
-    "get_navmesh_settings", "build_status", "switch_build_target_status", "package_list",
-    "package_status", "lighting_bake_status", "navmesh_bake_status", "occlusion_bake_status",
-    "tengine_validate_assets",
+    "editor status", "scene list_open", "scene get_hierarchy", "build get_settings",
+    "build.target list", "build list_profiles", "build list_platforms", "test list",
+    "test status", "script recompile_status", "settings.player get", "settings.audio get",
+    "settings.graphics get", "settings.input get", "settings.physics get", "settings.quality get",
+    "settings.tags_layers get", "settings.time get", "console get", "console status",
+    "diagnostics get_performance", "authoring get_root", "gameobject get_selection",
+    "asset find", "gameobject find", "component get_properties", "component get_fields",
+    "asset get_import_settings", "material get_properties", "material list_shaders",
+    "material get_shader_properties", "animation.clip get", "animation.animator get_controller",
+    "animation.timeline get", "lighting get_settings", "navmesh get_settings", "build status",
+    "build.target switch_status", "package list", "package status", "lighting bake_status",
+    "navmesh bake_status", "occlusion bake_status", "pipeline progress", "script.methodreload status",
+    "diagnostics profiler_record_status", "diagnostics memory_snapshot_status",
+    "global tengine_validate_assets",
 })
 
 # Explicit catalog, not a prefix heuristic. Only implemented return/poll contracts are admitted.
 MUTATIONS = {
-    "tengine_bake_ugui": {"dry_run": True, "confirm": True, "poll": None},
-    "delete_asset": {"dry_run": True, "confirm": True, "poll": None},
-    "set_player_settings": {"dry_run": True, "confirm": True, "poll": None},
-    "set_build_settings": {"dry_run": True, "confirm": True, "poll": None},
-    "build": {"dry_run": True, "confirm": True, "poll": "build_status"},
+    "global tengine_bake_ugui": {"dry_run": "dry_run", "confirm": "confirm", "poll": None},
+    "asset delete": {"dry_run": "dry-run", "confirm": "confirm", "poll": None},
+    "settings.player set": {"dry_run": "dry-run", "confirm": "confirm", "poll": None},
+    "build set_settings": {"dry_run": "dry-run", "confirm": "confirm", "poll": None},
+    "build run": {"dry_run": "dry-run", "confirm": "confirm", "poll": "build status"},
 }
 
 RESERVED = {"project-path", "project_path", "runtime", "runtime-path", "runtime_path",
-            "format", "json", "confirm", "dry_run", "dry-run", "non-interactive", "timeout"}
+            "format", "json", "confirm", "dry_run", "dry-run", "non-interactive",
+            "non_interactive", "timeout", "fields", "verbose", "omit-nulls", "omit_nulls",
+            "port", "host", "token", "no-log-proxy", "no_log_proxy"}
 
 STATUS_QUERIES = frozenset({
-    "editor_status", "test_status", "recompile_status", "build_status", "switch_build_target_status",
-    "package_status", "lighting_bake_status", "navmesh_bake_status", "occlusion_bake_status",
-    "get_console_logs",
+    "editor status", "test status", "script recompile_status", "build status",
+    "build.target switch_status", "package status", "lighting bake_status", "navmesh bake_status",
+    "occlusion bake_status", "console get", "console status", "pipeline progress",
+    "script.methodreload status", "diagnostics profiler_record_status", "diagnostics memory_snapshot_status",
 })
 
 
@@ -46,16 +63,51 @@ def validate_parameters(parameters):
     if not isinstance(parameters, dict):
         raise WorkflowError("Parameters must be a JSON object.")
     for key in parameters:
-        if not key or key.startswith("-") or key in RESERVED or not key.replace("_", "").isalnum():
+        if (not isinstance(key, str) or key.lower() in RESERVED
+                or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", key)):
             raise WorkflowError(f"Reserved or invalid parameter: {key}")
     return parameters
 
 
+def validate_mutation_parameters(command, parameters):
+    validate_parameters(parameters)
+    if command == "build run":
+        for key in ("target", "output-path"):
+            if not isinstance(parameters.get(key), str) or not parameters[key].strip():
+                raise WorkflowError(f"Build preview requires an explicit nonempty {key}.")
+        scenes = parameters.get("scenes")
+        if (not isinstance(scenes, list) or not scenes
+                or any(not isinstance(scene, str) or not scene.strip() for scene in scenes)):
+            raise WorkflowError("Build preview requires explicit scenes as a nonempty array of scene paths.")
+    return parameters
+
+
+def validate_mutation_preview(command, value):
+    if command == "build run" and (
+            not isinstance(value, dict) or value.get("status") != "dry_run"
+            or value.get("valid") is not True or value.get("validationErrors") != []):
+        raise WorkflowError("Build dry-run validation did not pass: " + json.dumps(value, ensure_ascii=False))
+    return value
+
+
 def decode_response(text):
+    """Read both protocol results/NDJSON and HTTP/CLI response envelopes."""
+    if not isinstance(text, str) or not text.strip():
+        raise WorkflowError("CLI returned no verifiable JSON result; inspect command evidence.")
     try:
         current = json.loads(text.lstrip("\ufeff"))
-    except (ValueError, AttributeError) as exc:
-        raise WorkflowError("CLI did not return a JSON response; inspect command evidence.") from exc
+    except ValueError:
+        try:
+            records = [json.loads(line) for line in text.lstrip("\ufeff").splitlines() if line.strip()]
+        except ValueError as exc:
+            raise WorkflowError("CLI did not return JSON/NDJSON; inspect command evidence.") from exc
+        if not records:
+            raise WorkflowError("CLI returned no verifiable JSON result; inspect command evidence.")
+        return [_unwrap_response(record) for record in records]
+    return _unwrap_response(current)
+
+
+def _unwrap_response(current):
     # CLI envelope -> Pipeline envelope -> JSON-string status. Never search arbitrary asset data.
     for _ in range(6):
         if isinstance(current, str):
@@ -69,14 +121,18 @@ def decode_response(text):
             return current
         if current.get("success") is False or current.get("Success") is False:
             raise WorkflowError("Command/business failure: " + json.dumps(current, ensure_ascii=False))
-        if current.get("status") in ("error", "failed", "cancelled", "busy"):
+        if current.get("status") == "busy":
+            blocked("Operation is busy: " + json.dumps(current, ensure_ascii=False))
+        if current.get("status") in ("error", "failed", "cancelled"):
             raise WorkflowError("Operation did not succeed: " + json.dumps(current, ensure_ascii=False))
-        if current.get("errors"):
-            raise WorkflowError("Command returned errors: " + json.dumps(current["errors"], ensure_ascii=False))
+        errors = current.get("errors", current.get("Errors"))
+        if errors or current.get("error") or current.get("Error"):
+            raise WorkflowError("Command returned errors: " + json.dumps(current, ensure_ascii=False))
+        payload_keys = ("summary", "Summary", "statusPath", "StatusPath", "tests", "Tests", "results", "Results")
         if "data" in current and ("success" in current or "command" in current):
             current = current["data"]
-        elif ("result" in current and ("command" in current or "executionTimeMs" in current)
-              and not any(key in current for key in ("summary", "Summary", "statusPath", "StatusPath", "tests", "Tests"))):
+        elif ("result" in current and ("success" in current or "command" in current or "executionTimeMs" in current)
+              and not any(key in current for key in payload_keys)):
             current = current["result"]
         else:
             return current
@@ -106,16 +162,52 @@ def parse_instances(text, project, require_ready=True):
     return instance
 
 
-def command_names(value):
+def command_catalog(value):
     if isinstance(value, dict):
         for key in ("commands", "tools"):
             if isinstance(value.get(key), list):
-                return {item.get("name") or item.get("command") for item in value[key] if isinstance(item, dict)}
-        if "result" in value:
-            return command_names(value["result"])
-    if isinstance(value, list):
-        return {item.get("name") or item.get("command") for item in value if isinstance(item, dict)}
-    blocked("Unrecognized command discovery schema; inspect the registered capabilities.")
+                value = value[key]
+                break
+        else:
+            if "result" in value:
+                return command_catalog(value["result"])
+            blocked("Unrecognized command discovery schema; inspect the registered capabilities.")
+    if not isinstance(value, list):
+        blocked("Unrecognized command discovery schema; inspect the registered capabilities.")
+    catalog = {}
+    for item in value:
+        if not isinstance(item, dict):
+            blocked("Invalid command catalog entry.")
+        name = item.get("command")
+        if not name:
+            short_name = item.get("name")
+            group = item.get("group")
+            name = f"{group} {short_name}" if group and short_name else short_name
+        if not isinstance(name, str) or not name.strip():
+            blocked("Command catalog entry lacks its command identity.")
+        if name in catalog:
+            blocked(f"Duplicate command identity in discovery: {name}")
+        catalog[name] = item
+    if not catalog:
+        blocked("No commands registered in this project.")
+    return catalog
+
+
+def command_names(value):
+    return set(command_catalog(value))
+
+
+def validate_editor_status(value, project):
+    if not isinstance(value, dict):
+        blocked("Editor status lacks a verifiable state.")
+    actual = value.get("projectPath")
+    if not actual or Path(actual).resolve() != Path(project).resolve():
+        blocked("Editor status project differs from the requested absolute project path.")
+    if value.get("compiling") is not False or value.get("domainReloadInProgress") is not False:
+        blocked("Editor compilation/import/domain reload is active or not verifiable.")
+    if value.get("status") not in ("ready", "playing"):
+        blocked(f"Editor cannot start a new operation ({value.get('status')!r}).")
+    return value
 
 
 def test_listing(value, mode, query, filter_type):
@@ -147,7 +239,7 @@ def validate_test_result(value, expected_names):
         raise WorkflowError("Tests have not reached a completed state.")
     summary = value.get("summary", {})
     fields = ("total", "passed", "failed", "skipped", "inconclusive")
-    if any(not isinstance(summary.get(key), int) or summary[key] < 0 for key in fields):
+    if any(type(summary.get(key)) is not int or summary[key] < 0 for key in fields):
         raise WorkflowError("Invalid test summary.")
     if summary["total"] == 0 or summary["passed"] == 0:
         raise WorkflowError("Zero executed/passed tests, or all tests skipped.")
@@ -178,6 +270,7 @@ class Unity:
         self.run = run
         self.context = run.context
         self.capabilities = None
+        self.catalog = None
 
     def raw(self, arguments, timeout=45, mutating=False):
         if not self.context.cli.is_file():
@@ -187,35 +280,56 @@ class Unity:
             timeout=timeout, mutating=mutating,
         )
         if result.returncode:
+            if result.returncode == 14:
+                suffix = " Mutation outcome is unknown; inspect state, do not replay." if mutating else ""
+                blocked("Unity CLI operation timed out; see command evidence." + suffix)
             # Connection errors are blockers, never a successful validation.
-            if any(code in result.stdout + result.stderr for code in ("NO_INSTANCES", "UNREACHABLE", "CONNECTION", "ECONNREFUSED", "TIMEOUT",
-                                                      "502 Bad Gateway", "503 Service Unavailable")):
+            if (result.returncode in (17, 18)
+                    or any(code in result.stdout + result.stderr for code in
+                           ("NO_INSTANCES", "UNREACHABLE", "CONNECTION", "ECONNREFUSED", "TIMEOUT",
+                            "502 Bad Gateway", "503 Service Unavailable"))):
                 blocked("Unity CLI connection unavailable; see command evidence.")
             raise WorkflowError(f"Unity CLI exited with {result.returncode}; see command evidence.")
         return result.stdout
 
     def ready(self, require_ready=True):
-        return parse_instances(self.raw(["status", "--project-path", str(self.context.project)]),
-                               self.context.project, require_ready)
+        instance = parse_instances(self.raw(["status", "--project-path", str(self.context.project)]),
+                                   self.context.project, require_ready)
+        if require_ready:
+            status = decode_response(self.raw(
+                ["command", "--project-path", str(self.context.project), "editor", "status"]))
+            return {**instance, "editorStatus": validate_editor_status(status, self.context.project)}
+        return instance
 
     def discover(self, require_ready=True):
         self.ready(require_ready)
-        value = decode_response(self.raw(["command", "--project-path", str(self.context.project)]))
-        self.capabilities = command_names(value)
-        return sorted(name for name in self.capabilities if name)
+        value = decode_response(self.raw(["command", "--project-path", str(self.context.project),
+                                         "pipeline", "list_commands", "--detail", "full"]))
+        self.catalog = command_catalog(value)
+        self.capabilities = set(self.catalog)
+        return sorted(self.capabilities)
+
+    def describe(self, command):
+        command = canonical_command(command)
+        self.discover(require_ready=False)
+        if command not in self.catalog:
+            blocked(f"Command is not registered in this project: {command}")
+        return self.catalog[command]
 
     def call(self, command, parameters=None, timeout=45, mutating=False):
+        command = canonical_command(command)
         if self.capabilities is None:
             self.discover()
         if command not in self.capabilities:
             blocked(f"Command is not registered in this project: {command}")
         arguments = ["command", "--project-path", str(self.context.project),
-                     "--timeout", str(timeout), command]
+                     "--timeout", str(timeout), *command.split()]
         for key, value in (parameters or {}).items():
             arguments.extend(["--" + key, json.dumps(value, ensure_ascii=False) if not isinstance(value, str) else value])
         return decode_response(self.raw(arguments, timeout=timeout + 5, mutating=mutating))
 
     def query(self, command, parameters):
+        command = canonical_command(command)
         validate_parameters(parameters)
         if command not in READ_ONLY:
             blocked(f"Not an audited read-only command: {command}")
@@ -249,66 +363,82 @@ class Unity:
 
     def recompile(self, timeout):
         self.ready()
-        started = self.call("recompile", mutating=True)
+        started = self.call("script recompile", mutating=True)
         if not isinstance(started, dict) or started.get("status") not in ("compiling", "up_to_date"):
             blocked("Compilation start not acknowledged; retained results cannot establish success.")
         try:
-            value = self.poll("recompile_status", {"completed", "up_to_date"}, timeout)
+            value = self.poll("script recompile_status", {"completed", "up_to_date"}, timeout)
         except WorkflowError:
             # Import/asmdef errors can prevent compilation callbacks entirely.
             # Collect the read-only console without hiding the original incomplete operation.
             try:
-                self.call("get_console_logs")
+                self.call("console get")
             except WorkflowError:
                 pass
             raise
-        if value.get("success") is False or value.get("failed") or value.get("hasErrors") or value.get("errorCount", 0):
+        if not isinstance(value.get("failed"), bool) or not isinstance(value.get("compilationFailed"), bool):
+            blocked("Compilation result lacks the current failure-state evidence.")
+        # A completed compile owns its errors. Unity's native flag may still describe the
+        # preceding failed compile until the successful compile's domain reload finishes.
+        native_failure = value.get("compilationFailed") and value.get("status") != "completed"
+        if (value.get("success") is False or value.get("failed") or native_failure
+                or value.get("hasErrors") or value.get("errorCount", 0)):
             raise WorkflowError("Editor compilation reported errors.")
         self.ready()
         self.discover()
-        logs = self.call("get_console_logs")
+        logs = self.call("console get")
         return {"compilation": value, "console": logs}
 
     def tests(self, mode, query, filter_type, timeout):
         self.ready()
-        expected = test_listing(self.call("list_tests", {"mode": mode}), mode, query, filter_type)
-        before = self.call("test_status")
+        expected = test_listing(self.call("test list", {"mode": mode}), mode, query, filter_type)
+        before = self.call("test status")
         if isinstance(before, dict) and before.get("status") == "running":
             blocked("Another test run is active.")
+        self.ready()
         # The package synchronously clears prior status before acknowledging the start.
         # An unacknowledged start is ambiguous; never fall back to a retained completed result.
-        started = self.call("run_tests", {"mode": mode, "filter": query, "filter_type": filter_type,
-                                        "async_tests": True}, mutating=True)
+        started = self.call("test run", {"mode": mode, "filter": query, "filter-type": filter_type,
+                                       "async-tests": True}, mutating=True)
         if not isinstance(started, dict) or started.get("result", started.get("Result")) != "running":
             blocked("Async test start was not acknowledged; do not accept the last retained result.")
-        value = self.poll("test_status", {"completed"}, timeout)
+        expected_mode = {"editor": "EditMode", "playmode": "PlayMode"}[mode]
+        if started.get("mode", started.get("Mode")) != expected_mode:
+            blocked("Async test acknowledgement differs from the requested test mode.")
+        value = self.poll("test status", {"completed"}, timeout)
         summary = validate_test_result(value, expected)
         return {"mode": mode, "filter": query, "summary": summary, "results": value["results"]}
 
     def preview(self, command, parameters, inputs=()):
-        validate_parameters(parameters)
+        command = canonical_command(command)
+        validate_mutation_parameters(command, parameters)
         if command not in MUTATIONS:
             blocked(f"Mutation policy/return contract not implemented: {command}")
         self.ready()
         policy = MUTATIONS[command]
-        preview = self.call(command, {**parameters, "dry_run": True}) if policy["dry_run"] else {"staticOnly": True}
+        preview = self.call(command, {**parameters, policy["dry_run"]: True})
+        validate_mutation_preview(command, preview)
         return make_plan(self.run, "unity", command, parameters, high_risk=True, inputs=inputs, preview=preview)
 
     def apply(self, plan, approval_file):
-        if plan.get("kind") != "unity" or plan.get("command") not in MUTATIONS:
+        command = canonical_command(plan.get("command"))
+        if plan.get("kind") != "unity" or command not in MUTATIONS:
             blocked("Unsupported Unity mutation plan.")
-        validate_parameters(plan["parameters"])
+        validate_mutation_parameters(command, plan["parameters"])
         self.ready()
         self.discover()
-        command = plan["command"]
+        policy = MUTATIONS[command]
         if command not in self.capabilities:
             blocked(f"Missing capability: {command}")
-        current_preview = self.call(command, {**plan["parameters"], "dry_run": True})
+        current_preview = self.call(command, {**plan["parameters"], policy["dry_run"]: True})
+        validate_mutation_preview(command, current_preview)
         if digest(current_preview) != digest(plan.get("preview")):
             blocked("Editor preview changed since authorization; inspect the new state and authorize a fresh preview.")
+        self.ready()
         consume_approval(self.run, plan, approval_file)
-        result = self.call(command, {**plan["parameters"], "confirm": True, "dry_run": False}, mutating=True)
-        poll = MUTATIONS[command]["poll"]
+        result = self.call(command, {**plan["parameters"], policy["confirm"]: True,
+                                     policy["dry_run"]: False}, mutating=True)
+        poll = policy["poll"]
         if poll:
             if not isinstance(result, dict) or result.get("status") != "queued":
                 raise WorkflowError("Build was not queued.")

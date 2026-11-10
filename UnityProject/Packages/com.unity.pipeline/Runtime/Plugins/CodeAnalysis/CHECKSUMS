@@ -2,12 +2,16 @@
 # Verified at build time by PipelineRuntimeBuildProcessor.VerifyBundledChecksums();
 # a mismatch (tampered/swapped DLL) fails the build.
 #
+# These DLLs are the NuGet originals renamed with a "UnityPipeline." prefix (assembly name, module name
+# and namespaces) by RenameAsm, so they cannot collide with the copies the Unity editor loads.
+# The originals are the NuGet packages listed in bundled-roslyn-original/ (hashes + rename script).
+#
 # Format per line:  <sha256-hex>  <filename>  # <nuget package> <version>
-# Regenerate hashes with:  sha256sum *.dll   (run in this folder)
+# Regenerate hashes with:  shasum -a 256 *.dll   (run in this folder)
 # Version fields marked TODO should be set to the exact NuGet package version the DLL came from.
 
-159f595e313f8cc09bac14588e2466c312f512a4778d9fa2352fcccf2a53aa3d  Microsoft.CodeAnalysis.dll  # Microsoft.CodeAnalysis.Common TODO
-e822156145e1add437b1d893c0315257c12e3d5b1b89d83494db6d88d37fe20a  Microsoft.CodeAnalysis.CSharp.dll  # Microsoft.CodeAnalysis.CSharp TODO
-5b1b1c83ba3d135c2fdfe425842fbe9c7432878b7e468623acb554c69b4c130f  System.Collections.Immutable.dll  # System.Collections.Immutable TODO
-55ef768ffa305de58e38e15420669258b16f420618eb1f702bddb30e5c797961  System.Reflection.Metadata.dll  # System.Reflection.Metadata TODO
-bac58578ec05ecb8c234bf3402a0aa1491a5e437b03008b431e78d663ab52b78  System.Runtime.CompilerServices.Unsafe.dll  # System.Runtime.CompilerServices.Unsafe TODO
+83836addf8d51df5d6d8cff3c43c1663655bdd85eb539b44a56dcd96ff2297a0  UnityPipeline.Microsoft.CodeAnalysis.dll  # Microsoft.CodeAnalysis.Common TODO
+6ca7115fb0256a4d415a73fe7e264d23c89d6d4019ac463fe519bc9097fbdf9b  UnityPipeline.Microsoft.CodeAnalysis.CSharp.dll  # Microsoft.CodeAnalysis.CSharp TODO
+fb05543596e537d7a4383c7330b181cf31151e985578c57a8b5eef00c6c8a460  UnityPipeline.System.Collections.Immutable.dll  # System.Collections.Immutable TODO
+3de473fbc3e3e01eef020cb82cb6a3eb288959e24e65175182a818c9d09dbe01  UnityPipeline.System.Reflection.Metadata.dll  # System.Reflection.Metadata TODO
+6f2becafbd15867d52bfad08f77a23d26c818e55473d6347aef41130572f14f7  UnityPipeline.System.Runtime.CompilerServices.Unsafe.dll  # System.Runtime.CompilerServices.Unsafe TODO

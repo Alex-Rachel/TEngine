@@ -17,12 +17,14 @@ namespace Unity.Pipeline.Commands
     /// agents calling the package — directly or as MCP tools whose schemas come from
     /// <c>GET /api/commands</c> — can construct structured arguments reliably.
     /// </summary>
-    public static class JsonSchemaGenerator
+    static class JsonSchemaGenerator
     {
         /// <summary>
         /// Generate JSON Schema for a command.
         /// Returns standard JSON Schema format for CLI validation.
         /// </summary>
+        /// <param name="command">The command to generate a schema for.</param>
+        /// <returns>The generated JSON Schema document.</returns>
         public static string GenerateCommandSchema(CommandInfo command)
         {
             if (command == null)
@@ -32,7 +34,7 @@ namespace Unity.Pipeline.Commands
             {
                 ["$schema"] = "http://json-schema.org/draft-07/schema#",
                 ["type"] = "object",
-                ["title"] = command.Name,
+                ["title"] = command.FullName,
                 ["description"] = command.Description,
                 ["properties"] = GenerateParameterProperties(command.Parameters),
                 ["required"] = new JArray(command.Parameters.Where(p => p.Required).Select(p => p.Name)),
@@ -222,7 +224,7 @@ namespace Unity.Pipeline.Commands
         /// element type. <c>string</c> is intentionally excluded (it is <see cref="IEnumerable{T}"/>
         /// of char but maps to a JSON string).
         /// </summary>
-        private static bool TryGetEnumerableElementType(Type type, out Type elementType)
+        internal static bool TryGetEnumerableElementType(Type type, out Type elementType)
         {
             elementType = null;
 

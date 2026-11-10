@@ -19,11 +19,14 @@ namespace Unity.Pipeline.Editor.Commands.Navigation
     /// follow-up call. All commands are read-only or non-destructive (set_selection only changes the
     /// Editor selection, which carries no undo/safety policy), and run on the main thread.
     /// </summary>
-    public static class NavigationCommands
+    static class NavigationCommands
     {
+        const string Group = "gameobject";
+        const string EditorGroup = "editor";
+
         private const int MaxSearchResults = 200;
 
-        [CliCommand("get_selection", "Read the current Editor selection as structured object identities.")]
+        [CliGroupCommand(Group, "Read the current Editor selection as structured object identities.", Tags = new[] { "navigation" })]
         public static SelectionResult GetSelection()
         {
             return DescribeSelection(null);
@@ -38,9 +41,9 @@ namespace Unity.Pipeline.Editor.Commands.Navigation
         /// each through <see cref="ObjectResolver.TryResolve"/> for the full handle surface.
         /// </para>
         /// </summary>
-        [CliCommand("set_selection", "Set the Editor selection to the given assets/scene objects.")]
+        [CliGroupCommand(Group, "Set the Editor selection to the given assets/scene objects.", Tags = new[] { "navigation" })]
         public static SelectionResult SetSelection(
-            [CliArg("instance_ids", "Scene/loaded object instance IDs to select.")] ObjectId[] instanceIds = null,
+            [CliArg("instance-ids", "Scene/loaded object instance IDs to select.")] ObjectId[] instanceIds = null,
             [CliArg("paths", "Asset paths to select (e.g. Assets/Foo.prefab).")] string[] paths = null)
         {
             var resolved = new List<Object>();
@@ -89,7 +92,7 @@ namespace Unity.Pipeline.Editor.Commands.Navigation
             return DescribeSelection(unresolved.ToArray());
         }
 
-        [CliCommand("search", "Run a Unity Search query and return structured results.")]
+        [CliGroupCommand(EditorGroup, "Run a Unity Search query and return structured results.", Tags = new[] { "navigation" })]
         public static SearchResult Search(
             [CliArg("query", "Unity Search query string, e.g. 't:Material', 'p: my asset', 'h: Main Camera'.", Required = true)] string query,
             [CliArg("limit", "Max results to return (capped 200).")] int limit = 50)
@@ -234,7 +237,7 @@ namespace Unity.Pipeline.Editor.Commands.Navigation
     /// populated by set_selection (inputs that did not resolve to a loaded object/asset).
     /// </summary>
     [Serializable]
-    public class SelectionResult
+    class SelectionResult
     {
         /// <summary>Number of selected objects (excludes nulls).</summary>
         [JsonProperty("count")]
@@ -258,7 +261,7 @@ namespace Unity.Pipeline.Editor.Commands.Navigation
     /// mapped <see cref="SearchResultItem"/> rows (capped at the requested limit).
     /// </summary>
     [Serializable]
-    public class SearchResult
+    class SearchResult
     {
         /// <summary>The query that was executed (echoed back).</summary>
         [JsonProperty("query")]
@@ -278,7 +281,7 @@ namespace Unity.Pipeline.Editor.Commands.Navigation
     /// when the item resolves to an asset object.
     /// </summary>
     [Serializable]
-    public class SearchResultItem
+    class SearchResultItem
     {
         /// <summary>Provider-specific item id (e.g. an asset path or scene object id).</summary>
         [JsonProperty("id")]

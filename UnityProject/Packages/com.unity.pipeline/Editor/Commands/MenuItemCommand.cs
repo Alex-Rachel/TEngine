@@ -5,6 +5,9 @@ using System.Reflection;
 using Newtonsoft.Json;
 using Unity.Pipeline.Commands;
 using UnityEditor;
+#if UNITY_6000_5_OR_NEWER
+using Unity.Scripting.LifecycleManagement;
+#endif
 
 namespace Unity.Pipeline.Editor.Commands
 {
@@ -34,10 +37,16 @@ namespace Unity.Pipeline.Editor.Commands
     /// (which tears the server down before it can reply). That is the nature of the invoked item;
     /// such cases are a known limitation of driving arbitrary menus over a request/response call.
     /// </summary>
-    public static class MenuItemCommand
+#if UNITY_6000_5_OR_NEWER
+    [NoAutoStaticsCleanup]
+#endif
+    static class MenuItemCommand
     {
-        [CliCommand("menu", "Execute an Editor menu item by path, or list available items when no path is given", MainThreadRequired = true)]
-        public static MenuResponse ExecuteMenu(
+        const string Group = "editor";
+        const string k_QuitMenuPath = "File/Exit";
+
+        [CliGroupCommand(Group, "Execute an Editor menu item by path, or list available items when no path is given", MainThreadRequired = true, Tags = new[] { "editor" })]
+        public static MenuResponse InvokeMenu(
             [CliArg("path", "Menu item path to execute, e.g. \"Assets/Reimport All\". Omit to list available menu items.")] string path = "")
         {
             // No path → discovery mode: return the available menu items instead of executing.
@@ -60,6 +69,12 @@ namespace Unity.Pipeline.Editor.Commands
                     Message = $"{items.Count} menu item(s) available."
                 };
             }
+
+            // File/Exit opens a save prompt for dirty scenes, which an unattended Editor silently cancels.
+            if (string.Equals(path.Trim(), k_QuitMenuPath, StringComparison.OrdinalIgnoreCase))
+                return MenuResponse.Fail(path,
+                    $"'{k_QuitMenuPath}' is not run through this command. Use '{CommandNames.EditorQuit}' " +
+                    "(with --save or --discard when there are unsaved changes).");
 
             bool executed;
             try
@@ -219,7 +234,7 @@ namespace Unity.Pipeline.Editor.Commands
     /// available menu paths.
     /// </summary>
     [Serializable]
-    public class MenuResponse
+    class MenuResponse
     {
         [JsonProperty("success")]
         public bool Success { get; set; }

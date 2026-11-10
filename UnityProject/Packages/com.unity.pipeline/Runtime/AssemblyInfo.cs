@@ -4,3 +4,6 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Unity.Pipeline.Tests.Runtime")]
 // Lets the EditMode test assembly unit-test internal runtime utilities (e.g. MaxLengthStream).
 [assembly: InternalsVisibleTo("Unity.Pipeline.Tests.Editor")]
+// Lets the Editor assembly feed CliProgress's internal ambient mirror (EditorProgressMirror)
+// and consume internal interpreter glue (e.g. IlInterpreterHostBindings).
+[assembly: InternalsVisibleTo("Unity.Pipeline.Editor")]

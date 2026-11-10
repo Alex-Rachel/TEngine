@@ -26,19 +26,22 @@ namespace Unity.Pipeline.Editor.Commands.Scripts
     /// The component add is wrapped in an <see cref="AuthoringUndoScope"/> and registered with the
     /// Undo system so it reverts as one step and the owning object/prefab is marked dirty.
     /// </summary>
-    public static class AttachScriptCommand
+    static class AttachScriptCommand
     {
-        [CliCommand("attach_script",
+        const string Group = "script";
+
+        [CliGroupCommand(Group,
             "Add a MonoBehaviour to a GameObject by its (compiled) type name OR by its script asset path. " +
             "Provide exactly one of 'type' or 'script'. " +
-            "If the type isn't compiled yet, returns a recoverable error: recompile, poll recompile_status, then retry.")]
-        public static AuthoringResult AttachScript(
+            "If the type isn't compiled yet, returns a recoverable error: " + CommandNames.ScriptRecompile + ", poll " + CommandNames.ScriptRecompileStatus + ", then retry.",
+            Tags = new[] { "scripts" })]
+        public static AuthoringResult Attach(
             [CliArg("target", "Reference to the GameObject to add the component to (globalId/path/guid/instanceId/hierarchyPath).", Required = true)] ObjectRef target,
             [CliArg("type", "Component type name to add, e.g. PlayerController or Game.Player.PlayerController. Must already be compiled. Mutually exclusive with 'script'.")] string type = null,
             [CliArg("script", "Script asset path, e.g. 'Assets/Pool/Scripts/CueShooter.cs'. The backing class is resolved via MonoScript.GetClass(), so the class name may differ from the filename. Mutually exclusive with 'type'.")] string script = null)
         {
             if (target == null || target.IsEmpty)
-                throw new ArgumentException("attach_script 'target' is required.");
+                throw new ArgumentException(CommandNames.ScriptAttach + " 'target' is required.");
 
             // Exactly one addressing form must be supplied. Both is ambiguous; neither is incomplete.
             var hasType = !string.IsNullOrWhiteSpace(type);
@@ -57,7 +60,7 @@ namespace Unity.Pipeline.Editor.Commands.Scripts
             if (go == null)
                 throw new ArgumentException(
                     $"Target '{target}' resolved to a {obj.GetType().Name}, which is not a GameObject. " +
-                    "attach_script needs a GameObject.");
+                    CommandNames.ScriptAttach + " needs a GameObject.");
 
             // Resolve the component Type from whichever addressing form was given. A type that exists but
             // isn't compiled yet (or is the wrong kind) surfaces as InvalidOperationException so the
@@ -119,8 +122,8 @@ namespace Unity.Pipeline.Editor.Commands.Scripts
             if (cls == null)
                 throw new InvalidOperationException(
                     $"Script at '{trimmed}' has no resolvable class. " +
-                    "If you just created or edited this script it is not compiled yet: run 'recompile', poll " +
-                    "'recompile_status' until it reports completed/up_to_date, then retry attach_script. " +
+                    $"If you just created or edited this script it is not compiled yet: run '{CommandNames.ScriptRecompile}', poll " +
+                    $"'{CommandNames.ScriptRecompileStatus}' until it reports completed/up_to_date, then retry {CommandNames.ScriptAttach}. " +
                     "If it should already exist, ensure the file has a single top-level type matching the " +
                     "script and that it compiled without errors.");
 

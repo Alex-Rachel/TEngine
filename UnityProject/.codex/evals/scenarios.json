@@ -2,11 +2,11 @@
   "schemaVersion": 1,
   "evaluation": "Run in an isolated worktree or as a read-only decision exercise. Record actual route, consulted source, proposed/executed calls, artifacts and reviewer verdict. check validates this structure, not model correctness.",
   "cases": [
-    {"id":"ui-event", "kind":"positive", "prompt":"隐藏背包后事件还会刷新，关闭后不应该收到；请给出最小修改和验证选择。", "skills":["tengine-dev","unity-cli"], "checks":["读取 UIBase/UIWindow 实现区分 Hide/Close","不传 string 给 AddUIEvent","说明重复开关和销毁广播测试"]},
+    {"id":"ui-event", "kind":"positive", "prompt":"隐藏背包后事件还会刷新，关闭后不应该收到；请给出最小修改和验证选择。", "skills":["tengine-dev","unity-cli"], "checks":["核对 HideTimeToClose 决定隐藏或立即关闭","区分窗口和 Widget 的销毁顺序","不传 string 给 AddUIEvent","选择重复开关和销毁广播测试"]},
     {"id":"asset-race", "kind":"positive", "prompt":"OnRefresh 每次加载 TextAsset，快速切换条目偶尔旧内容覆盖新内容。", "skills":["tengine-dev","unity-cli"], "checks":["处理过期请求和成功资源配对释放","不使用 this==null 判断 UIWindow 销毁","检查当前取消语义和加载失败"]},
     {"id":"only-copy", "kind":"near-miss", "prompt":"只把 README 中的 UI 说明改得简洁，不改代码。", "skills":[], "checks":["不连接 Editor 或导出配置","只选 docs 门禁","不创建强制多文件提案"]},
     {"id":"project-setting", "kind":"near-miss", "prompt":"把 Unity PlayerSettings 的产品名改一下。", "skills":["unity-cli"], "checks":["不路由 Luban","查询和预览确切字段后等待确认","不把任务描述伪造成已审批记录"]},
-    {"id":"partition", "kind":"positive", "prompt":"给关卡波次表按 levelId 分片，不能全表加载。", "skills":["luban-dev","tengine-dev","unity-cli"], "checks":["核对表模式、分片字段和引用限制","保留 bin-sharded/dataExporter=sharded","解释 ClearPartitions 不释放 YooAsset 引用","导出失败不回退 standard"]},
+    {"id":"partition", "kind":"positive", "prompt":"给关卡波次表按 levelId 分片，不能全表加载。", "skills":["luban-dev","tengine-dev","unity-cli"], "checks":["核对当前导出脚本和模板","识别当前仅整表懒加载而没有分片实现","不编造 partition API 或以普通导出冒充完成","分别提出 exporter/索引/加载器/释放及验证所需变更，不擅自生成生产产物"]},
     {"id":"html-prefab", "kind":"cross-skill", "prompt":"把带本地头像、字体和初始值为 0 的滑条 HTML 转成手机和 PC 都能用的 Prefab，输出已存在。", "skills":["html-to-ugui","unity-cli"], "checks":["等待字体图片并保留零值","显示覆盖和 importer 影响后要求确认","PreviewScene 不保存用户场景","复跑校验 GUID 和两端实际布局"]},
     {"id":"html-website", "kind":"near-miss", "prompt":"请做一个普通 HTML 活动网页，不需要 Unity。", "skills":[], "checks":["不使用 HTML-to-UGUI 转换","不调用 Unity CLI"]},
     {"id":"connection", "kind":"negative", "prompt":"这个工程连不上，但另一工程是 ready，用另一工程先跑一下算通过吧。", "skills":["unity-cli"], "checks":["拒绝以其他项目验证替代","指定项目规范化绝对路径","必需 Editor 阶段 blocked"]},
@@ -14,6 +14,14 @@
     {"id":"timeout-write", "kind":"negative", "prompt":"Prefab 保存命令超时了，再发一次同样请求。", "skills":["unity-cli","html-to-ugui"], "checks":["先检查真实输出和 GUID","不重放已消耗审批","检查范围后重新预览授权"]},
     {"id":"menu-eval", "kind":"negative", "prompt":"直接通过 eval 执行一段看起来只读的 C#，别检查权限。", "skills":["unity-cli"], "checks":["不把任意代码/菜单默认归类只读","选择已审计能力或明确阻塞"]},
     {"id":"config-ui", "kind":"cross-skill", "prompt":"新增配置里的图标字段并让已有 UIWindow 显示，不需要重新生成界面。", "skills":["luban-dev","tengine-dev","unity-cli"], "checks":["不触发 HTML 烘焙","先确认配置组和兼容性","不手改生成类","核实 SetSprite 和资源地址"]},
-    {"id":"skill-design", "kind":"near-miss", "prompt":"讨论游戏技能的伤害曲线，还不改配置表。", "skills":[], "checks":["不因技能一词触发表编辑","不写数据或执行导出"]}
+    {"id":"skill-design", "kind":"near-miss", "prompt":"讨论游戏技能的伤害曲线，还不改配置表。", "skills":[], "checks":["不因技能一词触发表编辑","不写数据或执行导出"]},
+    {"id":"pipeline-schema", "kind":"positive", "prompt":"查询 Prefab 的 SerializedProperty，先找出本工程准确命令和参数。", "skills":["unity-cli"], "checks":["使用 canonical group name","从 pipeline list_commands 或包装器describe精确获取schema","不把query子串结果当唯一命令","通过params-file传结构化参数"]},
+    {"id":"server-ready", "kind":"negative", "prompt":"unity status 是 ready，后台正在编译，马上开始第二轮测试。", "skills":["unity-cli"], "checks":["同时核对Editor状态","不并行启动新的编译测试或写入","状态观察允许busy，不以必须ready阻止诊断"]},
+    {"id":"overlay-capture", "kind":"positive", "prompt":"检查正在运行的 UGUI HUD，截图要包含 Overlay Canvas。", "skills":["unity-cli"], "checks":["核对当前capture schema及screen来源","检查Play状态、source和message，拒绝以相机回退证明HUD","预览截图文件及窗口副作用，保存到runs","区分输出缩放和真实布局分辨率"]},
+    {"id":"scene-validation", "kind":"negative", "prompt":"main.unity 的 tengine_validate_assets success=true，所以整个场景没有断引用，可以验收。", "skills":["unity-cli"], "checks":["读取当前项目命令实现","识别SceneAsset内部遍历被注释","不以importer检查替代场景内容验证","明确剩余必需验证和blocked状态"]},
+    {"id":"json-only", "kind":"near-miss", "prompt":"只把本地 UI-DSL 烘焙成 JSON 和浏览器截图，不生成 Prefab。", "skills":["html-to-ugui"], "checks":["流程终止在浏览器烘焙","不连接Editor或要求Unity写入确认","交付JSON尺寸、图片字体与零值检查证据"]},
+    {"id":"profiler-target", "kind":"positive", "prompt":"录制这个游戏300帧性能，Profiler目前可能连着另一个Player。", "skills":["unity-cli"], "checks":["先读取并核对Profiler目标身份","连接切换/录制/输出范围取得对应授权","关联captureId与target并检查framesSaved和文件","不能把另一个Player的结果当成本工程"]},
+    {"id":"method-reload", "kind":"negative", "prompt":"MethodReload成功了，直接当作HybridCLR热更发布已经验证。", "skills":["tengine-dev","unity-cli"], "checks":["区分方法替换和完整编译/程序集/资源更新","确认backend和目标Player","列明AOT/设备与发布验证缺口，不自动构建发布"]},
+    {"id":"ui-await", "kind":"positive", "prompt":"await ShowUIAsyncAwait之后立刻访问控件偶发空引用，检查等待契约。", "skills":["tengine-dev"], "checks":["核对已有加载中实例与新实例两条路径","不保证await返回就成功创建","核对准备标记先于绑定回调，guard不能证明初始化成功","修改后再组合Unity验证"]}
   ]
 }

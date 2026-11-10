@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using Newtonsoft.Json;
 using Unity.Pipeline.Commands;
+using Unity.Pipeline.Editor.Authoring;
 using UnityEditor;
 using UnityEngine;
 
@@ -19,16 +21,26 @@ namespace Unity.Pipeline.Editor.Commands
     /// view and writes asynchronously on the next frame — a single request/response can't reliably
     /// wait for that, and it does nothing for the Scene view in edit mode. Camera.Render() into a
     /// RenderTexture is synchronous, needs no play mode, and handles both views identically.
+    ///
+    /// Deprecated: <c>capture game_view</c> and <c>capture scene_view</c> with <c>output-path</c> cover it,
+    /// and the game view capture also includes the overlay UI this command misses. Every response
+    /// carries <see cref="DeprecationWarning"/>.
     /// </summary>
-    public static class ScreenshotCommand
+    static class ScreenshotCommand
     {
+        const string Group = "capture";
+
+        internal const string DeprecationWarning =
+            CommandNames.CaptureScreenshot + " is deprecated: use " + CommandNames.CaptureGameView + " or " +
+            CommandNames.CaptureSceneView + " with --output-path.";
+
         const int k_DefaultWidth = 1920;
         const int k_DefaultHeight = 1080;
 
-        [CliCommand("screenshot", "Capture the Scene or Game view as a PNG and return its file path", MainThreadRequired = true)]
-        public static ScreenshotResponse CaptureScreenshot(
+        [CliGroupCommand(Group, "Deprecated: use " + CommandNames.CaptureGameView + " or " + CommandNames.CaptureSceneView + " with output-path. Capture the Scene or Game view as a PNG and return its file path", MainThreadRequired = true, Tags = new[] { "capture" })]
+        public static ScreenshotResponse Screenshot(
             [CliArg("view", "Which view to capture: 'game' (default) or 'scene'")] string view = "game",
-            [CliArg("output", "Output PNG path (absolute, or relative to the project root). Defaults to a timestamped file under <project>/Temp/pipeline-screenshots/.")] string output = "",
+            [CliArg("output-path", "Output PNG path (absolute, or relative to the project root). Defaults to a timestamped file under <project>/Temp/pipeline-screenshots/.")] string output = "",
             [CliArg("width", "Output width in pixels. 0 (default) uses the view camera's current width.")] int width = 0,
             [CliArg("height", "Output height in pixels. 0 (default) uses the view camera's current height.")] int height = 0)
         {
@@ -153,11 +165,7 @@ namespace Unity.Pipeline.Editor.Commands
             var projectRoot = Path.GetDirectoryName(Application.dataPath);
 
             if (!string.IsNullOrWhiteSpace(output))
-            {
-                return Path.IsPathRooted(output)
-                    ? output
-                    : Path.GetFullPath(Path.Combine(projectRoot, output));
-            }
+                return ProjectPaths.ResolveFile(output, projectRoot);
 
             var stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss_fff", CultureInfo.InvariantCulture);
             return Path.Combine(projectRoot, "Temp", "pipeline-screenshots", $"screenshot_{view}_{stamp}.png");
@@ -169,7 +177,7 @@ namespace Unity.Pipeline.Editor.Commands
     /// output; the human formatter reads <see cref="Path"/>.
     /// </summary>
     [Serializable]
-    public class ScreenshotResponse
+    class ScreenshotResponse
     {
         [JsonProperty("success")]
         public bool Success { get; set; }
@@ -188,6 +196,10 @@ namespace Unity.Pipeline.Editor.Commands
 
         [JsonProperty("message")]
         public string Message { get; set; }
+
+        /// <summary>Always carries the deprecation notice, on success and failure alike.</summary>
+        [JsonProperty("warnings")]
+        public List<string> Warnings { get; set; } = new List<string> { ScreenshotCommand.DeprecationWarning };
 
         public static ScreenshotResponse Fail(string message) => new ScreenshotResponse
         {

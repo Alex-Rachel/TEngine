@@ -14,7 +14,7 @@
 |---|---|
 | TEngine 框架、UIWindow、事件、资源、HybridCLR | [tengine-dev](UnityProject/.codex/skills/tengine-dev/SKILL.md) |
 | Unity Editor/Player 查询、资产操作、测试、构建预检 | [unity-cli](UnityProject/.codex/skills/unity-cli/SKILL.md) |
-| Luban 配置结构、数据、导出及分片 | [luban-dev](UnityProject/.codex/skills/luban-dev/SKILL.md) |
+| Luban 配置结构、数据、导出及分片能力核对 | [luban-dev](UnityProject/.codex/skills/luban-dev/SKILL.md) |
 | HTML/UI-DSL 转 UGUI Prefab | [html-to-ugui](UnityProject/.codex/skills/html-to-ugui/SKILL.md) |
 
 ## 授权边界

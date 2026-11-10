@@ -1,6 +1,6 @@
 interface:
-  display_name: "Luban Configuration"
-  short_description: "Validate and export TEngine configuration and table shards"
-  default_prompt: "Use $luban-dev to make this configuration change and validate its export."
+  display_name: "Luban 游戏配置"
+  short_description: "维护游戏配置源数据与模板，验证普通及整表懒加载导出和运行时集成"
+  default_prompt: "使用 $luban-dev 完成这项配置任务，按查表、源编辑或导出目标选择流程并核实实际能力。"
 policy:
   allow_implicit_invocation: true

@@ -17,6 +17,10 @@ namespace Unity.Pipeline.Editor.Authoring
         /// Try to resolve a handle to a loaded object. Returns false with an <paramref name="error"/>
         /// when the handle is empty or does not resolve.
         /// </summary>
+        /// <param name="handle">The agent-supplied object reference.</param>
+        /// <param name="obj">The resolved object, or null on failure.</param>
+        /// <param name="error">A human-readable reason on failure, or null on success.</param>
+        /// <returns>True if the handle resolved.</returns>
         public static bool TryResolve(ObjectRef handle, out Object obj, out string error)
         {
             obj = null;
@@ -45,14 +49,41 @@ namespace Unity.Pipeline.Editor.Authoring
                 return false;
             }
 
-            // 2. Asset path.
+            // 2. Asset path. Explicit "Assets/"/"Packages/"-rooted paths load as-is; a bare relative
+            // path (e.g. "Materials/Floor.mat") is normalized under the authoring root first. If it
+            // does not resolve to an asset, fall back to a hierarchy lookup so dotted GameObject names
+            // (e.g. "Cube.001") still resolve, and report every strategy that was tried.
             if (!string.IsNullOrEmpty(handle.Path))
             {
-                obj = AssetDatabase.LoadMainAssetAtPath(handle.Path);
+                var raw = handle.Path;
+                var explicitlyRooted = IsExplicitlyRooted(raw);
+                var assetPath = raw;
+                if (!explicitlyRooted)
+                {
+                    var resolved = ProjectPaths.Resolve(raw, out _);
+                    if (!string.IsNullOrEmpty(resolved))
+                        assetPath = resolved;
+                }
+
+                obj = AssetDatabase.LoadMainAssetAtPath(assetPath);
                 if (obj != null)
                     return true;
 
-                error = $"No asset at path '{handle.Path}'.";
+                if (explicitlyRooted)
+                {
+                    error = $"No asset at path '{raw}'.";
+                    return false;
+                }
+
+                // A bare relative string may actually be a scene hierarchy path with a dotted name.
+                var go = FindByHierarchyPath(raw);
+                if (go != null)
+                {
+                    obj = go;
+                    return true;
+                }
+
+                error = $"Could not resolve '{raw}': no asset at '{assetPath}', no GameObject at hierarchy path '{raw}'.";
                 return false;
             }
 
@@ -124,6 +155,8 @@ namespace Unity.Pipeline.Editor.Authoring
         /// Produce the canonical identity for an object (assets get path/guid/fileId; loaded objects
         /// get instanceId/hierarchyPath). Returns null for a null object.
         /// </summary>
+        /// <param name="obj">The object to describe.</param>
+        /// <returns>The object's canonical identity, or null if <paramref name="obj"/> is null.</returns>
         public static AuthoringResult Describe(Object obj)
         {
             if (obj == null)
@@ -161,6 +194,12 @@ namespace Unity.Pipeline.Editor.Authoring
 
             return result;
         }
+
+        /// <summary>True when a path is explicitly rooted at "Assets/" or "Packages/" (or is exactly one of those).</summary>
+        private static bool IsExplicitlyRooted(string path) =>
+            path == "Assets" || path == "Packages"
+            || path.StartsWith("Assets/", System.StringComparison.Ordinal)
+            || path.StartsWith("Packages/", System.StringComparison.Ordinal);
 
         private static GameObject FindByHierarchyPath(string path)
         {

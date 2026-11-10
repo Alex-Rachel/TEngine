@@ -20,13 +20,16 @@ namespace Unity.Pipeline.Editor.Commands.Materials
     /// <c>GetPropertyTextureDimension</c>, and <c>GetPropertyFlags</c>. The reported type set is
     /// <see cref="UnityEngine.Rendering.ShaderPropertyType"/>: Color, Vector, Float, Range, Texture, Int.
     /// </summary>
-    public static class ShaderCommands
+    static class ShaderCommands
     {
-        [CliCommand("list_shaders",
-            "Discover available shaders so an agent can pick a valid name for set_material_properties / create_asset. Returns [{ name, assetPath|null, isBuiltin, isSupported }].")]
+        const string Group = "material";
+
+        [CliGroupCommand(Group,
+            "Discover available shaders so an agent can pick a valid name for " + CommandNames.MaterialSetProperties + " / " + CommandNames.AssetCreate + ". Returns [{ name, assetPath|null, isBuiltin, isSupported }].",
+            Tags = new[] { "materials/shaders" })]
         public static List<ShaderInfo> ListShaders(
             [CliArg("filter", "Case-insensitive substring matched against the shader name (e.g. \"URP\", \"Lit\").")] string filter = null,
-            [CliArg("includeBuiltin", "Include built-in/engine shaders (those with no project asset path). Default true.")] bool includeBuiltin = true,
+            [CliArg("include-builtin", "Include built-in/engine shaders (those with no project asset path). Default true.")] bool includeBuiltin = true,
             [CliArg("limit", "Maximum number of shaders to return (default 200).")] int limit = 200)
         {
             if (limit <= 0)
@@ -95,8 +98,9 @@ namespace Unity.Pipeline.Editor.Commands.Materials
             return results;
         }
 
-        [CliCommand("get_shader_properties",
-            "Introspect a shader's declared property list (name, description, type Color|Vector|Float|Range|TexEnv|Int, range, textureDimension, flags). Provide 'shader' (by name) OR 'material' (read the shader off that material).")]
+        [CliGroupCommand(Group,
+            "Introspect a shader's declared property list (name, description, type Color|Vector|Float|Range|TexEnv|Int, range, textureDimension, flags). Provide 'shader' (by name) OR 'material' (read the shader off that material).",
+            Tags = new[] { "materials/shaders" })]
         public static ShaderPropertiesResult GetShaderProperties(
             [CliArg("shader", "Shader name (e.g. \"Universal Render Pipeline/Lit\"). Provide this OR 'material'.")] string shader = null,
             [CliArg("material", "Reference to a material to read the shader from instead of naming it. Provide this OR 'shader'.")] ObjectRef material = null)
@@ -108,7 +112,7 @@ namespace Unity.Pipeline.Editor.Commands.Materials
                 resolved = Shader.Find(shader);
                 if (resolved == null)
                     throw new ShaderNotFoundException(
-                        $"Shader '{shader}' not found. Shader.Find only resolves shaders that are compiled/included in the build (or referenced by a material/scene). Use list_shaders to discover valid names.");
+                        $"Shader '{shader}' not found. Shader.Find only resolves shaders that are compiled/included in the build (or referenced by a material/scene). Use {CommandNames.MaterialListShaders} to discover valid names.");
             }
             else if (material != null && !material.IsEmpty)
             {

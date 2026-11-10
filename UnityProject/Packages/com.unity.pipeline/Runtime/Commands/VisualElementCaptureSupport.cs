@@ -28,7 +28,7 @@ namespace Unity.Pipeline.Runtime.Commands
     /// <c>Type#name.class1.class2</c> (any subset); optional pseudo-state suffixes
     /// <c>:checked :hover :focus :active :enabled :disabled</c> and <c>:not(&lt;state&gt;)</c>.
     /// </summary>
-    public static class VisualElementCaptureSupport
+    static class VisualElementCaptureSupport
     {
         /// <summary>
         /// Returns a failure response when no GPU is available (batchmode/headless), where a capture
@@ -392,7 +392,7 @@ namespace Unity.Pipeline.Runtime.Commands
     /// the GameView capture command's result shape (PR #13) for easy convergence later.
     /// </summary>
     [Serializable]
-    public class CaptureElementResponse
+    class CaptureElementResponse
     {
         /// <summary>Whether the capture succeeded.</summary>
         [JsonProperty("success")]

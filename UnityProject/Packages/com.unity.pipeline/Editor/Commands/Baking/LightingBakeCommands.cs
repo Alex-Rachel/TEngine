@@ -5,6 +5,9 @@ using Newtonsoft.Json.Linq;
 using Unity.Pipeline.Commands;
 using UnityEditor;
 using UnityEngine;
+#if UNITY_6000_5_OR_NEWER
+using Unity.Scripting.LifecycleManagement;
+#endif
 
 namespace Unity.Pipeline.Editor.Commands.Baking
 {
@@ -26,8 +29,12 @@ namespace Unity.Pipeline.Editor.Commands.Baking
     /// <see cref="Lightmapping.isRunning"/> flipping false in <see cref="EditorApplication.update"/>.
     /// </summary>
     [InitializeOnLoad]
-    public static class LightingBakeCommands
+#if UNITY_6000_5_OR_NEWER
+    [NoAutoStaticsCleanup]
+#endif
+    static class LightingBakeCommands
     {
+        const string Group = "lighting";
         const string StatusFile = "Temp/pipeline_lighting_bake_status.json";
 
         static readonly object s_Lock = new object();
@@ -47,10 +54,10 @@ namespace Unity.Pipeline.Editor.Commands.Baking
 
         #region bake_lighting
 
-        [CliCommand("bake_lighting", "Trigger an async lightmap bake of the open scene(s) via Lightmapping.BakeAsync(). Returns immediately; poll lighting_bake_status until completed.")]
-        public static object BakeLighting(
+        [CliGroupCommand(Group, "Trigger an async lightmap bake of the open scene(s) via Lightmapping.BakeAsync(). Returns immediately; poll " + CommandNames.LightingBakeStatus + " until completed.", Tags = new[] { "baking/lighting" })]
+        public static object Bake(
             [CliArg("confirm", "Recommended (true): a bake overwrites existing lightmap data. Accepted for parity; not required.")] bool confirm = false,
-            [CliArg("dry_run", "If true, validate there is an open bakeable scene and return the current lighting settings without baking.")] bool dryRun = false)
+            [CliArg("dry-run", "If true, validate there is an open bakeable scene and return the current lighting settings without baking.")] bool dryRun = false)
         {
             if (!BakeSceneGuard.HasBakeableScene())
                 return BakeSceneGuard.NoSceneResult();
@@ -60,7 +67,7 @@ namespace Unity.Pipeline.Editor.Commands.Baking
             OnUpdate();
 
             if (Lightmapping.isRunning)
-                return new { code = "bake_in_progress", message = "A lighting bake is already running. Poll lighting_bake_status." };
+                return new { code = "bake_in_progress", message = "A lighting bake is already running. Poll " + CommandNames.LightingBakeStatus + "." };
 
             if (dryRun)
                 return new { status = "dry_run", wouldBake = true, settings = ReadLightingSettings() };
@@ -92,16 +99,14 @@ namespace Unity.Pipeline.Editor.Commands.Baking
             return new { status = "baking", bakeId };
         }
 
-        [CliCommand("lighting_bake_status", "Get the status of the last lighting bake: idle | baking | completed.", MainThreadRequired = false)]
-        public static string LightingBakeStatus()
+        [CliGroupCommand(Group, "Get the status of the last lighting bake: idle | baking | completed.", MainThreadRequired = false, Tags = new[] { "baking/lighting" })]
+        public static JToken BakeStatus()
         {
-            if (File.Exists(StatusFile))
-                return File.ReadAllText(StatusFile);
-            return "{\"status\":\"idle\"}";
+            return StatusFileReader.ReadOrIdle(StatusFile);
         }
 
-        [CliCommand("cancel_lighting_bake", "Cancel an in-progress lighting bake (Lightmapping.Cancel()).")]
-        public static object CancelLightingBake()
+        [CliGroupCommand(Group, "Cancel an in-progress lighting bake (Lightmapping.Cancel()).", Tags = new[] { "baking/lighting" })]
+        public static object CancelBake()
         {
             var wasRunning = Lightmapping.isRunning;
             if (wasRunning)
@@ -126,11 +131,11 @@ namespace Unity.Pipeline.Editor.Commands.Baking
             return new { cancelled = wasRunning };
         }
 
-        [CliCommand("clear_baked_lighting", "Clear baked lightmap data for the open scene(s). Destructive: requires confirm=true.")]
-        public static object ClearBakedLighting(
+        [CliGroupCommand(Group, "Clear baked lightmap data for the open scene(s). Destructive: requires confirm=true.", Tags = new[] { "baking/lighting" })]
+        public static object ClearBake(
             [CliArg("confirm", "Must be true to actually clear (destructive, not undoable via Unity's Undo).")] bool confirm = false,
-            [CliArg("include_disk_cache", "If true, also clear the GI disk cache (Lightmapping.ClearDiskCache()).")] bool includeDiskCache = false,
-            [CliArg("dry_run", "If true, report what would be cleared without clearing.")] bool dryRun = false)
+            [CliArg("include-disk-cache", "If true, also clear the GI disk cache (Lightmapping.ClearDiskCache()).")] bool includeDiskCache = false,
+            [CliArg("dry-run", "If true, report what would be cleared without clearing.")] bool dryRun = false)
         {
             if (!confirm)
                 throw new ArgumentException("Refusing to clear baked lighting. Pass confirm=true (destructive, not undoable via Unity's Undo).");
@@ -149,21 +154,21 @@ namespace Unity.Pipeline.Editor.Commands.Baking
 
         #region settings
 
-        [CliCommand("get_lighting_settings", "Read the active LightingSettings (lightmapper, bounces, resolution, directional mode, AO, etc.).")]
-        public static LightingSettingsResult GetLightingSettings()
+        [CliGroupCommand(Group, "Read the active LightingSettings (lightmapper, bounces, resolution, directional mode, AO, etc.).", Tags = new[] { "baking/lighting" })]
+        public static LightingSettingsResult GetSettings()
         {
             return ReadLightingSettings();
         }
 
-        [CliCommand("set_lighting_settings", "Apply a subset of lighting settings to the active LightingSettings. Returns { applied[], unknown[] }.")]
-        public static object SetLightingSettings(
-            [CliArg("settings", "JSON object with a subset of lighting fields to set (same names/enums as get_lighting_settings).", Required = true)] JObject settings,
-            [CliArg("dry_run", "If true, validate the keys and report applied/unknown without changing anything.")] bool dryRun = false)
+        [CliGroupCommand(Group, "Apply a subset of lighting settings to the active LightingSettings. Returns { applied[], unknown[] }.", Tags = new[] { "baking/lighting" })]
+        public static object SetSettings(
+            [CliArg("settings", "JSON object with a subset of lighting fields to set (same names/enums as " + CommandNames.LightingGetSettings + ").", Required = true)] JObject settings,
+            [CliArg("dry-run", "If true, validate the keys and report applied/unknown without changing anything.")] bool dryRun = false)
         {
             if (settings == null)
                 throw new ArgumentException("settings is required (a JSON object of lighting fields to set).");
 
-            // In dry_run we must not create or assign a LightingSettings asset (no writes). When no
+            // In dry-run we must not create or assign a LightingSettings asset (no writes). When no
             // settings exist yet, validate the requested keys against a transient throwaway instance
             // that is never assigned, so applied/unknown is still reported without persisting anything.
             var ls = ActiveLightingSettings(allowCreate: !dryRun, out var source);
@@ -297,9 +302,9 @@ namespace Unity.Pipeline.Editor.Commands.Baking
         /// still exposes; we read/write that. <paramref name="source"/> records which we used.
         ///
         /// When none is available and <paramref name="allowCreate"/> is true, a new settings asset is
-        /// created and assigned so a real (non-dry_run) set has a target. When <paramref name="allowCreate"/>
-        /// is false (dry_run), this returns <c>null</c> rather than creating/assigning anything, so the
-        /// dry_run "no writes" contract holds.
+        /// created and assigned so a real (non-dry-run) set has a target. When <paramref name="allowCreate"/>
+        /// is false (dry-run), this returns <c>null</c> rather than creating/assigning anything, so the
+        /// dry-run "no writes" contract holds.
         /// </summary>
         static LightingSettings ActiveLightingSettings(bool allowCreate, out string source)
         {
@@ -350,9 +355,16 @@ namespace Unity.Pipeline.Editor.Commands.Baking
             return new LightingSettingsResult
             {
                 Available = true,
+                // Obsolete from 7000.0, but still this asset's own lightmapper; suppress only the warning.
+#pragma warning disable 618
                 Lightmapper = ls.lightmapper.ToString(),
+#pragma warning restore 618
                 BakedGI = ls.bakedGI,
+                // LightingSettings.realtimeGI is obsolete from 6000.7 (Enlighten realtime GI removal, no
+                // replacement API yet) but still functions; suppress only the deprecation warning here.
+#pragma warning disable 618
                 RealtimeGI = ls.realtimeGI,
+#pragma warning restore 618
                 DirectSampleCount = ls.directSampleCount,
                 IndirectSampleCount = ls.indirectSampleCount,
                 EnvironmentSampleCount = ls.environmentSampleCount,
@@ -381,12 +393,18 @@ namespace Unity.Pipeline.Editor.Commands.Baking
             switch (key)
             {
                 case "lightmapper":
+                    // Obsolete from 7000.0; see the read path above for why this still writes the
+                    // settings asset's own field.
+#pragma warning disable 618
                     return SetEnum<LightingSettings.Lightmapper>(value, dryRun, v => ls.lightmapper = v);
+#pragma warning restore 618
                 case "bakedGI":
                     if (!dryRun) ls.bakedGI = value.Value<bool>();
                     return true;
                 case "realtimeGI":
+#pragma warning disable 618
                     if (!dryRun) ls.realtimeGI = value.Value<bool>();
+#pragma warning restore 618
                     return true;
                 case "directSampleCount":
                     if (!dryRun) ls.directSampleCount = value.Value<int>();
@@ -538,7 +556,7 @@ namespace Unity.Pipeline.Editor.Commands.Baking
 
     /// <summary>Status/result payload for <c>bake_lighting</c> / <c>lighting_bake_status</c>.</summary>
     [Serializable]
-    public class LightingBakeStatus
+    class LightingBakeStatus
     {
         [JsonProperty("status")]
         public string Status { get; set; }
@@ -566,7 +584,7 @@ namespace Unity.Pipeline.Editor.Commands.Baking
 
     /// <summary>Post-bake lightmap statistics (CLI-215 acceptance: lightmapCount &gt;= 1, bakeTimeMs &gt; 0).</summary>
     [Serializable]
-    public class LightingBakeStats
+    class LightingBakeStats
     {
         [JsonProperty("lightmapCount")]
         public int LightmapCount { get; set; }
@@ -586,7 +604,7 @@ namespace Unity.Pipeline.Editor.Commands.Baking
 
     /// <summary>Result of <c>get_lighting_settings</c> (and the dry-run payload of bake_lighting).</summary>
     [Serializable]
-    public class LightingSettingsResult
+    class LightingSettingsResult
     {
         /// <summary>False when no LightingSettings could be read for the active scene.</summary>
         [JsonProperty("available")]

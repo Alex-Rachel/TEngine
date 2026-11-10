@@ -28,7 +28,10 @@ namespace Unity.Pipeline.Editor.Authoring
     public sealed class AuthoringUndoScope : IDisposable
     {
         private readonly int m_Group;
+        private bool m_Canceled;
 
+        /// <summary>Start a new collapsible Undo group.</summary>
+        /// <param name="name">Name shown for the collapsed Undo step.</param>
         public AuthoringUndoScope(string name)
         {
             Undo.IncrementCurrentGroup();
@@ -37,9 +40,19 @@ namespace Unity.Pipeline.Editor.Authoring
                 Undo.SetCurrentGroupName(name);
         }
 
+        /// <summary>
+        /// Skip the collapse on dispose. Call after the scope's registered operations have been
+        /// reverted wholesale (e.g. <c>Undo.RevertAllDownToGroup(group)</c> on a transactional batch
+        /// abort): the group id no longer refers to this scope's operations on the Undo stack, and
+        /// collapsing a discarded id could fold whatever now sits at that index into a stray group.
+        /// </summary>
+        public void Cancel() => m_Canceled = true;
+
+        /// <summary>Collapse all Undo operations registered during this scope into one step, unless <see cref="Cancel"/> was called.</summary>
         public void Dispose()
         {
-            Undo.CollapseUndoOperations(m_Group);
+            if (!m_Canceled)
+                Undo.CollapseUndoOperations(m_Group);
         }
     }
 }

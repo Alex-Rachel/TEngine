@@ -36,6 +36,7 @@ namespace Unity.Pipeline.Models
         [JsonProperty("hierarchyPath")]
         public string HierarchyPath { get; set; }
 
+        /// <summary>True when none of the reference forms above are set.</summary>
         [JsonIgnore]
         public bool IsEmpty =>
             string.IsNullOrEmpty(GlobalId) &&
@@ -44,6 +45,8 @@ namespace Unity.Pipeline.Models
             InstanceId == null &&
             string.IsNullOrEmpty(HierarchyPath);
 
+        /// <summary>The reference in its most specific set form, for diagnostics/logging.</summary>
+        /// <returns>The formatted string.</returns>
         public override string ToString()
         {
             if (!string.IsNullOrEmpty(GlobalId)) return GlobalId;

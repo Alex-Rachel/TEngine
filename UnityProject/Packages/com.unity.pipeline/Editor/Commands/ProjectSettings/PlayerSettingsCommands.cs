@@ -14,39 +14,40 @@ namespace Unity.Pipeline.Editor.Commands.ProjectSettings
     /// Icons and splash are intentionally out of this MVP set: they take <c>Texture2D</c> assets, not
     /// scalar JSON, so they need a dedicated asset-reference convention.
     /// </summary>
-    public static class PlayerSettingsCommands
+    static class PlayerSettingsCommands
     {
-        const string Group = "player";
+        const string Domain = "player";
+        const string Group = "settings." + Domain;
 
-        [CliCommand("get_player_settings", "Read PlayerSettings (company/product/version, scripting backend, API level).", MainThreadRequired = true)]
-        public static ProjectSettingsResponse Get() => ProjectSettingsCommand.Get(Group, Read);
+        [CliGroupCommand(Group, "Read PlayerSettings (company/product/version, scripting backend, API level).", MainThreadRequired = true, Tags = new[] { "settings/player" })]
+        public static ProjectSettingsResponse Get() => ProjectSettingsCommand.Get(Domain, Read);
 
-        [CliCommand("set_player_settings", "Change PlayerSettings. Requires confirm=true; use dry_run to preview. Not undoable via Ctrl+Z. Scripting backend / API level changes trigger a domain reload.", MainThreadRequired = true)]
+        [CliGroupCommand(Group, "Change PlayerSettings. Requires confirm=true; use dry-run to preview. Not undoable via Ctrl+Z. Scripting backend / API level changes trigger a domain reload.", MainThreadRequired = true, Tags = new[] { "settings/player" })]
         public static ProjectSettingsResponse Set(
             [CliArg("settings", "Fields to change; omitted fields are left unchanged.")] PlayerSettingsInput settings = null,
             [CliArg("confirm", "Apply the change. Without it the call is refused.")] bool confirm = false,
-            [CliArg("dry_run", "Preview the change without applying it.")] bool dryRun = false)
+            [CliArg("dry-run", "Preview the change without applying it.")] bool dryRun = false)
         {
             if (settings == null)
-                return ProjectSettingsResponse.Fail(Group, "No 'settings' object provided.");
+                return ProjectSettingsResponse.Fail(Domain, "No 'settings' object provided.");
 
             var target = NamedBuildTarget.FromBuildTargetGroup(EditorUserBuildSettings.selectedBuildTargetGroup);
             var changes = new List<string>();
             var reload = false;
 
             if (settings.CompanyName != null && settings.CompanyName != PlayerSettings.companyName)
-                changes.Add($"companyName '{PlayerSettings.companyName}' -> '{settings.CompanyName}'");
+                changes.Add($"company-name '{PlayerSettings.companyName}' -> '{settings.CompanyName}'");
             if (settings.ProductName != null && settings.ProductName != PlayerSettings.productName)
-                changes.Add($"productName '{PlayerSettings.productName}' -> '{settings.ProductName}'");
+                changes.Add($"product-name '{PlayerSettings.productName}' -> '{settings.ProductName}'");
             if (settings.BundleVersion != null && settings.BundleVersion != PlayerSettings.bundleVersion)
-                changes.Add($"bundleVersion '{PlayerSettings.bundleVersion}' -> '{settings.BundleVersion}'");
+                changes.Add($"bundle-version '{PlayerSettings.bundleVersion}' -> '{settings.BundleVersion}'");
 
             if (settings.ScriptingBackend.HasValue)
             {
                 var current = PlayerSettings.GetScriptingBackend(target);
                 if (settings.ScriptingBackend.Value != current)
                 {
-                    changes.Add($"scriptingBackend {current} -> {settings.ScriptingBackend.Value} (domain reload)");
+                    changes.Add($"scripting-backend {current} -> {settings.ScriptingBackend.Value} (domain reload)");
                     reload = true;
                 }
             }
@@ -56,7 +57,7 @@ namespace Unity.Pipeline.Editor.Commands.ProjectSettings
                 var current = PlayerSettings.GetApiCompatibilityLevel(target);
                 if (settings.ApiCompatibilityLevel.Value != current)
                 {
-                    changes.Add($"apiCompatibilityLevel {current} -> {settings.ApiCompatibilityLevel.Value} (domain reload)");
+                    changes.Add($"api-compatibility-level {current} -> {settings.ApiCompatibilityLevel.Value} (domain reload)");
                     reload = true;
                 }
             }
@@ -76,12 +77,12 @@ namespace Unity.Pipeline.Editor.Commands.ProjectSettings
                 AssetDatabase.SaveAssets();
             }
 
-            return ProjectSettingsCommand.Apply(Group, confirm, dryRun, settings, () => planText, Apply, Read, requiresDomainReload: reload);
+            return ProjectSettingsCommand.Apply(Domain, confirm, dryRun, settings, () => planText, Apply, Read, requiresDomainReload: reload);
         }
 
         static ProjectSettingsResponse NoChanges()
         {
-            var response = ProjectSettingsCommand.Get(Group, Read);
+            var response = ProjectSettingsCommand.Get(Domain, Read);
             response.Message = "No changes specified; nothing to apply.";
             return response;
         }
@@ -91,32 +92,32 @@ namespace Unity.Pipeline.Editor.Commands.ProjectSettings
             var target = NamedBuildTarget.FromBuildTargetGroup(EditorUserBuildSettings.selectedBuildTargetGroup);
             return new Dictionary<string, object>
             {
-                ["companyName"] = PlayerSettings.companyName,
-                ["productName"] = PlayerSettings.productName,
-                ["bundleVersion"] = PlayerSettings.bundleVersion,
-                ["buildTarget"] = target.TargetName,
-                ["scriptingBackend"] = PlayerSettings.GetScriptingBackend(target).ToString(),
-                ["apiCompatibilityLevel"] = PlayerSettings.GetApiCompatibilityLevel(target).ToString()
+                ["company-name"] = PlayerSettings.companyName,
+                ["product-name"] = PlayerSettings.productName,
+                ["bundle-version"] = PlayerSettings.bundleVersion,
+                ["build-target"] = target.TargetName,
+                ["scripting-backend"] = PlayerSettings.GetScriptingBackend(target).ToString(),
+                ["api-compatibility-level"] = PlayerSettings.GetApiCompatibilityLevel(target).ToString()
             };
         }
     }
 
     /// <summary>Player settings to change. Null/omitted fields are left unchanged.</summary>
-    public class PlayerSettingsInput : IStructuredCommandInput
+    class PlayerSettingsInput : IStructuredCommandInput
     {
-        [CliArg("companyName", "Company name.")]
+        [CliArg("company-name", "Company name.")]
         public string CompanyName { get; set; }
 
-        [CliArg("productName", "Product name.")]
+        [CliArg("product-name", "Product name.")]
         public string ProductName { get; set; }
 
-        [CliArg("bundleVersion", "Bundle/application version string.")]
+        [CliArg("bundle-version", "Bundle/application version string.")]
         public string BundleVersion { get; set; }
 
-        [CliArg("scriptingBackend", "Scripting backend (e.g. Mono2x, IL2CPP). Triggers a domain reload.")]
+        [CliArg("scripting-backend", "Scripting backend (e.g. Mono2x, IL2CPP). Triggers a domain reload.")]
         public ScriptingImplementation? ScriptingBackend { get; set; }
 
-        [CliArg("apiCompatibilityLevel", "API compatibility level (e.g. NET_Standard_2_0, NET_Unity_4_8). Triggers a domain reload.")]
+        [CliArg("api-compatibility-level", "API compatibility level (e.g. NET_Standard_2_0, NET_Unity_4_8). Triggers a domain reload.")]
         public ApiCompatibilityLevel? ApiCompatibilityLevel { get; set; }
     }
 }

@@ -17,15 +17,18 @@ namespace Unity.Pipeline.Editor.Commands
     /// Selection, capture, and encoding are shared with the runtime command via
     /// <see cref="VisualElementCaptureSupport"/>; this command only resolves the target window.
     /// </summary>
-    public static class CaptureEditorElementCommand
+    static class CaptureEditorElementCommand
     {
-        [CliCommand("capture_editor_element",
+        const string Group = "capture";
+
+        [CliGroupCommand(Group,
             "Capture a UI Toolkit VisualElement (by selector) from an EditorWindow to a PNG; returns path + base64.",
-            MainThreadRequired = true)]
-        public static CaptureElementResponse CaptureEditorElement(
+            MainThreadRequired = true,
+            Tags = new[] { "capture", "ui" })]
+        public static CaptureElementResponse EditorElement(
             [CliArg("window", "EditorWindow type name (e.g. InspectorWindow) or window title to capture from.", Required = true)] string window = "",
             [CliArg("selector", "Element selector: '#name', '.class', a type name (e.g. Button), descendant (space) / child ('>') chains, optional pseudo-states (:checked,:hover,:focus,:active,:enabled,:disabled,:not(...)).", Required = true)] string selector = "",
-            [CliArg("output", "Output PNG path (absolute, or relative to the project root). Defaults to a timestamped file under <project>/Temp/pipeline-screenshots/.")] string output = "")
+            [CliArg("output-path", "Output PNG path (absolute, or relative to the project root). Defaults to a timestamped file under <project>/Temp/pipeline-screenshots/.")] string output = "")
         {
             if (string.IsNullOrWhiteSpace(window))
                 return CaptureElementResponse.Fail("A 'window' (EditorWindow type name or title) is required.");

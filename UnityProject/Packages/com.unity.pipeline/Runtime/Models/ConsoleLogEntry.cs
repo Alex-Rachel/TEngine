@@ -32,6 +32,14 @@ namespace Unity.Pipeline.Models
         public string Level { get; set; }
 
         /// <summary>
+        /// Unity's own <see cref="UnityEngine.LogType"/> name for the entry ("Log", "Warning",
+        /// "Error", "Assert", "Exception"), keeping the distinction that <see cref="Level"/>
+        /// collapses.
+        /// </summary>
+        [JsonProperty("logType")]
+        public string LogType { get; set; }
+
+        /// <summary>
         /// The log message text.
         /// </summary>
         [JsonProperty("message")]
@@ -42,5 +50,14 @@ namespace Unity.Pipeline.Models
         /// </summary>
         [JsonProperty("stackTrace")]
         public string StackTrace { get; set; }
+
+        /// <summary>
+        /// True when the entry was read from the Editor console's own store rather than captured
+        /// live. Its <see cref="TimestampUtc"/> is when it was read, not when it was logged, and
+        /// its position relative to live-captured entries reflects the read, not the original
+        /// chronology.
+        /// </summary>
+        [JsonProperty("seeded")]
+        public bool Seeded { get; set; }
     }
 }

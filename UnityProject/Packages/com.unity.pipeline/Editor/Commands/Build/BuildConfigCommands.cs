@@ -2,10 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.ExceptionServices;
 using Unity.Pipeline.Commands;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEngine;
+#if UNITY_6000_5_OR_NEWER
+using Unity.Scripting.LifecycleManagement;
+#endif
 
 namespace Unity.Pipeline.Editor.Commands.Build
 {
@@ -15,12 +19,19 @@ namespace Unity.Pipeline.Editor.Commands.Build
     /// target switching are intentionally elsewhere (<c>add_scene_to_build</c>/<c>remove_scene_from_build</c>
     /// from CLI-189, and <c>switch_build_target</c>).
     /// </summary>
-    public static class BuildConfigCommands
+#if UNITY_6000_5_OR_NEWER
+    [NoAutoStaticsCleanup]
+#endif
+    static class BuildConfigCommands
     {
-        [CliCommand("list_build_targets",
+        const string Group = "build";
+        const string TargetGroup = "build.target";
+
+        [CliGroupCommand(TargetGroup,
             "List the known BuildTarget values with their group and whether build support is installed.",
-            MainThreadRequired = true)]
-        public static object ListBuildTargets()
+            MainThreadRequired = true,
+            Tags = new[] { "build/targets" })]
+        public static object List()
         {
             var targets = new List<BuildTargetInfo>();
             var seen = new HashSet<string>();
@@ -59,10 +70,11 @@ namespace Unity.Pipeline.Editor.Commands.Build
             return targets.OrderBy(t => t.TargetGroup).ThenBy(t => t.Name).ToList();
         }
 
-        [CliCommand("get_build_settings",
+        [CliGroupCommand(Group,
             "Read the current build configuration from EditorUserBuildSettings / EditorBuildSettings.",
-            MainThreadRequired = true)]
-        public static object GetBuildSettings()
+            MainThreadRequired = true,
+            Tags = new[] { "build/settings" })]
+        public static object GetSettings()
         {
             var target = EditorUserBuildSettings.activeBuildTarget;
             var group = BuildPipeline.GetBuildTargetGroup(target);
@@ -86,52 +98,53 @@ namespace Unity.Pipeline.Editor.Commands.Build
             };
         }
 
-        [CliCommand("set_build_settings",
-            "Set mutable EditorUserBuildSettings fields. Does NOT manage scenes (use add_scene_to_build / " +
-            "remove_scene_from_build) or switch target (use switch_build_target). Use dry_run to preview.",
-            MainThreadRequired = true)]
-        public static object SetBuildSettings(
+        [CliGroupCommand(Group,
+            "Set mutable EditorUserBuildSettings fields. Does NOT manage scenes (use " + CommandNames.SceneAddToBuild + " / " +
+            CommandNames.SceneRemoveFromBuild + ") or switch target (use " + CommandNames.BuildTargetSwitch + "). Use dry-run to preview.",
+            MainThreadRequired = true,
+            Tags = new[] { "build/settings" })]
+        public static object SetSettings(
             [CliArg("settings", "Fields to change; omitted fields are left unchanged.")] SetBuildSettingsInput settings = null,
             [CliArg("confirm", "Apply the changes. Without it the call is refused.")] bool confirm = false,
-            [CliArg("dry_run", "Preview the change without applying it.")] bool dryRun = false)
+            [CliArg("dry-run", "Preview the change without applying it.")] bool dryRun = false)
         {
             if (settings == null)
                 return SetBuildSettingsResult.Fail("No 'settings' object provided.");
 
             if (!dryRun && !confirm)
                 return SetBuildSettingsResult.Fail(
-                    "Refused: this operation mutates the project. Re-run with confirm=true to apply, or dry_run=true to preview the change.");
+                    "Refused: this operation mutates the project. Re-run with confirm=true to apply, or dry-run=true to preview the change.");
             var result = new SetBuildSettingsResult { DryRun = dryRun, Success = true };
             var group = BuildPipeline.GetBuildTargetGroup(EditorUserBuildSettings.activeBuildTarget);
 
             // For each supplied field: change it (recording in Applied) only if it differs from the
             // current value; otherwise record it in Skipped as a no-op.
-            Plan(result, "developmentBuild", settings.DevelopmentBuild, EditorUserBuildSettings.development,
+            Plan(result, "development-build", settings.DevelopmentBuild, EditorUserBuildSettings.development,
                 v => EditorUserBuildSettings.development = v, dryRun);
-            Plan(result, "allowDebugging", settings.AllowDebugging, EditorUserBuildSettings.allowDebugging,
+            Plan(result, "allow-debugging", settings.AllowDebugging, EditorUserBuildSettings.allowDebugging,
                 v => EditorUserBuildSettings.allowDebugging = v, dryRun);
-            Plan(result, "connectWithProfiler", settings.ConnectWithProfiler, EditorUserBuildSettings.connectProfiler,
+            Plan(result, "connect-with-profiler", settings.ConnectWithProfiler, EditorUserBuildSettings.connectProfiler,
                 v => EditorUserBuildSettings.connectProfiler = v, dryRun);
-            Plan(result, "buildScriptsOnly", settings.BuildScriptsOnly, EditorUserBuildSettings.buildScriptsOnly,
+            Plan(result, "build-scripts-only", settings.BuildScriptsOnly, EditorUserBuildSettings.buildScriptsOnly,
                 v => EditorUserBuildSettings.buildScriptsOnly = v, dryRun);
-            Plan(result, "symlinkSources", settings.SymlinkSources, EditorUserBuildSettings.symlinkSources,
+            Plan(result, "symlink-sources", settings.SymlinkSources, EditorUserBuildSettings.symlinkSources,
                 v => EditorUserBuildSettings.symlinkSources = v, dryRun);
 
             if (!string.IsNullOrWhiteSpace(settings.Il2CppCodeGeneration))
             {
                 if (!TryParseIl2Cpp(settings.Il2CppCodeGeneration, out var requested))
-                    return SetBuildSettingsResult.Fail($"Invalid il2CppCodeGeneration '{settings.Il2CppCodeGeneration}'. Use OptimizeSpeed | OptimizeSize.");
+                    return SetBuildSettingsResult.Fail($"Invalid il2cpp-code-generation '{settings.Il2CppCodeGeneration}'. Use OptimizeSpeed | OptimizeSize.");
 
                 var current = ReadIl2CppCodeGeneration(group);
                 if (!string.Equals(current, requested.ToString(), StringComparison.Ordinal))
                 {
                     if (!dryRun)
                         PlayerSettings.SetIl2CppCodeGeneration(NamedBuildTarget.FromBuildTargetGroup(group), requested);
-                    result.Applied["il2CppCodeGeneration"] = requested.ToString();
+                    result.Applied["il2cpp-code-generation"] = requested.ToString();
                 }
                 else
                 {
-                    result.Skipped["il2CppCodeGeneration"] = current;
+                    result.Skipped["il2cpp-code-generation"] = current;
                 }
             }
 
@@ -141,10 +154,11 @@ namespace Unity.Pipeline.Editor.Commands.Build
             return result;
         }
 
-        [CliCommand("list_build_profiles",
+        [CliGroupCommand(Group,
             "List Build Profile assets in the project (Unity 6 only). Returns feature_unavailable on earlier versions.",
-            MainThreadRequired = true)]
-        public static object ListBuildProfiles()
+            MainThreadRequired = true,
+            Tags = new[] { "build/settings" })]
+        public static object ListProfiles()
         {
             if (!BuildProfiles.IsSupported)
                 return new { error = "Build Profiles require Unity 6 (6000.0) or later", code = "feature_unavailable" };
@@ -218,6 +232,9 @@ namespace Unity.Pipeline.Editor.Commands.Build
     /// so this assembly compiles and runs on older editors without the type. Used by
     /// <c>list_build_profiles</c> and by <c>build</c>'s optional <c>profileName</c> activation.
     /// </summary>
+#if UNITY_6000_5_OR_NEWER
+    [NoAutoStaticsCleanup]
+#endif
     internal static class BuildProfiles
     {
         const string TypeName = "UnityEditor.Build.Profile.BuildProfile, UnityEditor.CoreModule";
@@ -225,6 +242,9 @@ namespace Unity.Pipeline.Editor.Commands.Build
         static readonly Type s_Type = ResolveType();
 
         public static bool IsSupported => s_Type != null;
+
+        /// <summary>The resolved <c>BuildProfile</c> type, for shims that need its internal members.</summary>
+        public static Type ProfileType => s_Type;
 
         static Type ResolveType()
         {
@@ -272,6 +292,29 @@ namespace Unity.Pipeline.Editor.Commands.Build
             return List().FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
         }
 
+        /// <summary>
+        /// The profile stored at a project-relative asset path, or null. Used after creation, where the path
+        /// is known exactly and the name may collide with an existing profile.
+        /// </summary>
+        public static BuildProfileInfo FindByPath(string assetPath)
+        {
+            if (s_Type == null || string.IsNullOrEmpty(assetPath))
+                return null;
+
+            var asset = AssetDatabase.LoadAssetAtPath(assetPath, s_Type);
+            if (asset == null)
+                return null;
+
+            var active = GetActive();
+            return new BuildProfileInfo
+            {
+                Name = System.IO.Path.GetFileNameWithoutExtension(assetPath),
+                Guid = AssetDatabase.AssetPathToGUID(assetPath),
+                Platform = ReadPlatform(asset),
+                IsActive = active != null && ReferenceEquals(active, asset)
+            };
+        }
+
         /// <summary>Activate the named profile via the API's static setter; returns false if unavailable.</summary>
         public static bool TrySetActive(BuildProfileInfo info)
         {
@@ -283,19 +326,28 @@ namespace Unity.Pipeline.Editor.Commands.Build
             if (asset == null)
                 return false;
 
-            // Unity 6 exposes a static settable 'activeProfile' (and/or a SetActiveBuildProfile method).
-            var prop = s_Type.GetProperty("activeProfile", BindingFlags.Public | BindingFlags.Static);
-            if (prop != null && prop.CanWrite)
+            try
             {
-                prop.SetValue(null, asset);
-                return true;
-            }
+                // Unity 6 exposes a static settable 'activeProfile' (and/or a SetActiveBuildProfile method).
+                var prop = s_Type.GetProperty("activeProfile", BindingFlags.Public | BindingFlags.Static);
+                if (prop != null && prop.CanWrite)
+                {
+                    prop.SetValue(null, asset);
+                    return true;
+                }
 
-            var method = s_Type.GetMethod("SetActiveBuildProfile", BindingFlags.Public | BindingFlags.Static);
-            if (method != null)
+                var method = s_Type.GetMethod("SetActiveBuildProfile", BindingFlags.Public | BindingFlags.Static);
+                if (method != null)
+                {
+                    method.Invoke(null, new[] { asset });
+                    return true;
+                }
+            }
+            catch (TargetInvocationException e) when (e.InnerException != null)
             {
-                method.Invoke(null, new[] { asset });
-                return true;
+                // Rethrow Unity's own exception (e.g. activation refused in batch mode) instead of
+                // reflection's generic "thrown by the target of an invocation", for every caller.
+                ExceptionDispatchInfo.Capture(e.InnerException).Throw();
             }
 
             return false;
@@ -315,6 +367,22 @@ namespace Unity.Pipeline.Editor.Commands.Build
             }
             catch { /* best effort */ }
             return null;
+        }
+
+        /// <summary>
+        /// The platform GUID a profile asset targets (its serialized <c>m_PlatformId</c>), or null when
+        /// unreadable. Finer-grained than <see cref="ReadPlatform"/>: Meta Quest and Android share a build
+        /// target but not a platform id.
+        /// </summary>
+        public static string ReadPlatformId(UnityEngine.Object asset)
+        {
+            try
+            {
+                var field = s_Type?.GetField("m_PlatformId", BindingFlags.NonPublic | BindingFlags.Instance);
+                var value = field?.GetValue(asset)?.ToString();
+                return string.IsNullOrEmpty(value) ? null : value;
+            }
+            catch { return null; }
         }
 
         static string ReadPlatform(UnityEngine.Object asset)

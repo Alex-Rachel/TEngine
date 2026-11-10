@@ -1,139 +1,139 @@
 # Baking commands
 
-Bake and clear precomputed scene data: lightmaps, NavMesh, and occlusion culling. Each `bake_*` runs asynchronously (returns immediately) — poll the matching `*_bake_status` until `completed`. The `clear_*` commands are destructive and require `confirm=true`. The `get_*_settings` / `set_*_settings` pairs read and tune the bake parameters.
+Bake and clear precomputed scene data: lightmaps, NavMesh, and occlusion culling. The three bake families have a group each: `lighting`, `navmesh` and `occlusion`. Each `bake` command runs asynchronously (returns immediately) — poll the matching `bake_status` in the same group until `completed`. The `clear_bake` commands are destructive and require `confirm=true`. The `get_settings` / `set_settings` pairs in `lighting` and `navmesh` read and tune the bake parameters.
 
 ## Lighting
 
-### `bake_lighting`
-Trigger an async lightmap bake of the open scene(s) via Lightmapping.BakeAsync(). Returns immediately; poll `lighting_bake_status` until completed.
+### `lighting bake`
+Trigger an async lightmap bake of the open scene(s) via Lightmapping.BakeAsync(). Returns immediately; poll `lighting bake_status` until completed.
 
 | Parameter | Required | Default | Description |
 |-----------|----------|---------|-------------|
 | `confirm` | no | `false` | Recommended (true): a bake overwrites existing lightmap data. Accepted for parity; not required. |
-| `dry_run` | no | `false` | If true, validate there is an open bakeable scene and return the current lighting settings without baking. |
+| `dry-run` | no | `false` | If true, validate there is an open bakeable scene and return the current lighting settings without baking. |
 
 **Returns:** `object`
 
-### `lighting_bake_status`
+### `lighting bake_status`
 Get the status of the last lighting bake: idle | baking | completed.
 
-**Returns:** `string`
+**Returns:** `object` — the bake's status payload, or `{"status":"idle"}` before the first bake.
 
-### `cancel_lighting_bake`
+### `lighting cancel_bake`
 Cancel an in-progress lighting bake (Lightmapping.Cancel()).
 
 **Returns:** `object`
 
-### `clear_baked_lighting`
+### `lighting clear_bake`
 Clear baked lightmap data for the open scene(s). Destructive: requires confirm=true.
 
 | Parameter | Required | Default | Description |
 |-----------|----------|---------|-------------|
 | `confirm` | no | `false` | Must be true to actually clear (destructive, not undoable via Unity's Undo). |
-| `include_disk_cache` | no | `false` | If true, also clear the GI disk cache (Lightmapping.ClearDiskCache()). |
-| `dry_run` | no | `false` | If true, report what would be cleared without clearing. |
+| `include-disk-cache` | no | `false` | If true, also clear the GI disk cache (Lightmapping.ClearDiskCache()). |
+| `dry-run` | no | `false` | If true, report what would be cleared without clearing. |
 
 **Returns:** `object`
 
-### `get_lighting_settings`
+### `lighting get_settings`
 Read the active LightingSettings (lightmapper, bounces, resolution, directional mode, AO, etc.).
 
 **Returns:** `LightingSettingsResult`
 
-### `set_lighting_settings`
+### `lighting set_settings`
 Apply a subset of lighting settings to the active LightingSettings. Returns `{ applied[], unknown[] }`.
 
 | Parameter | Required | Default | Description |
 |-----------|----------|---------|-------------|
-| `settings` | yes | `–` | JSON object with a subset of lighting fields to set (same names/enums as get_lighting_settings). |
-| `dry_run` | no | `false` | If true, validate the keys and report applied/unknown without changing anything. |
+| `settings` | yes | `–` | JSON object with a subset of lighting fields to set (same names/enums as `lighting get_settings`). |
+| `dry-run` | no | `false` | If true, validate the keys and report applied/unknown without changing anything. |
 
 **Returns:** `object`
 
 ## NavMesh
 
-### `bake_navmesh`
-Trigger an async legacy NavMesh bake of the open scene(s) via UnityEditor.AI.NavMeshBuilder. Returns immediately; poll `navmesh_bake_status` until completed.
+### `navmesh bake`
+Trigger an async legacy NavMesh bake of the open scene(s) via UnityEditor.AI.NavMeshBuilder. Returns immediately; poll `navmesh bake_status` until completed.
 
 | Parameter | Required | Default | Description |
 |-----------|----------|---------|-------------|
 | `confirm` | no | `false` | Accepted for parity (a bake overwrites the existing NavMesh); not required. |
-| `dry_run` | no | `false` | If true, validate there is an open scene and return current NavMesh settings without baking. |
+| `dry-run` | no | `false` | If true, validate there is an open scene and return current NavMesh settings without baking. |
 
 **Returns:** `object`
 
-### `navmesh_bake_status`
+### `navmesh bake_status`
 Get the status of the last NavMesh bake: idle | baking | completed.
 
-**Returns:** `string`
+**Returns:** `object` — the bake's status payload, or `{"status":"idle"}` before the first bake.
 
-### `cancel_navmesh_bake`
+### `navmesh cancel_bake`
 Cancel an in-progress NavMesh bake (NavMeshBuilder.Cancel()).
 
 **Returns:** `object`
 
-### `clear_navmesh`
+### `navmesh clear_bake`
 Clear the baked NavMesh for the open scene(s). Destructive: requires confirm=true.
 
 | Parameter | Required | Default | Description |
 |-----------|----------|---------|-------------|
 | `confirm` | no | `false` | Must be true to actually clear (destructive, not undoable via Unity's Undo). |
-| `dry_run` | no | `false` | If true, report what would be cleared without clearing. |
+| `dry-run` | no | `false` | If true, report what would be cleared without clearing. |
 
 **Returns:** `object`
 
-### `get_navmesh_settings`
+### `navmesh get_settings`
 Read the default agent's legacy NavMesh bake settings (agentRadius/Height/Slope/Climb, minRegionArea, voxelSize).
 
 **Returns:** `NavMeshSettingsResult`
 
-### `set_navmesh_settings`
+### `navmesh set_settings`
 Apply a subset of legacy NavMesh bake settings to the default agent. Returns `{ applied[], unknown[] }`.
 
 | Parameter | Required | Default | Description |
 |-----------|----------|---------|-------------|
-| `settings` | yes | `–` | JSON object with a subset of NavMesh fields to set (same names as get_navmesh_settings). |
-| `dry_run` | no | `false` | If true, validate the keys and report applied/unknown without changing anything. |
+| `settings` | yes | `–` | JSON object with a subset of NavMesh fields to set (same names as `navmesh get_settings`). |
+| `dry-run` | no | `false` | If true, validate the keys and report applied/unknown without changing anything. |
 
 **Returns:** `object`
 
-### `bake_navmesh_surfaces`
+### `navmesh bake_surfaces`
 Bake NavMeshSurface components (AI Navigation package). v1 stub: returns package_not_found when the package is absent.
 
 **Returns:** `object`
 
 ## Occlusion culling
 
-### `bake_occlusion_culling`
-Trigger an async occlusion-culling bake of the open scene(s) via StaticOcclusionCulling.GenerateInBackground(). Returns immediately; poll `occlusion_bake_status` until completed.
+### `occlusion bake`
+Trigger an async occlusion-culling bake of the open scene(s) via StaticOcclusionCulling.GenerateInBackground(). Returns immediately; poll `occlusion bake_status` until completed.
 
 | Parameter | Required | Default | Description |
 |-----------|----------|---------|-------------|
-| `smallest_occluder` | no | `–` | Smallest object that will occlude others (meters). Defaults to Unity's current value. |
-| `smallest_hole` | no | `–` | Smallest gap geometry can have that the view can see through (meters). Defaults to Unity's current value. |
-| `backface_threshold` | no | `–` | Backface threshold (1-100); lower trims more backfaces. Defaults to Unity's current value. |
+| `smallest-occluder` | no | `–` | Smallest object that will occlude others (meters). Defaults to Unity's current value. |
+| `smallest-hole` | no | `–` | Smallest gap geometry can have that the view can see through (meters). Defaults to Unity's current value. |
+| `backface-threshold` | no | `–` | Backface threshold (1-100); lower trims more backfaces. Defaults to Unity's current value. |
 | `confirm` | no | `false` | Accepted for parity (a bake overwrites existing occlusion data); not required. |
-| `dry_run` | no | `false` | If true, validate there is an open scene and report the parameters that would be used without baking. |
+| `dry-run` | no | `false` | If true, validate there is an open scene and report the parameters that would be used without baking. |
 
 **Returns:** `object`
 
-### `occlusion_bake_status`
+### `occlusion bake_status`
 Get the status of the last occlusion bake: idle | baking | completed.
 
-**Returns:** `string`
+**Returns:** `object` — the bake's status payload, or `{"status":"idle"}` before the first bake.
 
-### `cancel_occlusion_bake`
+### `occlusion cancel_bake`
 Cancel an in-progress occlusion bake (StaticOcclusionCulling.Cancel()).
 
 **Returns:** `object`
 
-### `clear_occlusion_culling`
+### `occlusion clear_bake`
 Clear baked occlusion-culling data for the open scene(s). Destructive: requires confirm=true.
 
 | Parameter | Required | Default | Description |
 |-----------|----------|---------|-------------|
 | `confirm` | no | `false` | Must be true to actually clear (destructive, not undoable via Unity's Undo). |
-| `dry_run` | no | `false` | If true, report what would be cleared without clearing. |
+| `dry-run` | no | `false` | If true, report what would be cleared without clearing. |
 
 **Returns:** `object`
 
