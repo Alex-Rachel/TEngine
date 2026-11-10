@@ -6,6 +6,10 @@
 
 | 需求 | API | 释放责任 |
 |---|---|---|
+| Image/SpriteRenderer 显示图片 | `SetSprite`、`SetSubSprite` | 扩展组件管理；同目标新请求替换旧请求 |
+| 实例化 Prefab | `LoadGameObjectAsync` | 销毁实例，由 AssetsReference 释放 |
+| 普通 Asset | `LoadAssetAsync<T>` | 每次成功取得后配对 `UnloadAsset` |
+| 原始句柄 | `LoadAssetAsyncHandle<T>` | 调用方持有并释放句柄，不能与对象池 API 混用 |
 | Image/SpriteRenderer 散图 | `SetSprite` | 扩展组件跟踪目标和资源引用，业务传入适合的取消 token |
 | 图集子图 | `SetSubSprite` | 通过 SubSpriteReference 管理；存在下述当前源码限制 |
 | 实例化 Prefab | `LoadGameObjectAsync` | 调用方销毁实例，由 AssetsReference 交还源 Prefab 引用 |
@@ -37,6 +41,10 @@ finally
 }
 ```
 
+上述为嵌入业务的片段；`Consume`、`token`、地址由调用方提供。
+`SetSubSprite` 支持 SpriteAtlas 与纹理切片，共享句柄并管理图集 Sprite 克隆。清空、换图或销毁目标后，既有使用扫描归还引用；隐藏但保留图片时继续持有。两种图片入口共用请求替换状态，取消或失败保留当前图片；直接清空图片不会取消未完成请求。
+取消可能返回 null，也可能抛异常，核实当前实现，不能只捕获 `OperationCanceledException`。
+异步后的所有权转移见 [resource-patterns.md](resource-patterns.md)。
 片段中的 `Consume`、token 和地址由业务提供；异常由所属异步调用链观察。
 `UnloadAsset` 在 [ResourceModule.Pool](../../../../Assets/TEngine/Runtime/Module/ResourceModule/ResourceModule.Pool.cs) 中仅 Unspawn，
 底层句柄由 [AssetObject.Release](../../../../Assets/TEngine/Runtime/Module/ResourceModule/ResourceModule.AssetObject.cs) 在池回收时 Dispose。

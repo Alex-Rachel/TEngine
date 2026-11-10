@@ -16,13 +16,16 @@ namespace TEngine
         [ShowInInspector]
 #endif
         public UnityEngine.Object AssetTarget { get; }
+
+        public bool IsSubSprite { get; }
 #if UNITY_EDITOR
         public bool IsSelect { get; set; }
 #endif
-        public LoadAssetObject(ISetAssetObject obj, UnityEngine.Object assetTarget)
+        public LoadAssetObject(ISetAssetObject obj, UnityEngine.Object assetTarget, bool isSubSprite = false)
         {
             AssetObject = obj;
             AssetTarget = assetTarget;
+            IsSubSprite = isSubSprite;
         }
     }
 }
