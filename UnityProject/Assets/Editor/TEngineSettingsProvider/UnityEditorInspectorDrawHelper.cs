@@ -2,8 +2,9 @@
 using UnityEngine;
 using UnityEngine.UIElements;
 using UnityEditor;
+using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
+using System.Reflection;
 using GameLogic;
 using TEngine.Editor.UI;
 using UnityEngine.Events;
@@ -11,7 +12,12 @@ using UnityEngine.Events;
 [InitializeOnLoad]
 public static class UnityEditorInspectorDrawHelper
 {
-    private static Dictionary<EditorWindow, VisualElement> m_bindButtonsByWindow = new();
+    private static readonly Dictionary<EditorWindow, VisualElement> m_bindButtonsByWindow = new();
+    private static readonly List<EditorWindow> m_windowsToRemove = new();
+    private static readonly System.Type m_inspectorWindowType = typeof(UnityEditor.Editor).Assembly.GetType("UnityEditor.InspectorWindow");
+    // 复用 Unity 维护的窗口列表，窗口开关时由 Unity 更新，不缓存窗口快照。
+    private static readonly IList m_inspectorWindows = (IList)m_inspectorWindowType
+        .GetField("m_AllInspectors", BindingFlags.Static | BindingFlags.NonPublic).GetValue(null);
     public static UnityAction<EditorWindow> OnCreateButton;
     public static UnityAction<EditorWindow> OnDestroyButton;
 
@@ -23,45 +29,41 @@ public static class UnityEditorInspectorDrawHelper
 
     static void UpdateBindButtons()
     {
-        // 获取所有Inspector窗口
-        var inspectorWindows = Resources.FindObjectsOfTypeAll<EditorWindow>()
-            .Where(w => w.GetType().Name == "InspectorWindow")
-            .ToList();
-
-        foreach (var window in inspectorWindows)
+        var shouldShowButton = ShouldShowBindButton();
+        foreach (EditorWindow window in m_inspectorWindows)
         {
-            if (window != null && window.rootVisualElement != null)
+            if (window != null && window.GetType() == m_inspectorWindowType && window.rootVisualElement != null)
             {
-                UpdateButtonForWindow(window);
+                UpdateButtonForWindow(window, shouldShowButton);
             }
         }
 
         // 清理不存在的窗口引用
-        var windowsToRemove = new List<EditorWindow>();
+        m_windowsToRemove.Clear();
         foreach (var kvp in m_bindButtonsByWindow)
         {
             if (kvp.Key == null)
             {
-                windowsToRemove.Add(kvp.Key);
+                m_windowsToRemove.Add(kvp.Key);
             }
         }
-        foreach (var window in windowsToRemove)
+        foreach (var window in m_windowsToRemove)
         {
             m_bindButtonsByWindow.Remove(window);
         }
+        m_windowsToRemove.Clear();
     }
 
-    static void UpdateButtonForWindow(EditorWindow window)
+    static void UpdateButtonForWindow(EditorWindow window, bool shouldShowButton)
     {
         if (window == null || window.rootVisualElement == null) return;
 
-        var shouldShowButton = ShouldShowBindButton();
         var hasButton = m_bindButtonsByWindow.ContainsKey(window);
 
         if (shouldShowButton && !hasButton)
         {
-            CreateButton(window);
-            OnCreateButton?.Invoke(window);
+            if (CreateButton(window))
+                OnCreateButton?.Invoke(window);
         }
         else if (!shouldShowButton && hasButton)
         {
@@ -72,28 +74,35 @@ public static class UnityEditorInspectorDrawHelper
 
     static bool ShouldShowBindButton()
     {
+        if (!ScriptGeneratorSetting.Instance.UseBindComponent) return false;
+
         var selectedGameObjects = Selection.gameObjects;
-        return selectedGameObjects.Length > 0 &&
-               selectedGameObjects.All(go => go != null && go.TryGetComponent<RectTransform>(out _)
-               && !go.TryGetComponent<UIBindComponent>(out _)) && ScriptGeneratorSetting.Instance.UseBindComponent;
+        if (selectedGameObjects.Length == 0) return false;
+
+        foreach (var go in selectedGameObjects)
+        {
+            if (go == null || !go.TryGetComponent<RectTransform>(out _) || go.TryGetComponent<UIBindComponent>(out _))
+                return false;
+        }
+        return true;
     }
 
-    static void CreateButton(EditorWindow window)
+    static bool CreateButton(EditorWindow window)
     {
-        if (window.rootVisualElement == null) return;
+        if (window.rootVisualElement == null) return false;
 
         // 查找Add Component按钮
         var addComponentButton = window.rootVisualElement.Q(className: "unity-inspector-add-component-button");
-        if (addComponentButton == null)
-        {
-            // 延迟一帧再尝试，确保UI已经构建完成
-            EditorApplication.delayCall += () => CreateButton(window);
-            return;
-        }
+        // UI 尚未构建完成时由下一次 Update 重试，避免堆积 delayCall。
+        if (addComponentButton == null) return false;
 
         // 检查是否已经存在我们的按钮
-        if (window.rootVisualElement.Q("bind-ui-component-button-holder") != null)
-            return;
+        var existingHolder = window.rootVisualElement.Q("bind-ui-component-button-holder");
+        if (existingHolder != null)
+        {
+            m_bindButtonsByWindow[window] = existingHolder;
+            return true;
+        }
 
         // 创建按钮容器
         var buttonHolder = new VisualElement();
@@ -137,7 +146,9 @@ public static class UnityEditorInspectorDrawHelper
             }
 
             m_bindButtonsByWindow[window] = buttonHolder;
+            return true;
         }
+        return false;
     }
 
     static void DestroyButton(EditorWindow window)
