@@ -1,6 +1,6 @@
 #if ENABLE_HYBRIDCLR
-using HybridCLR.Editor;
-using HybridCLR.Editor.Commands;
+using HybridCLR;
+using HybridCLR.Commands;
 #endif
 using System.IO;
 #if ENABLE_OBFUZ
@@ -8,7 +8,7 @@ using Obfuz.Settings;
 using Obfuz4HybridCLR;
 #endif
 using System.Collections.Generic;
-using HybridCLR.Editor.Installer;
+using HybridCLR.Installer;
 using TEngine.Editor;
 using UnityEditor;
 using UnityEngine;
@@ -26,7 +26,7 @@ public static class BuildDLLCommand
     public static void DisableHybridCLR()
     {
         ScriptingDefineSymbols.RemoveScriptingDefineSymbol(EnableHybridClrScriptingDefineSymbol);
-        HybridCLR.Editor.SettingsUtil.Enable = false;
+        HybridCLR.SettingsUtil.Enable = false;
 #if ENABLE_HYBRIDCLR
         UpdateSettingEditor.ForceUpdateAssemblies();
 #endif
@@ -45,9 +45,9 @@ public static class BuildDLLCommand
             controller.InstallDefaultHybridCLR();
         }
 
-        if (!HybridCLR.Editor.SettingsUtil.Enable)
+        if (!HybridCLR.SettingsUtil.Enable)
         {
-            HybridCLR.Editor.SettingsUtil.Enable = true;
+            HybridCLR.SettingsUtil.Enable = true;
 #if ENABLE_HYBRIDCLR
             UpdateSettingEditor.ForceUpdateAssemblies();
 #endif
